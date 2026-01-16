@@ -1,0 +1,263 @@
+/**
+ * Custom CSS
+ * PHP 8.4 Pure Functional Script
+ */
+
+/* Global Styles */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: #333;
+}
+
+/* Product Cards */
+.product-card {
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.product-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 .5rem 1rem rgba(0,0,0,.15) !important;
+}
+
+.product-card .card-img-top {
+    height: 200px;
+    object-fit: cover;
+}
+
+/* Footer */
+footer .social-links a {
+    transition: color 0.3s;
+}
+
+footer .social-links a:hover {
+    color: #f8f9fa !important;
+}
+
+/* Modal Styles */
+.modal-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+}
+
+/* Form Controls */
+.form-control:focus {
+    border-color: #80bdff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+/* Buttons */
+.btn {
+    border-radius: 0.25rem;
+}
+
+.btn-primary {
+    background-color: #007bff;
+    border-color: #007bff;
+}
+
+.btn-primary:hover {
+    background-color: #0069d9;
+    border-color: #0062cc;
+}
+
+/* Categories Section */
+.category-card {
+    transition: transform 0.3s;
+}
+
+.category-card:hover {
+    transform: translateY(-5px);
+}
+
+/* Cart Badge */
+.badge {
+    transition: all 0.3s;
+}
+
+/* Flash Messages */
+.alert {
+    border-radius: 0.25rem;
+}
+
+/* User Dashboard */
+.dashboard-card {
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.dashboard-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 .25rem .75rem rgba(0,0,0,.15) !important;
+}
+
+/* Hero Section */
+.hero-section {
+    background-size: cover;
+    background-position: center;
+}
+
+/* Testimonials */
+.testimonial-card {
+    border-left: 4px solid #007bff;
+}
+
+/* Newsletter Form */
+.newsletter-form .form-control {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+.newsletter-form .btn {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+}
+
+/* Mobile Optimization */
+@media (max-width: 767.98px) {
+    .product-card .card-img-top {
+        height: 180px;
+    }
+}
+
+/* Cart Page */
+.cart-item {
+    transition: background-color 0.3s;
+}
+
+.cart-item:hover {
+    background-color: #f8f9fa;
+}
+
+.cart-summary {
+    position: sticky;
+    top: 20px;
+}
+
+/* User Profile Page */
+.profile-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+    padding: 20px 0;
+}
+
+.profile-avatar {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid #fff;
+    box-shadow: 0 0 10px rgba(0,0,0,.1);
+}
+
+/* Admin Dashboard */
+.admin-card {
+    border-left: 4px solid #28a745;
+}
+
+.admin-stats {
+    font-size: 2rem;
+    font-weight: bold;
+}
+
+/* Order Status Badges */
+.status-badge {
+    padding: 0.35em 0.65em;
+    border-radius: 50rem;
+}
+
+.status-pending {
+    background-color: #ffc107;
+    color: #212529;
+}
+
+.status-processing {
+    background-color: #0dcaf0;
+    color: #212529;
+}
+
+.status-completed {
+    background-color: #198754;
+    color: #fff;
+}
+
+.status-cancelled {
+    background-color: #dc3545;
+    color: #fff;
+}
+
+/* Product Details Page */
+.product-gallery {
+    margin-bottom: 20px;
+}
+
+.product-thumbnail {
+    cursor: pointer;
+    opacity: 0.6;
+    transition: opacity 0.3s;
+}
+
+.product-thumbnail:hover,
+.product-thumbnail.active {
+    opacity: 1;
+}
+
+/* Checkout Steps */
+.checkout-steps {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 30px;
+}
+
+.checkout-step {
+    text-align: center;
+    position: relative;
+    flex: 1;
+}
+
+.checkout-step::after {
+    content: '';
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    width: 100%;
+    height: 3px;
+    background-color: #dee2e6;
+    z-index: -1;
+}
+
+.checkout-step:last-child::after {
+    display: none;
+}
+
+.checkout-step-icon {
+    display: inline-flex;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: #dee2e6;
+    color: #6c757d;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 10px;
+    z-index: 1;
+    position: relative;
+}
+
+.checkout-step.active .checkout-step-icon {
+    background-color: #007bff;
+    color: #fff;
+}
+
+.checkout-step.completed .checkout-step-icon {
+    background-color: #28a745;
+    color: #fff;
+}
+.text-bronze{
+    color: rgb(255, 201, 114) !important;
+}
+.text-silver{
+    color: rgb(184, 184, 184) !important;
+}
+.text-boronz{
+    color: rgb(255, 191, 0) !important;
+}
+

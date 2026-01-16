@@ -1,0 +1,14 @@
+{
+    "name": "login-system/php",
+    "description": "سیستم لاگین و ثبت نام با PHP 8.3",
+    "require": {
+        "php": ">=8.3",
+        "google/apiclient": "^2.15",
+        "phpmailer/phpmailer": "^6.10"
+    },
+    "config": {
+        "platform": {
+            "php": "8.3"
+        }
+    }
+}

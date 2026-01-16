@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>تبدیل JS به SQL</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 20px;
+      }
+
+      .container {
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        padding: 40px;
+        max-width: 800px;
+        width: 100%;
+      }
+
+      h1 {
+        color: #667eea;
+        text-align: center;
+        margin-bottom: 30px;
+        font-size: 28px;
+      }
+
+      .upload-area {
+        border: 3px dashed #667eea;
+        border-radius: 15px;
+        padding: 40px;
+        text-align: center;
+        background: #f8f9ff;
+        cursor: pointer;
+        transition: all 0.3s;
+        margin-bottom: 30px;
+      }
+
+      .upload-area:hover {
+        border-color: #764ba2;
+        background: #f0f1ff;
+      }
+
+      .upload-area.dragover {
+        background: #e8e9ff;
+        border-color: #764ba2;
+      }
+
+      .upload-icon {
+        font-size: 50px;
+        color: #667eea;
+        margin-bottom: 15px;
+      }
+
+      input[type="file"] {
+        display: none;
+      }
+
+      .btn {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 15px 30px;
+        border: none;
+        border-radius: 10px;
+        font-size: 16px;
+        cursor: pointer;
+        transition: all 0.3s;
+        width: 100%;
+        margin-top: 10px;
+      }
+
+      .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+      }
+
+      .btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      .results {
+        background: #f8f9ff;
+        border-radius: 15px;
+        padding: 25px;
+        margin-top: 25px;
+        display: none;
+      }
+
+      .results.show {
+        display: block;
+      }
+
+      .stat {
+        display: flex;
+        justify-content: space-between;
+        padding: 12px 0;
+        border-bottom: 1px solid #e0e0e0;
+      }
+
+      .stat:last-child {
+        border-bottom: none;
+      }
+
+      .stat-label {
+        color: #666;
+        font-weight: 500;
+      }
+
+      .stat-value {
+        color: #667eea;
+        font-weight: bold;
+      }
+
+      .download-buttons {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+        margin-top: 20px;
+      }
+
+      .btn-download {
+        background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+      }
+
+      .btn-download:hover {
+        box-shadow: 0 10px 25px rgba(17, 153, 142, 0.4);
+      }
+
+      .error {
+        background: #fee;
+        color: #c33;
+        padding: 15px;
+        border-radius: 10px;
+        margin-top: 15px;
+        display: none;
+      }
+
+      .error.show {
+        display: block;
+      }
+
+      .progress {
+        text-align: center;
+        color: #667eea;
+        font-weight: bold;
+        margin: 20px 0;
+        display: none;
+      }
+
+      .progress.show {
+        display: block;
+      }
+
+      .debug-info {
+        background: #fff3cd;
+        padding: 15px;
+        border-radius: 10px;
+        margin-top: 20px;
+        direction: rtl;
+      }
+
+      .debug-info h4 {
+        color: #856404;
+        margin-bottom: 10px;
+      }
+
+      .debug-info p {
+        margin: 5px 0;
+        font-size: 14px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>🔄 تبدیل JS به SQL - فیلتر کلاس B</h1>
+
+      <div class="upload-area" id="uploadArea">
+        <div class="upload-icon">📁</div>
+        <h3>فایل JavaScript را اینجا رها کنید</h3>
+        <p>یا کلیک کنید تا فایل را انتخاب کنید</p>
+        <input type="file" id="fileInput" accept=".js" />
+      </div>
+
+      <button class="btn" id="processBtn" disabled>
+        پردازش و تولید فایل‌های SQL
+      </button>
+
+      <div class="progress" id="progress">در حال پردازش...</div>
+      <div class="error" id="error"></div>
+
+      <div class="results" id="results">
+        <h3 style="color: #667eea; margin-bottom: 15px">نتایج:</h3>
+        <div class="stat">
+          <span class="stat-label">تعداد کل سوالات:</span>
+          <span class="stat-value" id="totalQuestions">0</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">سوالات فیلتر شده (کلاس B):</span>
+          <span class="stat-value" id="filteredQuestions">0</span>
+        </div>
+
+        <div class="download-buttons">
+          <button class="btn btn-download" id="downloadQuestions">
+            📥 دانلود SQL سوالات
+          </button>
+          <button class="btn btn-download" id="downloadAnswers">
+            📥 دانلود SQL پاسخ‌ها
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      let filteredQuestions = [];
+      let uploadedFile = null;
+      let dbTblQ = [];
+
+      const uploadArea = document.getElementById("uploadArea");
+      const fileInput = document.getElementById("fileInput");
+      const processBtn = document.getElementById("processBtn");
+      const progress = document.getElementById("progress");
+      const error = document.getElementById("error");
+      const results = document.getElementById("results");
+
+      // Upload area click
+      uploadArea.addEventListener("click", () => fileInput.click());
+
+      // Drag and drop
+      uploadArea.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        uploadArea.classList.add("dragover");
+      });
+
+      uploadArea.addEventListener("dragleave", () => {
+        uploadArea.classList.remove("dragover");
+      });
+
+      uploadArea.addEventListener("drop", (e) => {
+        e.preventDefault();
+        uploadArea.classList.remove("dragover");
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+          handleFile(files[0]);
+        }
+      });
+
+      // File input change
+      fileInput.addEventListener("change", (e) => {
+        if (e.target.files.length > 0) {
+          handleFile(e.target.files[0]);
+        }
+      });
+
+      // Handle file upload
+      function handleFile(file) {
+        if (!file.name.endsWith(".js")) {
+          showError("لطفاً یک فایل JavaScript (.js) انتخاب کنید");
+          return;
+        }
+
+        uploadedFile = file;
+        uploadArea.querySelector("h3").textContent = `✅ ${file.name}`;
+        uploadArea.querySelector("p").textContent = "فایل آماده پردازش است";
+        processBtn.disabled = false;
+        hideError();
+      }
+
+      // Process button click
+      processBtn.addEventListener("click", async () => {
+        if (!uploadedFile) return;
+
+        progress.classList.add("show");
+        results.classList.remove("show");
+        hideError();
+        processBtn.disabled = true;
+
+        try {
+          const text = await uploadedFile.text();
+
+          console.log("محتوای فایل بارگذاری شد، طول:", text.length);
+
+          // Create a clean iframe to execute the code
+          const iframe = document.createElement("iframe");
+          iframe.style.display = "none";
+          document.body.appendChild(iframe);
+
+          // Execute code in iframe
+          iframe.contentWindow.eval(text);
+
+          // Check if function exists in iframe
+          if (
+            typeof iframe.contentWindow.initDb2TableQuestions !== "function"
+          ) {
+            document.body.removeChild(iframe);
+            throw new Error("تابع initDb2TableQuestions یافت نشد");
+          }
+
+          console.log("تابع initDb2TableQuestions یافت شد");
+
+          // Initialize the database in iframe
+          iframe.contentWindow.initDb2TableQuestions();
+
+          // Get dbTblQ from iframe
+          if (!iframe.contentWindow.dbTblQ) {
+            document.body.removeChild(iframe);
+            throw new Error("dbTblQ یافت نشد");
+          }
+
+          // Copy to our scope (preserve sparse array structure)
+          const sourceArray = iframe.contentWindow.dbTblQ;
+          dbTblQ = [];
+          for (let key in sourceArray) {
+            if (sourceArray.hasOwnProperty(key)) {
+              dbTblQ[key] = JSON.parse(JSON.stringify(sourceArray[key]));
+            }
+          }
+
+          // Clean up iframe
+          document.body.removeChild(iframe);
+
+          console.log(
+            "dbTblQ کپی شد، تعداد کلیدها:",
+            Object.keys(dbTblQ).length
+          );
+
+          // Count numeric keys
+          let numericKeys = 0;
+          for (let key in dbTblQ) {
+            if (!isNaN(key) && dbTblQ.hasOwnProperty(key)) {
+              numericKeys++;
+            }
+          }
+          console.log("تعداد کلیدهای عددی:", numericKeys);
+
+          if (numericKeys === 0) {
+            throw new Error("هیچ سوالی در فایل یافت نشد");
+          }
+
+          // Filter questions for class B
+          filteredQuestions = filterQuestionsForClassB();
+
+          // Update UI
+          document.getElementById("totalQuestions").textContent = numericKeys;
+          document.getElementById("filteredQuestions").textContent =
+            filteredQuestions.length;
+
+          progress.classList.remove("show");
+          results.classList.add("show");
+        } catch (err) {
+          console.error("خطای کامل:", err);
+          progress.classList.remove("show");
+          showError("خطا در پردازش فایل: " + err.message);
+          processBtn.disabled = false;
+        }
+      });
+
+      // Filter questions for class B
+      function filterQuestionsForClassB() {
+        const selectedClass = "6";
+        const filtered = [];
+        let debugInfo = {
+          total: 0,
+          classPass: 0,
+          basicPass: 0,
+          bothPass: 0,
+          classValues: new Set(),
+          basicValues: [],
+        };
+
+        console.log("شروع فیلتر کردن...");
+
+        for (let key in dbTblQ) {
+          // بررسی اینکه آیا کلید یک عدد است و مقدار null نیست
+          if (
+            dbTblQ.hasOwnProperty(key) &&
+            !isNaN(key) &&
+            dbTblQ[key] !== null &&
+            dbTblQ[key] !== undefined
+          ) {
+            const question = dbTblQ[key];
+            debugInfo.total++;
+
+            // جمع‌آوری اطلاعات debug برای 10 سوال اول
+            if (debugInfo.total <= 10) {
+              debugInfo.classValues.add(JSON.stringify(question.classes));
+              debugInfo.basicValues.push({
+                basic: question.basic,
+                basic_mofa: question.basic_mofa,
+                result: !(question.basic == 0 && question.basic_mofa == 1),
+              });
+            }
+
+            // شرط کلاس: classes باید null، خالی، یا شامل ',6,' باشد
+            const classCondition =
+              !question.classes ||
+              question.classes == "" ||
+              question.classes.includes(",6,");
+
+            if (classCondition) debugInfo.classPass++;
+
+            // شرط basic: NOT (basic = 0 AND basic_mofa = 1)
+            const basicCondition = !(
+              question.basic == 0 && question.basic_mofa == 1
+            );
+
+            if (basicCondition) debugInfo.basicPass++;
+
+            // اگر هر دو شرط برقرار باشد
+            if (classCondition && basicCondition) {
+              debugInfo.bothPass++;
+              filtered.push({ ...question, original_id: key });
+            }
+          }
+        }
+
+        console.log("=== اطلاعات Debug ===");
+        console.log("تعداد کل بررسی شده:", debugInfo.total);
+        console.log("تعداد قبولی شرط classes:", debugInfo.classPass);
+        console.log("تعداد قبولی شرط basic:", debugInfo.basicPass);
+        console.log("تعداد قبولی هر دو شرط:", debugInfo.bothPass);
+        console.log(
+          "نمونه مقادیر classes (10 تا اول):",
+          Array.from(debugInfo.classValues)
+        );
+        console.log("نمونه مقادیر basic (10 تا اول):", debugInfo.basicValues);
+
+        // نمایش اطلاعات debug در صفحه
+        const existingDebug = document.querySelector(".debug-info");
+        if (existingDebug) existingDebug.remove();
+
+        const debugDiv = document.createElement("div");
+        debugDiv.className = "debug-info";
+        debugDiv.innerHTML = `
+                <h4>⚠️ اطلاعات Debug:</h4>
+                <p>تعداد کل بررسی شده: <strong>${debugInfo.total}</strong></p>
+                <p>قبولی شرط classes: <strong>${
+                  debugInfo.classPass
+                }</strong> (${
+          debugInfo.total > 0
+            ? Math.round((debugInfo.classPass / debugInfo.total) * 100)
+            : 0
+        }%)</p>
+                <p>قبولی شرط basic: <strong>${debugInfo.basicPass}</strong> (${
+          debugInfo.total > 0
+            ? Math.round((debugInfo.basicPass / debugInfo.total) * 100)
+            : 0
+        }%)</p>
+                <p>قبولی هر دو شرط: <strong>${debugInfo.bothPass}</strong></p>
+                <p style="font-size: 12px; margin-top: 10px;">
+                    نمونه classes (3 تا اول): ${Array.from(
+                      debugInfo.classValues
+                    )
+                      .slice(0, 3)
+                      .join(", ")}
+                </p>
+                <p style="font-size: 12px;">
+                    نمونه basic (3 تا اول): ${debugInfo.basicValues
+                      .slice(0, 3)
+                      .map(
+                        (v) =>
+                          `{basic:${v.basic}, mofa:${v.basic_mofa}, قبول:${
+                            v.result ? "بله" : "خیر"
+                          }}`
+                      )
+                      .join(", ")}
+                </p>
+            `;
+        results.appendChild(debugDiv);
+
+        return filtered;
+      }
+
+      // Generate Questions SQL
+      function generateQuestionsSQL() {
+        let sql = `-- SQL برای سوالات کلاس B
+-- تعداد سوالات: ${filteredQuestions.length}
+-- تاریخ تولید: ${new Date().toLocaleString("fa-IR")}
+
+DROP TABLE IF EXISTS \`questions\`;
+
+CREATE TABLE \`questions\` (
+  \`id\` int NOT NULL AUTO_INCREMENT,
+  \`number\` varchar(20) DEFAULT NULL,
+  \`picture\` text,
+  \`stvo\` varchar(10) DEFAULT NULL,
+  \`asw_pretext\` text,
+  \`points\` int DEFAULT NULL,
+  \`basic\` int DEFAULT NULL,
+  \`basic_mofa\` int DEFAULT NULL,
+  \`mq_flag\` int DEFAULT NULL,
+  \`category_id\` varchar(50) DEFAULT NULL,
+  \`classes\` text,
+  \`text\` text,
+  PRIMARY KEY (\`id\`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+INSERT INTO \`questions\` (\`number\`, \`picture\`, \`stvo\`, \`asw_pretext\`, \`points\`, \`basic\`, \`basic_mofa\`, \`mq_flag\`, \`category_id\`, \`classes\`, \`text\`) VALUES\n`;
+
+        filteredQuestions.forEach((q, index) => {
+          const values = [
+            escapeSQL(q.number || ""),
+            escapeSQL(q.picture || ""),
+            escapeSQL(q.stvo || ""),
+            escapeSQL(q.asw_pretext || ""),
+            q.points || 0,
+            q.basic || 0,
+            q.basic_mofa || 0,
+            q.mq_flag || 0,
+            escapeSQL(q.category_id || ""),
+            escapeSQL(q.classes || ""),
+            escapeSQL(decodeROT13(q.text || "")),
+          ];
+
+          sql += `(${values.join(", ")})`;
+          sql += index < filteredQuestions.length - 1 ? ",\n" : ";\n";
+        });
+
+        return sql;
+      }
+
+      // Generate Answers SQL
+      function generateAnswersSQL() {
+        let sql = `-- SQL برای پاسخ‌های سوالات کلاس B
+-- تعداد سوالات: ${filteredQuestions.length}
+-- تاریخ تولید: ${new Date().toLocaleString("fa-IR")}
+
+DROP TABLE IF EXISTS \`answers\`;
+
+CREATE TABLE \`answers\` (
+  \`id\` int NOT NULL AUTO_INCREMENT,
+  \`question_id\` int DEFAULT NULL,
+  \`text\` text,
+  \`is_image\` tinyint(1) DEFAULT '0',
+  \`original_content\` text,
+  \`asw_type\` int DEFAULT NULL,
+  \`asw_corr\` int DEFAULT NULL,
+  \`asw_hint\` text,
+  PRIMARY KEY (\`id\`)
+) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+INSERT INTO \`answers\` (\`question_id\`, \`text\`, \`is_image\`, \`original_content\`, \`asw_type\`, \`asw_corr\`, \`asw_hint\`) VALUES\n`;
+
+        const rows = [];
+        filteredQuestions.forEach((q, qIndex) => {
+          const questionId = qIndex + 1; // استفاده از index به عنوان question_id
+
+          for (let i = 1; i <= 3; i++) {
+            if (q[`asw_${i}`]) {
+              const answerText = q[`asw_${i}`] || "";
+              const isImage = answerText.includes("<img") ? 1 : 0;
+
+              rows.push([
+                questionId,
+                escapeSQL(answerText),
+                isImage,
+                escapeSQL(answerText),
+                q[`asw_type_${i}`] || "NULL",
+                q[`asw_corr${i}`] || 0,
+                escapeSQL(q[`asw_hint_${i}`] || ""),
+              ]);
+            }
+          }
+        });
+
+        rows.forEach((row, index) => {
+          sql += `(${row.join(", ")})`;
+          sql += index < rows.length - 1 ? ",\n" : ";\n";
+        });
+
+        return sql;
+      }
+
+      // Decode ROT13
+      function decodeROT13(str) {
+        if (!str) return str;
+        return str.replace(/[a-zA-Z]/g, function (c) {
+          return String.fromCharCode(
+            (c <= "Z" ? 90 : 122) >= (c = c.charCodeAt(0) + 13) ? c : c - 26
+          );
+        });
+      }
+
+      // Escape SQL strings
+      function escapeSQL(str) {
+        if (str === null || str === undefined) return "NULL";
+        return (
+          "'" + String(str).replace(/'/g, "''").replace(/\\/g, "\\\\") + "'"
+        );
+      }
+
+      // Download Questions SQL
+      document
+        .getElementById("downloadQuestions")
+        .addEventListener("click", () => {
+          const sql = generateQuestionsSQL();
+          downloadFile(sql, "questions_class_b.sql", "text/sql");
+        });
+
+      // Download Answers SQL
+      document
+        .getElementById("downloadAnswers")
+        .addEventListener("click", () => {
+          const sql = generateAnswersSQL();
+          downloadFile(sql, "answers_class_b.sql", "text/sql");
+        });
+
+      // Download file helper
+      function downloadFile(content, filename, mimeType) {
+        const blob = new Blob([content], { type: mimeType });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }
+
+      // Show error
+      function showError(message) {
+        error.textContent = message;
+        error.classList.add("show");
+      }
+
+      // Hide error
+      function hideError() {
+        error.classList.remove("show");
+      }
+    </script>
+  </body>
+</html>
