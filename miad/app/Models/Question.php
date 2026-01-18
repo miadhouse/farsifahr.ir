@@ -46,4 +46,15 @@ class Question extends Model
         'points' => 'integer',
         'category_id' => 'integer',
     ];
+        // رابطه با جدول categories (اگر دارید)
+    public function category()
+    {
+        return $this->belongsTo(Category::class, 'category_id');
+    }
+    
+    // رابطه با جدول answers
+    public function answers()
+    {
+        return $this->hasMany(Answer::class, 'question_id');
+    }
 }

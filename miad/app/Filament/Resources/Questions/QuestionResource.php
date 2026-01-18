@@ -11,10 +11,9 @@ use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Resources\Resource;
-use Filament\Forms\Components\Component;
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\RichEditor;
-use Filament\Forms\Components\Select;
 use Filament\Schemas\Components\Section;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\Toggle;
@@ -75,10 +74,65 @@ Section::make('توضیح سوال')
                         RichEditor::make('info')
                             ->label('متن سوال')
                                 ->resizableImages()
-
-                            ->columnSpanFull(),
+->columns(12)
+                    ->columnSpanFull(),
                     ])->columns(12),
-             
+             Section::make('پاسخ‌های سوال')
+                    ->schema([
+                        Repeater::make('answers')
+                            ->relationship('answers')
+                            ->label('')
+                            ->schema([
+                                Textarea::make('text')
+                                    ->label('متن آلمانی')
+                                    ->rows(2)
+                                    ->columnSpan(4),
+
+                                Textarea::make('en_text')
+                                    ->label('متن انگلیسی')
+                                    ->rows(2)
+                                    ->columnSpan(4),
+
+                                Textarea::make('farsi_text')
+                                    ->label('متن فارسی')
+                                    ->rows(2)
+                                    ->columnSpan(4),
+
+                                RichEditor::make('info')
+                                    ->label('توضیحات پاسخ')
+                                    ->fileAttachmentsDisk('public')
+                                    ->fileAttachmentsDirectory('answers/info')
+                                    ->fileAttachmentsVisibility('public')
+                                    ->toolbarButtons([
+                                        'bold',
+                                        'italic',
+                                        'underline',
+                                        'link',
+                                        'attachFiles',
+                                    ])
+                                    ->columnSpan(12),
+                            ])
+                            ->columns(12)
+                            ->itemLabel(fn (array $state): ?string => 
+                                $state['text'] 
+                                    ? (strlen($state['text']) > 50 
+                                        ? substr($state['text'], 0, 50) . '...' 
+                                        : $state['text'])
+                                    : 'پاسخ جدید'
+                            )
+                            ->collapsed()
+                            ->collapsible()
+                            ->addActionLabel('افزودن پاسخ')
+                            ->reorderable()
+                            ->orderColumn('id')
+                            ->defaultItems(0)
+                            ->columnSpanFull(),
+                    ])
+                    ->columns(12)
+                    ->columnSpanFull()
+                    ->collapsible()
+                    ->collapsed(false),
+        
             ]);
     }
 
