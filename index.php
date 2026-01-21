@@ -517,9 +517,46 @@ if (is_logged_in()) {
                             </div>
                         </div>
 
-                        <div class="d-flex align-items-center">
+                      <div class="d-flex align-items-center">
                             <?php if (is_logged_in()): ?>
-                                <span><?= $_SESSION['name'] ?></span>
+                                <!-- User Dropdown Menu -->
+                                <div class="dropdown">
+                                    <button class="btn btn-dark btn-lg text-white fs-4 dropdown-toggle d-flex align-items-center gap-2" 
+                                            type="button" 
+                                            id="userDropdown" 
+                                            data-bs-toggle="dropdown" 
+                                            aria-expanded="false">
+                                        <i class="fa-regular fa-user-circle"></i>
+                                        <span><?= $_SESSION['name'] ?></span>
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                                        <li>
+                                            <a class="dropdown-item" href="user/dashboard.php">
+                                                <i class="fa-regular fa-speedometer me-2"></i>
+                                                داشبورد
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" href="user/profile.php">
+                                                <i class="fa-regular fa-user me-2"></i>
+                                                پروفایل
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" href="user/subscription.php">
+                                                <i class="fa-regular fa-crown me-2"></i>
+                                                اشتراک
+                                            </a>
+                                        </li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li>
+                                            <a class="dropdown-item text-danger" href="logout.php">
+                                                <i class="fa-regular fa-arrow-right-from-bracket me-2"></i>
+                                                خروج
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </div>
                             <?php else: ?>
                                 <!-- Guest User Buttons -->
 

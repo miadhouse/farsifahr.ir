@@ -105,7 +105,7 @@ function handle_login($pdo, $ip)
     echo json_encode([
         'success' => true,
         'message' => 'ورود موفقیت‌آمیز بود',
-        'redirect' => 'dashboard.php'
+        'redirect' => 'admin'
     ]);
 }
 
