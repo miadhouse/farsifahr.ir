@@ -1,14 +1,28 @@
 <?php
 require_once __DIR__ . '/../incloud/questions.php';
+require_once __DIR__ . '/../incloud/subscription-functions.php';
 require_once __DIR__ . '/../config/config.php';
 
-$csrf_token = $_SESSION['csrf_token'] ?? '';
-
-if (empty($csrf_token)) {
-    die('لطفاً مجدداً وارد شوید');
+if (!isset($_SESSION['user_id']) || !isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
+    header('Location: ../index.php');
+    exit();
 }
-$user_id = $_SESSION['user_id'];
 
+// بررسی CSRF token
+$csrf_token = $_SESSION['csrf_token'] ?? '';
+if (empty($csrf_token)) {
+    // اگر csrf token وجود نداشت، session را پاک کن و به صفحه login برگردان
+    session_destroy();
+    header('Location: ../index.php');
+    exit();
+}
+
+$user_id = $_SESSION['user_id'];
+$isSubscribed = is_user_vip($user_id, $pdo);
+
+if (!$isSubscribed) {
+    die('شما دسترسی به این بخش را ندارید. لطفاً اشتراک VIP خریداری کنید.');
+}
 // تابع بازگشتی برای دریافت تمام سوالات یک دسته و تمام زیردسته‌هایش
 function getAllCategoryQuestionsRecursive($pdo, $parentId, $user_id = null)
 {

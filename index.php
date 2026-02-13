@@ -120,7 +120,7 @@ if (is_logged_in()) {
         border-radius: 12px;
         color: #e2e8f0;
         padding: 12px 16px;
-        font-size: 1rem;
+        /* font-size: 1rem; */
         transition: all 0.3s ease;
     }
 
@@ -451,7 +451,69 @@ if (is_logged_in()) {
 
 
 
-
+   .pricing-card {
+        transition: all 0.3s ease;
+        transform: translateY(0);
+    }
+    
+    .pricing-card:hover {
+        transform: translateY(-10px);
+    }
+    
+    .popular-card {
+        position: relative;
+        z-index: 2;
+        box-shadow: 0 15px 40px rgba(0, 123, 255, 0.3) !important;
+    }
+    
+    .features-list li:last-child {
+        border-bottom: none !important;
+    }
+    
+    .billing-switch .form-check-input:checked {
+        background-color: #28a745;
+        border-color: #28a745;
+    }
+    
+    .billing-switch .form-check-input {
+        cursor: pointer;
+    }
+    
+    .comparison-table th, 
+    .comparison-table td {
+        vertical-align: middle;
+    }
+    
+    /* انیمیشن برای نمایش کارت‌ها */
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    .pricing-card {
+        animation: fadeInUp 0.6s ease forwards;
+    }
+    
+    .pricing-card:nth-child(1) { animation-delay: 0.1s; }
+    .pricing-card:nth-child(2) { animation-delay: 0.2s; }
+    .pricing-card:nth-child(3) { animation-delay: 0.3s; }
+    
+    /* استایل برای موبایل */
+    @media (max-width: 768px) {
+        .pricing-card {
+            margin-bottom: 30px;
+        }
+        
+        .comparison-table {
+            display: none;
+        }
+    }
 
 
 
@@ -819,80 +881,137 @@ if (is_logged_in()) {
     <div class="container">
         <div class="section-head">
             <div class="section-sub-title center-title tmp-scroll-trigger tmp-fade-in animation-order-1">
-                <span class="subtitle">جدول اشتراک ها</span>
+                <span class="subtitle">جدول اشتراک‌ها</span>
             </div>
-            <h2 class="title split-collab tmp-scroll-trigger tmp-fade-in animation-order-2">قیمتگذاری ساده و شفاف</h2>
-            <p>طرحی را انتخاب کنید که به بهترین وجه با نیازهای شما مطابقت داشته باشد. همه طرح‌ها شامل ویژگی‌های اصلی ما هستند.</p>
+            <h2 class="title split-collab tmp-scroll-trigger tmp-fade-in animation-order-2">قیمت‌گذاری ساده و شفاف</h2>
+            <p>طرحی را انتخاب کنید که به بهترین وجه با نیازهای شما مطابقت داشته باشد.</p>
         </div>
-
-        <div class="row align-items-center">
+        
+        <div class="row justify-content-center">
             <ul class="pricing_table">
-
                 <?php
-                // دریافت همه پلن‌ها و ویژگی‌ها
+                
+                // دریافت پلن‌ها
                 $plans = get_all_subscription_plans($pdo);
-                $all_features = get_all_features($pdo);
-
+                $vip_durations = get_vip_duration_options();
+                
                 foreach ($plans as $plan):
-                    $features = get_plan_features($plan['id'], $pdo);
-
-                    // برای تطبیق سریع ویژگی‌ها
-                    $feature_map = [];
-                    foreach ($features as $f) {
-                        $feature_map[$f['id']] = $f;
-                    }
-
-                    // کلاس رنگ پلن
-                    $plan_class = '';
-                    if (strpos(strtolower($plan['name']), 'gold') !== false) {
-                        $plan_class = 'text-gold';
-                    } elseif (strpos(strtolower($plan['name']), 'silver') !== false) {
-                        $plan_class = 'text-silver';
-                    } elseif (strpos(strtolower($plan['name']), 'bronze') !== false) {
-                        $plan_class = 'text-bronze';
-                    }
-
-                    // قیمت
-                    $monthly_price = calculate_plan_price($plan['id'], false, $pdo);
+                    $is_free = ($plan['slug'] === 'free');
+                    $is_vip = ($plan['slug'] === 'vip');
+                    
+                    // تعیین کلاس رنگ
+                    $plan_class = $is_vip ? 'text-gold plan-vip' : 'plan-free';
                 ?>
-
+                
                 <li class="price_block <?= $plan_class ?>">
-                    <h3><?= $plan['name'] ?></h3>
-                    <div class="price">
-                        <div class="price_figure">
-                            <span class="price_number"><?= format_price($monthly_price['price']) ?></span>
+                    <div class="plan-header">
+                        <h3><?= htmlspecialchars($plan['name']) ?></h3>
+                        <?php if ($is_vip): ?>
+                            <span class="badge badge-vip">پیشنهاد ویژه</span>
+                        <?php endif; ?>
+                    </div>
+                    
+                    <?php if ($is_free): ?>
+                        <!-- پلن رایگان -->
+                        <div class="price">
+                            <div class="price_figure">
+                                <span class="price_number">رایگان</span>
+                            </div>
                         </div>
-                    </div>
-
-                    <ul class="features">
-                        <?php foreach ($all_features as $feature): 
-                            $is_enabled = isset($feature_map[$feature['id']]);
-                            $value = $is_enabled
-                                ? format_feature_value($feature_map[$feature['id']]['feature_value'], $feature_map[$feature['id']]['is_unlimited'])
-                                : '-';
-
-                            $icon_class = $is_enabled ? 'enabled-icon' : 'disabled-icon';
-                            $icon_html = $is_enabled
-                                ? ' <i class="fa fa-check-circle text-success fs-3"></i> '
-                                : ' <i class="fa fa-times-circle fs-3"></i> ';
-                        ?>
-                            <li class="<?= $icon_class ?> text-start">
-                                <?= $icon_html ?> <?= $feature['name'] ?>
+                        
+                        <ul class="features">
+                            <li class="enabled-icon text-start">
+                                <i class="fa fa-check-circle text-success fs-4"></i>
+                                دسترسی به 200 سوال اول
                             </li>
-                        <?php endforeach; ?>
-                    </ul>
-
-                    <div class="footer w-100">
-                        <a href="#" class="action_button btn btn-primary p-3 fs-3 w-100">خرید</a>
-                    </div>
+                            <li class="enabled-icon text-start">
+                                <i class="fa fa-check-circle text-success fs-4"></i>
+                                بدون محدودیت زمانی
+                            </li>
+                            <li class="enabled-icon text-start">
+                                <i class="fa fa-check-circle text-success fs-4"></i>
+                                دسترسی به آزمون‌های ساده
+                            </li>
+                            <li class="disabled-icon text-start">
+                                <i class="fa fa-times-circle text-muted fs-4"></i>
+                                دسترسی به تمام سوالات
+                            </li>
+                            <li class="disabled-icon text-start">
+                                <i class="fa fa-times-circle text-muted fs-4"></i>
+                                آزمون‌های تخصصی
+                            </li>
+                        </ul>
+                        
+                        <div class="footer w-100">
+                            <a href="#" class="action_button btn btn-outline-primary p-3 fs-4 w-100">
+                                استفاده رایگان
+                            </a>
+                        </div>
+                        
+                    <?php elseif ($is_vip): ?>
+                        <!-- پلن VIP -->
+                        <div class="vip-pricing-options">
+                            <p class="mb-4 text-center">
+                                <i class="fa fa-infinity text-gold fs-3"></i>
+                                <strong>دسترسی نامحدود به تمام سوالات</strong>
+                            </p>
+                            
+                            <div class="duration-options">
+                                <?php foreach ($vip_durations as $duration): 
+                                    $price = get_vip_price($duration['days'], $pdo);
+                                    if ($price === null) continue;
+                                ?>
+                                    <div class="duration-option" data-duration="<?= $duration['days'] ?>" data-price="<?= $price ?>">
+                                        <div class="duration-header">
+                                            <span class="duration-label"><?= $duration['label'] ?></span>
+                                            <span class="duration-price"><?= format_price($price) ?></span>
+                                        </div>
+                                        <?php if ($duration['days'] >= 90): ?>
+                                            <span class="badge badge-discount">
+                                                صرفه‌جویی بیشتر
+                                            </span>
+                                        <?php endif; ?>
+                                    </div>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
+                        
+                        <ul class="features mt-4">
+                            <li class="enabled-icon text-start">
+                                <i class="fa fa-check-circle text-success fs-4"></i>
+                                دسترسی نامحدود به تمام سوالات
+                            </li>
+                            <li class="enabled-icon text-start">
+                                <i class="fa fa-check-circle text-success fs-4"></i>
+                                آزمون‌های تخصصی و پیشرفته
+                            </li>
+                            <li class="enabled-icon text-start">
+                                <i class="fa fa-check-circle text-success fs-4"></i>
+                                گزارش‌های تحلیلی دقیق
+                            </li>
+                            <li class="enabled-icon text-start">
+                                <i class="fa fa-check-circle text-success fs-4"></i>
+                                پشتیبانی اختصاصی
+                            </li>
+                            <li class="enabled-icon text-start">
+                                <i class="fa fa-check-circle text-success fs-4"></i>
+                                بروزرسانی‌های مداوم محتوا
+                            </li>
+                        </ul>
+                        
+                        <div class="footer w-100">
+                            <button class="action_button btn btn-primary p-3 fs-4 w-100" id="vip-purchase-btn">
+                                خرید اشتراک VIP
+                            </button>
+                        </div>
+                    <?php endif; ?>
                 </li>
-
+                
                 <?php endforeach; ?>
             </ul>
         </div>
     </div>
 </section>
-
     <!-- Tpm My Price plan End -->
 
     <section class="blog-and-news-are tmp-section-gap">

@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1:3306
--- Generation Time: Jan 18, 2026 at 10:46 PM
+-- Generation Time: Feb 04, 2026 at 03:23 PM
 -- Server version: 9.1.0
 -- PHP Version: 8.3.14
 
@@ -40,6 +40,57 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `cleanup_old_logs` ()   BEGIN
     WHERE last_activity < DATE_SUB(NOW(), INTERVAL 7 DAY);
 END$$
 
+DROP PROCEDURE IF EXISTS `downgrade_to_free`$$
+CREATE DEFINER=`root`@`localhost` PROCEDURE `downgrade_to_free` (IN `p_user_id` INT)   BEGIN
+    DECLARE v_free_plan_id INT DEFAULT 1;
+    
+    START TRANSACTION;
+    
+    -- لغو اشتراک فعال
+    UPDATE user_subscriptions 
+    SET status = 'cancelled' 
+    WHERE user_id = p_user_id AND status = 'active';
+    
+    -- تغییر به پلن رایگان
+    UPDATE users SET current_plan_id = v_free_plan_id WHERE id = p_user_id;
+    
+    -- ایجاد اشتراک رایگان
+    INSERT INTO user_subscriptions (user_id, plan_id, status, amount_paid, duration_days) 
+    VALUES (p_user_id, v_free_plan_id, 'active', 0.00, 0);
+    
+    COMMIT;
+    
+    SELECT 'success' as result, 'کاربر به پلن رایگان منتقل شد' as message;
+END$$
+
+DROP PROCEDURE IF EXISTS `purchase_vip_subscription`$$
+CREATE DEFINER=`root`@`localhost` PROCEDURE `purchase_vip_subscription` (IN `p_user_id` INT, IN `p_duration_days` INT, IN `p_amount_paid` DECIMAL(10,2), IN `p_payment_method` VARCHAR(50), IN `p_transaction_id` VARCHAR(255))   BEGIN
+    DECLARE v_plan_id INT DEFAULT 2;
+    DECLARE v_expires_at DATETIME;
+    
+    START TRANSACTION;
+    
+    SET v_expires_at = DATE_ADD(NOW(), INTERVAL p_duration_days DAY);
+    
+    -- لغو اشتراک‌های قبلی
+    UPDATE user_subscriptions 
+    SET status = 'cancelled' 
+    WHERE user_id = p_user_id AND status = 'active';
+    
+    -- ایجاد اشتراک جدید
+    INSERT INTO user_subscriptions 
+    (user_id, plan_id, expires_at, duration_days, amount_paid, payment_method, transaction_id, status)
+    VALUES 
+    (p_user_id, v_plan_id, v_expires_at, p_duration_days, p_amount_paid, p_payment_method, p_transaction_id, 'active');
+    
+    -- بروزرسانی پلن کاربر
+    UPDATE users SET current_plan_id = v_plan_id WHERE id = p_user_id;
+    
+    COMMIT;
+    
+    SELECT 'success' as result, v_expires_at as expires_at, LAST_INSERT_ID() as subscription_id;
+END$$
+
 DELIMITER ;
 
 -- --------------------------------------------------------
@@ -55,14 +106,14 @@ CREATE TABLE IF NOT EXISTS `answers` (
   `text` text,
   `en_text` mediumtext NOT NULL,
   `farsi_text` mediumtext NOT NULL,
-  `info` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+  `info` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci,
   `is_image` tinyint(1) DEFAULT '0',
   `original_content` text,
   `asw_type` int DEFAULT NULL,
   `asw_corr` int DEFAULT NULL,
   `asw_hint` text,
   PRIMARY KEY (`id`)
-) ENGINE=MyISAM AUTO_INCREMENT=3396 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=MyISAM AUTO_INCREMENT=3396 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 --
 -- Dumping data for table `answers`
@@ -3495,7 +3546,7 @@ CREATE TABLE IF NOT EXISTS `categories` (
   KEY `idx_category_type` (`category_type`),
   KEY `idx_index_code` (`index_code`),
   KEY `idx_level` (`level`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 --
 -- Dumping data for table `categories`
@@ -3647,53 +3698,6 @@ INSERT INTO `login_attempts` (`id`, `email`, `ip_address`, `attempted_at`) VALUE
 -- --------------------------------------------------------
 
 --
--- Table structure for table `plan_features`
---
-
-DROP TABLE IF EXISTS `plan_features`;
-CREATE TABLE IF NOT EXISTS `plan_features` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `plan_id` int NOT NULL,
-  `feature_id` int NOT NULL,
-  `feature_value` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `is_unlimited` tinyint(1) DEFAULT '0',
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `unique_plan_feature` (`plan_id`,`feature_id`),
-  KEY `idx_plan_id` (`plan_id`),
-  KEY `idx_feature_id` (`feature_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=28 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
---
--- Dumping data for table `plan_features`
---
-
-INSERT INTO `plan_features` (`id`, `plan_id`, `feature_id`, `feature_value`, `is_unlimited`, `created_at`) VALUES
-(2, 1, 2, '10', 0, '2025-08-05 19:31:30'),
-(3, 1, 5, '1', 0, '2025-08-05 19:31:30'),
-(5, 2, 1, '100% سوالات فعال است', 0, '2025-08-05 19:31:30'),
-(6, 2, 2, '50', 0, '2025-08-05 19:31:30'),
-(7, 2, 3, '1', 0, '2025-08-05 19:31:30'),
-(8, 2, 5, '1', 0, '2025-08-05 19:31:30'),
-(10, 3, 1, '100% سوالات فعال است', 0, '2025-08-05 19:31:30'),
-(11, 3, 2, '200', 0, '2025-08-05 19:31:30'),
-(12, 3, 3, '1', 0, '2025-08-05 19:31:30'),
-(13, 3, 4, '1', 0, '2025-08-05 19:31:30'),
-(14, 3, 5, '1', 0, '2025-08-05 19:31:30'),
-(15, 3, 6, '5', 0, '2025-08-05 19:31:30'),
-(16, 3, 7, '1', 0, '2025-08-05 19:31:30'),
-(18, 4, 1, '100% سوالات فعال است', 0, '2025-08-05 19:31:30'),
-(19, 4, 2, NULL, 0, '2025-08-05 19:31:30'),
-(20, 4, 3, '1', 0, '2025-08-05 19:31:30'),
-(21, 4, 4, '1', 0, '2025-08-05 19:31:30'),
-(22, 4, 5, '1', 0, '2025-08-05 19:31:30'),
-(23, 4, 6, NULL, 0, '2025-08-05 19:31:30'),
-(24, 4, 7, '1', 0, '2025-08-05 19:31:30'),
-(25, 4, 8, '1', 0, '2025-08-05 19:31:30');
-
--- --------------------------------------------------------
-
---
 -- Table structure for table `questions`
 --
 
@@ -3704,8 +3708,8 @@ CREATE TABLE IF NOT EXISTS `questions` (
   `picture` text,
   `stvo` varchar(10) DEFAULT NULL,
   `asw_pretext` text,
-  `asw_farsi` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `asw_en` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `asw_farsi` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
+  `asw_en` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
   `points` int DEFAULT NULL,
   `basic` int DEFAULT NULL,
   `basic_mofa` int DEFAULT NULL,
@@ -3713,12 +3717,12 @@ CREATE TABLE IF NOT EXISTS `questions` (
   `category_id` varchar(50) DEFAULT NULL,
   `classes` text,
   `text` text,
-  `farsi_text` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `en_text` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `info` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `farsi_text` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `en_text` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `info` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
   `available` int NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=1254 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=1254 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 --
 -- Dumping data for table `questions`
@@ -4978,7 +4982,7 @@ CREATE TABLE IF NOT EXISTS `questions2` (
   `classes` text,
   `text` text,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=1170 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=1170 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 --
 -- Dumping data for table `questions2`
@@ -6174,7 +6178,7 @@ CREATE TABLE IF NOT EXISTS `question_bookmarks` (
   UNIQUE KEY `unique_bookmark` (`user_id`,`question_id`),
   KEY `idx_user_id` (`user_id`),
   KEY `idx_question_id` (`question_id`)
-) ENGINE=MyISAM AUTO_INCREMENT=37 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=MyISAM AUTO_INCREMENT=37 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 --
 -- Dumping data for table `question_bookmarks`
@@ -6213,11 +6217,11 @@ INSERT INTO `question_bookmarks` (`id`, `user_id`, `question_id`, `created_at`) 
 --
 DROP VIEW IF EXISTS `recent_successful_logins`;
 CREATE TABLE IF NOT EXISTS `recent_successful_logins` (
-`id` int
-,`name` varchar(100)
-,`email` varchar(255)
+`email` varchar(255)
+,`id` int
 ,`ip_address` varchar(45)
 ,`login_time` timestamp
+,`name` varchar(100)
 );
 
 -- --------------------------------------------------------
@@ -6239,49 +6243,6 @@ CREATE TABLE IF NOT EXISTS `sessions` (
   KEY `idx_last_activity` (`last_activity`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
---
--- Dumping data for table `sessions`
---
-
-INSERT INTO `sessions` (`id`, `user_id`, `ip_address`, `user_agent`, `last_activity`, `created_at`) VALUES
-('2o57ko8fv2mfgblfoqli47m6fc', 13, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36', '2026-01-15 11:17:38', '2026-01-15 11:17:36'),
-('4f61pgfpon2om0j0kuhd1ungho', 13, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36', '2026-01-03 17:29:44', '2026-01-03 17:29:42'),
-('8psq46efbl94f89qmpect921ci', 13, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36', '2026-01-10 20:17:58', '2026-01-10 20:17:57');
-
--- --------------------------------------------------------
-
---
--- Table structure for table `subscription_features`
---
-
-DROP TABLE IF EXISTS `subscription_features`;
-CREATE TABLE IF NOT EXISTS `subscription_features` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `name` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `slug` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `description` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
-  `is_active` tinyint(1) DEFAULT '1',
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `unique_slug` (`slug`),
-  KEY `idx_is_active` (`is_active`)
-) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
---
--- Dumping data for table `subscription_features`
---
-
-INSERT INTO `subscription_features` (`id`, `name`, `slug`, `description`, `is_active`, `created_at`, `updated_at`) VALUES
-(1, 'شامل تمام سوالات', 'social_accounts', 'تعداد سوالاتی که در این پلن برای شما فعال است', 1, '2025-08-05 19:31:30', '2025-08-07 12:58:02'),
-(2, 'ترجمه فارسی سوالات و پاسخ ها', 'monthly_posts', 'تعداد پست‌های قابل انتشار در ماه', 1, '2025-08-05 19:31:30', '2025-08-07 12:59:32'),
-(3, 'توضیح آموزشی جداگانه فارسی برای هر پاسخ ', 'support_24_7', 'دسترسی به پشتیبانی 24 ساعته', 1, '2025-08-05 19:31:30', '2025-08-07 13:04:08'),
-(4, 'بخش واژه آموزی', 'advanced_analytics', 'دسترسی به گزارش‌های تحلیلی پیشرفته', 1, '2025-08-05 19:31:30', '2025-08-07 13:01:31'),
-(5, 'اضافه کردن دلخواه کلمات به بخش واژه ها', 'post_scheduling', 'امکان زمان‌بندی انتشار پست‌ها', 1, '2025-08-05 19:31:30', '2025-08-07 13:01:46'),
-(6, 'دسترسی به آموزش مربوطه در حین خواندن سوال', 'team_collaboration', 'امکان کار تیمی و مدیریت کاربران', 1, '2025-08-05 19:31:30', '2025-08-07 13:02:50'),
-(7, 'شبیه ساز امتحان', 'auto_response', 'ربات پاسخگوی خودکار', 1, '2025-08-05 19:31:30', '2025-08-07 13:03:10'),
-(8, 'پشتیبانی 24/7', 'custom_reports', 'امکان تولید گزارش‌های سفارشی', 1, '2025-08-05 19:31:30', '2025-08-07 13:00:35');
-
 -- --------------------------------------------------------
 
 --
@@ -6291,30 +6252,30 @@ INSERT INTO `subscription_features` (`id`, `name`, `slug`, `description`, `is_ac
 DROP TABLE IF EXISTS `subscription_plans`;
 CREATE TABLE IF NOT EXISTS `subscription_plans` (
   `id` int NOT NULL AUTO_INCREMENT,
-  `name` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `slug` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `description` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
-  `monthly_price` decimal(10,2) NOT NULL DEFAULT '0.00',
-  `yearly_price` decimal(10,2) NOT NULL DEFAULT '0.00',
+  `name` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'نام پلن',
+  `slug` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'شناسه یکتا',
+  `description` text COLLATE utf8mb4_unicode_ci COMMENT 'توضیحات',
+  `price_2_weeks` decimal(10,2) DEFAULT '0.00' COMMENT 'قیمت 2 هفته (فقط VIP)',
+  `price_1_month` decimal(10,2) DEFAULT '0.00' COMMENT 'قیمت 1 ماه (فقط VIP)',
+  `price_3_months` decimal(10,2) DEFAULT '0.00' COMMENT 'قیمت 3 ماه (فقط VIP)',
+  `price_6_months` decimal(10,2) DEFAULT '0.00' COMMENT 'قیمت 6 ماه (فقط VIP)',
+  `price_1_year` decimal(10,2) DEFAULT '0.00' COMMENT 'قیمت 1 سال (فقط VIP)',
+  `question_limit` int DEFAULT NULL COMMENT 'محدودیت تعداد سوالات (NULL = نامحدود)',
   `is_active` tinyint(1) DEFAULT '1',
   `sort_order` int DEFAULT '0',
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `unique_slug` (`slug`),
-  KEY `idx_is_active` (`is_active`),
-  KEY `idx_sort_order` (`sort_order`)
-) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  UNIQUE KEY `slug` (`slug`)
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `subscription_plans`
 --
 
-INSERT INTO `subscription_plans` (`id`, `name`, `slug`, `description`, `monthly_price`, `yearly_price`, `is_active`, `sort_order`, `created_at`, `updated_at`) VALUES
-(1, 'رایگان', 'free', 'پلن رایگان با امکانات محدود', 0.00, 0.00, 1, 1, '2025-08-05 19:31:29', '2025-08-05 19:31:29'),
-(2, 'برنزی', 'bronze', 'پلن برنزی با امکانات پایه', 50000.00, 480000.00, 1, 2, '2025-08-05 19:31:29', '2025-08-05 19:31:29'),
-(3, 'نقره‌ای', 'silver', 'پلن نقره‌ای با امکانات پیشرفته', 120000.00, 1152000.00, 1, 3, '2025-08-05 19:31:29', '2025-08-05 19:31:29'),
-(4, 'طلایی', 'gold', 'پلن طلایی با تمام امکانات', 250000.00, 2400000.00, 1, 4, '2025-08-05 19:31:29', '2025-08-05 19:31:29');
+INSERT INTO `subscription_plans` (`id`, `name`, `slug`, `description`, `price_2_weeks`, `price_1_month`, `price_3_months`, `price_6_months`, `price_1_year`, `question_limit`, `is_active`, `sort_order`, `created_at`, `updated_at`) VALUES
+(1, 'رایگان', 'free', 'دسترسی محدود به 200 سوال اول بدون محدودیت زمانی', 0.00, 0.00, 0.00, 0.00, 0.00, 200, 1, 1, '2026-01-28 21:50:37', '2026-01-28 21:50:37'),
+(2, 'VIP', 'vip', 'دسترسی نامحدود به تمام سوالات', 150000.00, 250000.00, 650000.00, 1200000.00, 2000000.00, NULL, 1, 2, '2026-01-28 21:50:37', '2026-01-28 21:50:37');
 
 -- --------------------------------------------------------
 
@@ -6325,6 +6286,7 @@ INSERT INTO `subscription_plans` (`id`, `name`, `slug`, `description`, `monthly_
 DROP TABLE IF EXISTS `users`;
 CREATE TABLE IF NOT EXISTS `users` (
   `id` int NOT NULL AUTO_INCREMENT,
+  `current_plan_id` int DEFAULT NULL COMMENT 'پلن فعلی کاربر',
   `email` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `password` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `name` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
@@ -6336,23 +6298,21 @@ CREATE TABLE IF NOT EXISTS `users` (
   `reset_expires` datetime DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  `current_plan_id` int DEFAULT '1',
   PRIMARY KEY (`id`),
   UNIQUE KEY `unique_email` (`email`),
   KEY `idx_google_id` (`google_id`),
   KEY `idx_reset_token` (`reset_token`),
-  KEY `idx_verification_token` (`verification_token`),
-  KEY `idx_current_plan` (`current_plan_id`)
+  KEY `idx_verification_token` (`verification_token`)
 ) ENGINE=InnoDB AUTO_INCREMENT=14 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `users`
 --
 
-INSERT INTO `users` (`id`, `email`, `password`, `name`, `role`, `google_id`, `email_verified`, `verification_token`, `reset_token`, `reset_expires`, `created_at`, `updated_at`, `current_plan_id`) VALUES
-(1, 'admin@example.com', '$2y$10$ziReKmEFU/6yFqo.CMBYF.vzyWij73PAcLyFaYuYIzYb6aGSAj7Tq', 'مدیر سیستم', 'admin', NULL, 1, NULL, NULL, NULL, '2025-07-31 18:40:38', '2025-07-31 18:55:11', 1),
-(12, 'miadhouse@gmail.com', '$2y$10$YmKDelia74Y7p1dEjm6b9u.XRJfR5Wi.DRIl1zeUOMyUYCPiAUZ5e', 'miad', 'user', NULL, 1, NULL, NULL, NULL, '2025-08-04 09:34:20', '2025-08-04 09:34:53', 1),
-(13, 'miadaleali@gmail.com', '$2y$10$XAZOCLCnB14p.je.s4P8NefT3C0weADSWNnV9gqAj0NdiwgWSNFTS', 'miadaleali@gmail.com', 'user', NULL, 0, '563ec6d6547d240b4240e7e723c2122b733b55c6f8cfcf9bcad04f2febb1c94e', NULL, NULL, '2025-12-31 16:26:59', '2025-12-31 16:26:59', 1);
+INSERT INTO `users` (`id`, `current_plan_id`, `email`, `password`, `name`, `role`, `google_id`, `email_verified`, `verification_token`, `reset_token`, `reset_expires`, `created_at`, `updated_at`) VALUES
+(1, 1, 'admin@example.com', '$2y$10$ziReKmEFU/6yFqo.CMBYF.vzyWij73PAcLyFaYuYIzYb6aGSAj7Tq', 'مدیر سیستم', 'admin', NULL, 1, NULL, NULL, NULL, '2025-07-31 18:40:38', '2026-01-28 21:46:17'),
+(12, 1, 'miadhouse@gmail.com', '$2y$10$YmKDelia74Y7p1dEjm6b9u.XRJfR5Wi.DRIl1zeUOMyUYCPiAUZ5e', 'miad', 'user', NULL, 1, NULL, NULL, NULL, '2025-08-04 09:34:20', '2026-01-28 21:46:17'),
+(13, 1, 'miadaleali@gmail.com', '$2y$10$XAZOCLCnB14p.je.s4P8NefT3C0weADSWNnV9gqAj0NdiwgWSNFTS', 'miadaleali@gmail.com', 'user', NULL, 0, '563ec6d6547d240b4240e7e723c2122b733b55c6f8cfcf9bcad04f2febb1c94e', NULL, NULL, '2025-12-31 16:26:59', '2026-01-28 21:46:17');
 
 -- --------------------------------------------------------
 
@@ -6372,7 +6332,7 @@ CREATE TABLE IF NOT EXISTS `user_config` (
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `user_id` (`user_id`)
-) ENGINE=MyISAM AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=MyISAM AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 --
 -- Dumping data for table `user_config`
@@ -6403,7 +6363,7 @@ CREATE TABLE IF NOT EXISTS `user_logs` (
   KEY `idx_user_id` (`user_id`),
   KEY `idx_action` (`action`),
   KEY `idx_created_at` (`created_at`)
-) ENGINE=InnoDB AUTO_INCREMENT=85 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=89 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `user_logs`
@@ -6440,7 +6400,11 @@ INSERT INTO `user_logs` (`id`, `user_id`, `email`, `action`, `ip_address`, `user
 (81, 13, 'miadaleali@gmail.com', 'config_update', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36', 'success', '2026-01-13 20:29:16'),
 (82, 13, 'miadaleali@gmail.com', 'config_update', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36', 'success', '2026-01-13 22:24:11'),
 (83, 13, 'miadaleali@gmail.com', 'config_update', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36', 'success', '2026-01-13 22:27:39'),
-(84, 13, 'miadaleali@gmail.com', 'login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36', 'success', '2026-01-15 11:17:36');
+(84, 13, 'miadaleali@gmail.com', 'login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36', 'success', '2026-01-15 11:17:36'),
+(85, 13, 'miadaleali@gmail.com', 'login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36', 'success', '2026-01-21 19:55:29'),
+(86, 13, 'miadaleali@gmail.com', 'logout', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36', 'success', '2026-01-21 21:01:49'),
+(87, 13, 'miadaleali@gmail.com', 'login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', 'success', '2026-01-27 08:31:23'),
+(88, 13, 'miadaleali@gmail.com', 'logout', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', 'success', '2026-01-28 20:34:44');
 
 -- --------------------------------------------------------
 
@@ -6461,7 +6425,7 @@ CREATE TABLE IF NOT EXISTS `user_question_stats` (
   UNIQUE KEY `unique_user_question` (`user_id`,`question_id`),
   KEY `idx_user_id` (`user_id`),
   KEY `idx_question_id` (`question_id`)
-) ENGINE=MyISAM AUTO_INCREMENT=220 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=MyISAM AUTO_INCREMENT=220 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 --
 -- Dumping data for table `user_question_stats`
@@ -6513,31 +6477,29 @@ CREATE TABLE IF NOT EXISTS `user_subscriptions` (
   `id` int NOT NULL AUTO_INCREMENT,
   `user_id` int NOT NULL,
   `plan_id` int NOT NULL,
-  `status` enum('active','expired','cancelled','pending') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'active',
-  `started_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  `expires_at` timestamp NULL DEFAULT NULL,
-  `is_yearly` tinyint(1) DEFAULT '0',
+  `status` enum('active','cancelled','expired','pending') COLLATE utf8mb4_unicode_ci DEFAULT 'active',
+  `expires_at` datetime DEFAULT NULL COMMENT 'تاریخ انقضا',
+  `duration_days` int DEFAULT '0' COMMENT 'تعداد روزهای اشتراک',
   `amount_paid` decimal(10,2) DEFAULT '0.00',
-  `payment_method` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `transaction_id` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `payment_method` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `transaction_id` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
-  KEY `idx_user_id` (`user_id`),
-  KEY `idx_plan_id` (`plan_id`),
-  KEY `idx_status` (`status`),
-  KEY `idx_expires_at` (`expires_at`)
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  KEY `user_id` (`user_id`),
+  KEY `plan_id` (`plan_id`),
+  KEY `idx_user_subscriptions_user_status` (`user_id`,`status`),
+  KEY `idx_user_subscriptions_expires` (`expires_at`)
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `user_subscriptions`
 --
 
-INSERT INTO `user_subscriptions` (`id`, `user_id`, `plan_id`, `status`, `started_at`, `expires_at`, `is_yearly`, `amount_paid`, `payment_method`, `transaction_id`, `created_at`, `updated_at`) VALUES
-(1, 1, 1, 'pending', '2025-08-05 19:32:37', '2025-08-29 19:32:37', 0, 0.00, NULL, NULL, '2025-08-05 19:32:37', '2025-08-07 21:08:11'),
-(3, 12, 2, 'active', '2025-08-05 19:32:37', '2025-08-29 19:32:37', 0, 11999.00, NULL, NULL, '2025-08-05 19:32:37', '2025-08-08 17:25:02'),
-(4, 12, 1, 'active', '0000-00-00 00:00:00', NULL, 0, 0.00, NULL, NULL, '2025-08-05 19:32:37', '2025-08-07 21:53:46'),
-(5, 13, 4, 'active', '2026-01-03 18:04:14', '2026-01-23 18:04:44', 0, 0.00, NULL, NULL, '2026-01-03 18:04:14', '2026-01-03 18:04:46');
+INSERT INTO `user_subscriptions` (`id`, `user_id`, `plan_id`, `status`, `expires_at`, `duration_days`, `amount_paid`, `payment_method`, `transaction_id`, `created_at`, `updated_at`) VALUES
+(1, 1, 1, 'active', NULL, 0, 0.00, NULL, NULL, '2026-01-28 21:50:37', '2026-01-28 21:50:37'),
+(2, 12, 1, 'active', NULL, 0, 0.00, NULL, NULL, '2026-01-28 21:50:37', '2026-01-28 21:50:37'),
+(3, 13, 1, 'active', NULL, 0, 0.00, NULL, NULL, '2026-01-28 21:50:37', '2026-01-28 21:50:37');
 
 -- --------------------------------------------------------
 
@@ -6611,6 +6573,24 @@ INSERT INTO `vocabulary_words` (`id`, `word`, `translation`, `created_at`, `upda
 -- --------------------------------------------------------
 
 --
+-- Stand-in structure for view `v_active_subscriptions`
+-- (See below for the actual view)
+--
+DROP VIEW IF EXISTS `v_active_subscriptions`;
+CREATE TABLE IF NOT EXISTS `v_active_subscriptions` (
+`amount_paid` decimal(10,2)
+,`duration_days` int
+,`expires_at` datetime
+,`plan_name` varchar(100)
+,`plan_slug` varchar(50)
+,`remaining_days` varchar(13)
+,`subscription_start` timestamp
+,`user_id` int
+);
+
+-- --------------------------------------------------------
+
+--
 -- Structure for view `recent_successful_logins`
 --
 DROP TABLE IF EXISTS `recent_successful_logins`;
@@ -6618,28 +6598,25 @@ DROP TABLE IF EXISTS `recent_successful_logins`;
 DROP VIEW IF EXISTS `recent_successful_logins`;
 CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `recent_successful_logins`  AS SELECT `u`.`id` AS `id`, `u`.`name` AS `name`, `u`.`email` AS `email`, `ul`.`ip_address` AS `ip_address`, `ul`.`created_at` AS `login_time` FROM (`user_logs` `ul` join `users` `u` on((`ul`.`user_id` = `u`.`id`))) WHERE ((`ul`.`action` = 'login') AND (`ul`.`status` = 'success')) ORDER BY `ul`.`created_at` DESC ;
 
+-- --------------------------------------------------------
+
+--
+-- Structure for view `v_active_subscriptions`
+--
+DROP TABLE IF EXISTS `v_active_subscriptions`;
+
+DROP VIEW IF EXISTS `v_active_subscriptions`;
+CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v_active_subscriptions`  AS SELECT `u`.`id` AS `user_id`, `sp`.`name` AS `plan_name`, `sp`.`slug` AS `plan_slug`, `us`.`expires_at` AS `expires_at`, `us`.`duration_days` AS `duration_days`, `us`.`amount_paid` AS `amount_paid`, (case when (`us`.`expires_at` is null) then 'نامحدود' when (`us`.`expires_at` > now()) then concat((to_days(`us`.`expires_at`) - to_days(now())),' روز') else 'منقضی شده' end) AS `remaining_days`, `us`.`created_at` AS `subscription_start` FROM ((`users` `u` join `user_subscriptions` `us` on((`u`.`id` = `us`.`user_id`))) join `subscription_plans` `sp` on((`us`.`plan_id` = `sp`.`id`))) WHERE (`us`.`status` = 'active') ;
+
 --
 -- Constraints for dumped tables
 --
-
---
--- Constraints for table `plan_features`
---
-ALTER TABLE `plan_features`
-  ADD CONSTRAINT `fk_plan_features_feature` FOREIGN KEY (`feature_id`) REFERENCES `subscription_features` (`id`) ON DELETE CASCADE,
-  ADD CONSTRAINT `fk_plan_features_plan` FOREIGN KEY (`plan_id`) REFERENCES `subscription_plans` (`id`) ON DELETE CASCADE;
 
 --
 -- Constraints for table `sessions`
 --
 ALTER TABLE `sessions`
   ADD CONSTRAINT `fk_sessions_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
-
---
--- Constraints for table `users`
---
-ALTER TABLE `users`
-  ADD CONSTRAINT `fk_users_current_plan` FOREIGN KEY (`current_plan_id`) REFERENCES `subscription_plans` (`id`);
 
 --
 -- Constraints for table `user_logs`
@@ -6651,8 +6628,8 @@ ALTER TABLE `user_logs`
 -- Constraints for table `user_subscriptions`
 --
 ALTER TABLE `user_subscriptions`
-  ADD CONSTRAINT `fk_user_subscriptions_plan` FOREIGN KEY (`plan_id`) REFERENCES `subscription_plans` (`id`),
-  ADD CONSTRAINT `fk_user_subscriptions_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
+  ADD CONSTRAINT `fk_user_subscriptions_plan` FOREIGN KEY (`plan_id`) REFERENCES `subscription_plans` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
+  ADD CONSTRAINT `fk_user_subscriptions_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
 -- Constraints for table `user_vocabulary`
@@ -6666,6 +6643,41 @@ DELIMITER $$
 --
 DROP EVENT IF EXISTS `auto_cleanup`$$
 CREATE DEFINER=`root`@`localhost` EVENT `auto_cleanup` ON SCHEDULE EVERY 1 DAY STARTS '2025-08-01 02:00:00' ON COMPLETION NOT PRESERVE ENABLE DO CALL cleanup_old_logs()$$
+
+DROP EVENT IF EXISTS `check_expired_subscriptions_daily`$$
+CREATE DEFINER=`root`@`localhost` EVENT `check_expired_subscriptions_daily` ON SCHEDULE EVERY 1 DAY STARTS '2026-01-29 00:00:00' ON COMPLETION NOT PRESERVE ENABLE DO BEGIN
+    DECLARE v_free_plan_id INT DEFAULT 1;
+    DECLARE v_affected_rows INT;
+    
+    -- تغییر وضعیت اشتراک‌های منقضی شده
+    UPDATE user_subscriptions 
+    SET status = 'expired' 
+    WHERE status = 'active' 
+    AND expires_at IS NOT NULL 
+    AND expires_at <= NOW();
+    
+    SET v_affected_rows = ROW_COUNT();
+    
+    IF v_affected_rows > 0 THEN
+        -- تغییر کاربران به پلن رایگان
+        UPDATE users u
+        INNER JOIN user_subscriptions us ON u.id = us.user_id
+        SET u.current_plan_id = v_free_plan_id
+        WHERE us.status = 'expired' 
+        AND us.expires_at <= NOW();
+        
+        -- ایجاد اشتراک رایگان برای کاربران منقضی شده
+        INSERT IGNORE INTO user_subscriptions (user_id, plan_id, status, amount_paid, duration_days)
+        SELECT DISTINCT us.user_id, v_free_plan_id, 'active', 0.00, 0
+        FROM user_subscriptions us
+        WHERE us.status = 'expired'
+        AND us.expires_at <= NOW()
+        AND us.user_id NOT IN (
+            SELECT user_id FROM user_subscriptions 
+            WHERE plan_id = v_free_plan_id AND status = 'active'
+        );
+    END IF;
+END$$
 
 DELIMITER ;
 COMMIT;

@@ -21,21 +21,6 @@ function get_all_subscription_plans($pdo) {
 }
 
 /**
- * دریافت ویژگی‌های یک پلن
- */
-function get_plan_features($plan_id, $pdo) {
-    $stmt = $pdo->prepare("
-        SELECT sf.*, pf.feature_value, pf.is_unlimited
-        FROM subscription_features sf
-        JOIN plan_features pf ON sf.id = pf.feature_id
-        WHERE pf.plan_id = ? AND sf.is_active = 1
-        ORDER BY sf.id ASC
-    ");
-    $stmt->execute([$plan_id]);
-    return $stmt->fetchAll();
-}
-
-/**
  * دریافت اشتراک فعال کاربر
  */
 function get_user_active_subscription($user_id, $pdo) {
@@ -51,6 +36,10 @@ function get_user_active_subscription($user_id, $pdo) {
     $stmt->execute([$user_id]);
     return $stmt->fetch();
 }
+
+/**
+ * دریافت اشتراک در انتظار کاربر
+ */
 function get_user_pending_subscription($user_id, $pdo) {
     $stmt = $pdo->prepare("
         SELECT us.*, sp.id as plan_id, sp.name as plan_name, sp.description as plan_description, sp.slug as plan_slug
@@ -63,135 +52,135 @@ function get_user_pending_subscription($user_id, $pdo) {
     $stmt->execute([$user_id]);
     return $stmt->fetch();
 }
+
 /**
- * بررسی دسترسی کاربر به یک ویژگی
+ * بررسی آیا کاربر VIP است
  */
-function user_has_feature($user_id, $feature_slug, $pdo) {
+function is_user_vip($user_id, $pdo) {
     $subscription = get_user_active_subscription($user_id, $pdo);
     if (!$subscription) {
         return false;
     }
     
-    $stmt = $pdo->prepare("
-        SELECT pf.feature_value, pf.is_unlimited
-        FROM plan_features pf
-        JOIN subscription_features sf ON pf.feature_id = sf.id
-        WHERE pf.plan_id = ? AND sf.slug = ? AND sf.is_active = 1
-    ");
-    $stmt->execute([$subscription['plan_id'], $feature_slug]);
-    $feature = $stmt->fetch();
-    
-    return $feature !== false;
+    // بررسی slug پلن - اگر vip باشد، کاربر VIP است
+    return $subscription['plan_slug'] === 'vip';
 }
 
 /**
- * دریافت مقدار یک ویژگی برای کاربر
+ * دریافت محدودیت سوالات کاربر
+ * Free: 200 سوال
+ * VIP: نامحدود
  */
-function get_user_feature_value($user_id, $feature_slug, $pdo) {
-    $subscription = get_user_active_subscription($user_id, $pdo);
-    if (!$subscription) {
-        return null;
+function get_user_question_limit($user_id, $pdo) {
+    if (is_user_vip($user_id, $pdo)) {
+        return null; // نامحدود
     }
-    
-    $stmt = $pdo->prepare("
-        SELECT pf.feature_value, pf.is_unlimited
-        FROM plan_features pf
-        JOIN subscription_features sf ON pf.feature_id = sf.id
-        WHERE pf.plan_id = ? AND sf.slug = ? AND sf.is_active = 1
-    ");
-    $stmt->execute([$subscription['plan_id'], $feature_slug]);
-    $feature = $stmt->fetch();
-    
-    if (!$feature) {
-        return null;
-    }
-    
-    return $feature['is_unlimited'] ? 'unlimited' : $feature['feature_value'];
+    return 200; // پلن رایگان
 }
 
 /**
- * بررسی اینکه آیا کاربر از یک ویژگی استفاده کرده یا نه
+ * بررسی دسترسی کاربر به سوال
  */
-function check_feature_usage($user_id, $feature_slug, $current_usage, $pdo) {
-    $limit = get_user_feature_value($user_id, $feature_slug, $pdo);
+function can_access_question($user_id, $question_number, $pdo) {
+    $limit = get_user_question_limit($user_id, $pdo);
     
+    // اگر نامحدود باشد (VIP)
     if ($limit === null) {
-        return false; // کاربر به این ویژگی دسترسی ندارد
+        return true;
     }
     
-    if ($limit === 'unlimited') {
-        return true; // نامحدود
-    }
-    
-    return intval($current_usage) < intval($limit);
+    // بررسی محدودیت برای پلن رایگان
+    return $question_number <= $limit;
 }
 
 /**
  * ایجاد اشتراک جدید برای کاربر
  */
-function create_user_subscription($user_id, $plan_id, $pdo, $is_yearly = false, $amount_paid = 0, $payment_method = null, $transaction_id = null) {
+function create_user_subscription($user_id, $plan_id, $duration_days, $amount_paid, $pdo, $payment_method = null, $transaction_id = null, $status = 'active') {
     try {
         $pdo->beginTransaction();
         
         // محاسبه تاریخ انقضا
         $expires_at = null;
-        if ($plan_id != 1) { // اگر پلن رایگان نباشد
-            $period = $is_yearly ? '1 YEAR' : '1 MONTH';
-            $expires_at = date('Y-m-d H:i:s', strtotime("+$period"));
+        if ($duration_days > 0) {
+            $expires_at = date('Y-m-d H:i:s', strtotime("+{$duration_days} days"));
         }
         
-        // لغو اشتراک‌های قبلی
-        $stmt = $pdo->prepare("UPDATE user_subscriptions SET status = 'cancelled' WHERE user_id = ? AND status = 'active'");
+        // لغو تمام اشتراک‌های قبلی فعال و معلق
+        $stmt = $pdo->prepare("
+            UPDATE user_subscriptions 
+            SET status = 'cancelled', updated_at = NOW() 
+            WHERE user_id = ? AND status IN ('active', 'pending')
+        ");
         $stmt->execute([$user_id]);
         
         // ایجاد اشتراک جدید
         $stmt = $pdo->prepare("
             INSERT INTO user_subscriptions 
-            (user_id, plan_id, expires_at, is_yearly, amount_paid, payment_method, transaction_id) 
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+            (user_id, plan_id, expires_at, duration_days, amount_paid, payment_method, transaction_id, status, created_at) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())
         ");
-        $stmt->execute([$user_id, $plan_id, $expires_at, $is_yearly, $amount_paid, $payment_method, $transaction_id]);
+        $stmt->execute([$user_id, $plan_id, $expires_at, $duration_days, $amount_paid, $payment_method, $transaction_id, $status]);
         
-        // بروزرسانی پلن فعلی کاربر
-        $stmt = $pdo->prepare("UPDATE users SET current_plan_id = ? WHERE id = ?");
-        $stmt->execute([$plan_id, $user_id]);
+        $subscription_id = $pdo->lastInsertId();
+        
+        // فقط اگر اشتراک active باشد، current_plan_id را آپدیت کن
+        if ($status === 'active') {
+            $stmt = $pdo->prepare("UPDATE users SET current_plan_id = ? WHERE id = ?");
+            $stmt->execute([$plan_id, $user_id]);
+        }
         
         $pdo->commit();
-        return true;
+        return $subscription_id;
         
     } catch (Exception $e) {
         $pdo->rollback();
+        error_log("Error creating subscription: " . $e->getMessage());
         return false;
     }
 }
 
 /**
- * لغو اشتراک کاربر
+ * لغو اشتراک کاربر و تغییر به پلن رایگان
  */
 function cancel_user_subscription($user_id, $pdo) {
     try {
         $pdo->beginTransaction();
         
-        // لغو اشتراک فعال
-        $stmt = $pdo->prepare("UPDATE user_subscriptions SET status = 'cancelled' WHERE user_id = ? AND status = 'active'");
+        // لغو تمام اشتراک‌های فعال و معلق
+        $stmt = $pdo->prepare("
+            UPDATE user_subscriptions 
+            SET status = 'cancelled', updated_at = NOW() 
+            WHERE user_id = ? AND status IN ('active', 'pending')
+        ");
         $stmt->execute([$user_id]);
         
+        // دریافت ID پلن رایگان
+        $stmt = $pdo->prepare("SELECT id FROM subscription_plans WHERE slug = 'free' LIMIT 1");
+        $stmt->execute();
+        $free_plan = $stmt->fetch();
+        
+        if (!$free_plan) {
+            throw new Exception("پلن رایگان یافت نشد");
+        }
+        
         // تغییر به پلن رایگان
-        $stmt = $pdo->prepare("UPDATE users SET current_plan_id = 1 WHERE id = ?");
-        $stmt->execute([$user_id]);
+        $stmt = $pdo->prepare("UPDATE users SET current_plan_id = ? WHERE id = ?");
+        $stmt->execute([$free_plan['id'], $user_id]);
         
         // ایجاد اشتراک رایگان
         $stmt = $pdo->prepare("
-            INSERT INTO user_subscriptions (user_id, plan_id, status, amount_paid) 
-            VALUES (?, 1, 'active', 0.00)
+            INSERT INTO user_subscriptions (user_id, plan_id, status, amount_paid, duration_days, created_at) 
+            VALUES (?, ?, 'active', 0.00, 0, NOW())
         ");
-        $stmt->execute([$user_id]);
+        $stmt->execute([$user_id, $free_plan['id']]);
         
         $pdo->commit();
         return true;
         
     } catch (Exception $e) {
         $pdo->rollback();
+        error_log("Error cancelling subscription: " . $e->getMessage());
         return false;
     }
 }
@@ -205,41 +194,61 @@ function check_expired_subscriptions($pdo) {
         
         // پیدا کردن اشتراک‌های منقضی شده
         $stmt = $pdo->prepare("
-            SELECT user_id FROM user_subscriptions 
+            SELECT user_id, id FROM user_subscriptions 
             WHERE status = 'active' AND expires_at IS NOT NULL AND expires_at <= NOW()
         ");
         $stmt->execute();
-        $expired_users = $stmt->fetchAll(PDO::FETCH_COLUMN);
+        $expired_subscriptions = $stmt->fetchAll();
         
-        if (!empty($expired_users)) {
+        $expired_count = count($expired_subscriptions);
+        
+        if ($expired_count > 0) {
             // تغییر وضعیت به منقضی شده
             $stmt = $pdo->prepare("
                 UPDATE user_subscriptions 
-                SET status = 'expired' 
+                SET status = 'expired', updated_at = NOW() 
                 WHERE status = 'active' AND expires_at IS NOT NULL AND expires_at <= NOW()
             ");
             $stmt->execute();
             
-            // تغییر کاربران به پلن رایگان
-            $placeholders = str_repeat('?,', count($expired_users) - 1) . '?';
-            $stmt = $pdo->prepare("UPDATE users SET current_plan_id = 1 WHERE id IN ($placeholders)");
-            $stmt->execute($expired_users);
+            // دریافت ID پلن رایگان
+            $stmt = $pdo->prepare("SELECT id FROM subscription_plans WHERE slug = 'free' LIMIT 1");
+            $stmt->execute();
+            $free_plan = $stmt->fetch();
             
-            // ایجاد اشتراک رایگان برای کاربران
-            foreach ($expired_users as $user_id) {
-                $stmt = $pdo->prepare("
-                    INSERT INTO user_subscriptions (user_id, plan_id, status, amount_paid) 
-                    VALUES (?, 1, 'active', 0.00)
-                ");
-                $stmt->execute([$user_id]);
+            if ($free_plan) {
+                // برای هر کاربر، اشتراک رایگان ایجاد کن
+                foreach ($expired_subscriptions as $sub) {
+                    $user_id = $sub['user_id'];
+                    
+                    // لغو تمام اشتراک‌های active و pending قبلی
+                    $stmt = $pdo->prepare("
+                        UPDATE user_subscriptions 
+                        SET status = 'cancelled', updated_at = NOW() 
+                        WHERE user_id = ? AND status IN ('active', 'pending')
+                    ");
+                    $stmt->execute([$user_id]);
+                    
+                    // ایجاد اشتراک رایگان
+                    $stmt = $pdo->prepare("
+                        INSERT INTO user_subscriptions (user_id, plan_id, status, amount_paid, duration_days, created_at) 
+                        VALUES (?, ?, 'active', 0.00, 0, NOW())
+                    ");
+                    $stmt->execute([$user_id, $free_plan['id']]);
+                    
+                    // بروزرسانی current_plan_id
+                    $stmt = $pdo->prepare("UPDATE users SET current_plan_id = ? WHERE id = ?");
+                    $stmt->execute([$free_plan['id'], $user_id]);
+                }
             }
         }
         
         $pdo->commit();
-        return count($expired_users);
+        return $expired_count;
         
     } catch (Exception $e) {
         $pdo->rollback();
+        error_log("Error checking expired subscriptions: " . $e->getMessage());
         return false;
     }
 }
@@ -300,64 +309,59 @@ function get_user_subscription_history($user_id, $pdo) {
 }
 
 /**
- * محاسبه قیمت با تخفیف سالانه
+ * دریافت گزینه‌های مدت زمان VIP
  */
+function get_vip_duration_options() {
+    return [
+        [
+            'days' => 14,
+            'label' => '2 هفته',
+            'price_key' => 'price_2_weeks'
+        ],
+        [
+            'days' => 30,
+            'label' => '1 ماه',
+            'price_key' => 'price_1_month'
+        ],
+        [
+            'days' => 90,
+            'label' => '3 ماه',
+            'price_key' => 'price_3_months'
+        ],
+        [
+            'days' => 180,
+            'label' => '6 ماه',
+            'price_key' => 'price_6_months'
+        ],
+        [
+            'days' => 365,
+            'label' => '1 سال',
+            'price_key' => 'price_1_year'
+        ]
+    ];
+}
+
 /**
- * محاسبه قیمت با تخفیف سالانه
+ * محاسبه قیمت بر اساس مدت زمان
  */
-function calculate_plan_price($plan_id, $is_yearly, $pdo) {
-    $plan = get_subscription_plan($plan_id, $pdo);
+function get_vip_price($duration_days, $pdo) {
+    $vip_plan = $pdo->prepare("SELECT * FROM subscription_plans WHERE slug = 'vip' LIMIT 1");
+    $vip_plan->execute();
+    $plan = $vip_plan->fetch();
+    
     if (!$plan) {
         return null;
     }
     
-    if ($is_yearly) {
-        $original_price = $plan['monthly_price'] * 12;
-        $discounted_price = $plan['yearly_price'];
-        
-        // Prevent division by zero
-        if ($original_price <= 0) {
-            return [
-                'original_price' => $original_price,
-                'discounted_price' => $discounted_price,
-                'discount_amount' => 0,
-                'discount_percentage' => 0
-            ];
-        }
-        
-        $discount_amount = $original_price - $discounted_price;
-        $discount_percentage = round(($discount_amount / $original_price) * 100);
-        
-        return [
-            'original_price' => $original_price,
-            'discounted_price' => $discounted_price,
-            'discount_amount' => $discount_amount,
-            'discount_percentage' => $discount_percentage
-        ];
-    } else {
-        return [
-            'price' => $plan['monthly_price']
-        ];
-    }
-}
-
-/**
- * بررسی امکان ارتقا پلن
- */
-function can_upgrade_plan($user_id, $target_plan_id, $pdo) {
-    $current_subscription = get_user_active_subscription($user_id, $pdo);
-    if (!$current_subscription) {
-        return false;
-    }
+    $price_map = [
+        14 => $plan['price_2_weeks'] ?? 0,
+        30 => $plan['price_1_month'] ?? 0,
+        90 => $plan['price_3_months'] ?? 0,
+        180 => $plan['price_6_months'] ?? 0,
+        365 => $plan['price_1_year'] ?? 0
+    ];
     
-    $current_plan = get_subscription_plan($current_subscription['plan_id'], $pdo);
-    $target_plan = get_subscription_plan($target_plan_id, $pdo);
-    
-    if (!$current_plan || !$target_plan) {
-        return false;
-    }
-    
-    return $target_plan['sort_order'] > $current_plan['sort_order'];
+    return $price_map[$duration_days] ?? null;
 }
 
 /**
@@ -368,26 +372,213 @@ function format_price($price) {
 }
 
 /**
- * تبدیل مقدار ویژگی به متن قابل نمایش
+ * دریافت روزهای باقی‌مانده تا انقضا
  */
-function format_feature_value($value, $is_unlimited = false) {
-    if ($is_unlimited) {
-        return 'نامحدود';
+function get_days_until_expiry($user_id, $pdo) {
+    $subscription = get_user_active_subscription($user_id, $pdo);
+    
+    if (!$subscription || !$subscription['expires_at']) {
+        return null; // نامحدود یا رایگان
     }
     
-    if (is_numeric($value)) {
-        return number_format($value, 0, '.', ',');
-    }
+    $now = new DateTime();
+    $expires = new DateTime($subscription['expires_at']);
+    $diff = $now->diff($expires);
     
-    return $value;
-}
-function get_all_features($pdo) {
-    $stmt = $pdo->prepare("SELECT * FROM subscription_features WHERE is_active = 1 ORDER BY id ASC");
-    $stmt->execute();
-    return $stmt->fetchAll();
+    return $diff->days;
 }
 
-function getLastInvoiceNumber($pdo){
-    $stmt = $pdo->prepare("SELECT id FROM subscription_features ORDER BY id ASC LIMIT 1");
-    return $stmt++;
-};
+/**
+ * دریافت ویژگی‌های یک پلن
+ */
+function get_plan_features($plan_slug) {
+    $features = [
+        'free' => [
+            'دسترسی به 200 سوال اول',
+            'بدون محدودیت زمانی',
+            'پشتیبانی عمومی'
+        ],
+        'vip' => [
+            'دسترسی نامحدود به تمام سوالات',
+            'بدون محدودیت زمانی',
+            'آپدیت‌های رایگان',
+            'پشتیبانی اختصاصی',
+            'دانلود نامحدود محتوا',
+            'دسترسی به محتوای جدید'
+        ]
+    ];
+    
+    return $features[$plan_slug] ?? [];
+}
+
+/**
+ * تبدیل duration به روز
+ */
+function get_duration_days($duration_key) {
+    $durations = [
+        '2_weeks' => 14,
+        '1_month' => 30,
+        '3_months' => 90,
+        '6_months' => 180,
+        '1_year' => 365
+    ];
+    
+    return $durations[$duration_key] ?? 0;
+}
+
+/**
+ * تبدیل duration به برچسب فارسی
+ */
+function get_duration_label($duration_key) {
+    $labels = [
+        '2_weeks' => '2 هفته',
+        '1_month' => '1 ماه',
+        '3_months' => '3 ماه',
+        '6_months' => '6 ماه',
+        '1_year' => '1 سال'
+    ];
+    
+    return $labels[$duration_key] ?? '';
+}
+
+/**
+ * دریافت قیمت بر اساس duration
+ */
+function get_plan_price_by_duration($plan, $duration_key) {
+    $price_keys = [
+        '2_weeks' => 'price_2_weeks',
+        '1_month' => 'price_1_month',
+        '3_months' => 'price_3_months',
+        '6_months' => 'price_6_months',
+        '1_year' => 'price_1_year'
+    ];
+    
+    $price_key = $price_keys[$duration_key] ?? null;
+    
+    if (!$price_key || !isset($plan[$price_key])) {
+        return 0;
+    }
+    
+    return $plan[$price_key];
+}
+
+/**
+ * اعتبارسنجی duration
+ */
+function validate_duration($duration_key) {
+    $valid_durations = ['2_weeks', '1_month', '3_months', '6_months', '1_year'];
+    return in_array($duration_key, $valid_durations);
+}
+
+/**
+ * محاسبه تخفیف نسبت به خرید ماهانه
+ */
+function calculate_discount_percentage($plan, $duration_key) {
+    if ($duration_key === '1_month' || $plan['price_1_month'] <= 0) {
+        return 0;
+    }
+    
+    $duration_days = get_duration_days($duration_key);
+    $duration_price = get_plan_price_by_duration($plan, $duration_key);
+    
+    if ($duration_days <= 0 || $duration_price <= 0) {
+        return 0;
+    }
+    
+    $monthly_equivalent = ($duration_price / $duration_days) * 30;
+    $discount = (1 - ($monthly_equivalent / $plan['price_1_month'])) * 100;
+    
+    return round($discount);
+}
+
+/**
+ * فعال‌سازی اشتراک pending و لغو اشتراک‌های قبلی
+ */
+function activate_pending_subscription($subscription_id, $pdo) {
+    try {
+        $pdo->beginTransaction();
+        
+        // دریافت اطلاعات اشتراک pending
+        $stmt = $pdo->prepare("SELECT * FROM user_subscriptions WHERE id = ? AND status = 'pending'");
+        $stmt->execute([$subscription_id]);
+        $subscription = $stmt->fetch();
+        
+        if (!$subscription) {
+            throw new Exception("اشتراک معلق یافت نشد");
+        }
+        
+        $user_id = $subscription['user_id'];
+        $plan_id = $subscription['plan_id'];
+        
+        // لغو تمام اشتراک‌های فعال و معلق قبلی (به جز این اشتراک)
+        $stmt = $pdo->prepare("
+            UPDATE user_subscriptions 
+            SET status = 'cancelled', updated_at = NOW() 
+            WHERE user_id = ? AND id != ? AND status IN ('active', 'pending')
+        ");
+        $stmt->execute([$user_id, $subscription_id]);
+        
+        // فعال‌سازی این اشتراک
+        $stmt = $pdo->prepare("
+            UPDATE user_subscriptions 
+            SET status = 'active', updated_at = NOW() 
+            WHERE id = ?
+        ");
+        $stmt->execute([$subscription_id]);
+        
+        // بروزرسانی current_plan_id کاربر
+        $stmt = $pdo->prepare("UPDATE users SET current_plan_id = ? WHERE id = ?");
+        $stmt->execute([$plan_id, $user_id]);
+        
+        $pdo->commit();
+        return true;
+        
+    } catch (Exception $e) {
+        $pdo->rollBack();
+        error_log("Error activating subscription: " . $e->getMessage());
+        return false;
+    }
+}
+
+/**
+ * بررسی و جلوگیری از اشتراک‌های تکراری active
+ */
+function ensure_single_active_subscription($user_id, $pdo) {
+    try {
+        $pdo->beginTransaction();
+        
+        // دریافت تمام اشتراک‌های active کاربر
+        $stmt = $pdo->prepare("
+            SELECT id, created_at 
+            FROM user_subscriptions 
+            WHERE user_id = ? AND status = 'active'
+            ORDER BY created_at DESC
+        ");
+        $stmt->execute([$user_id]);
+        $active_subscriptions = $stmt->fetchAll();
+        
+        // اگر بیش از یک اشتراک active وجود دارد
+        if (count($active_subscriptions) > 1) {
+            // اولین (جدیدترین) را نگه دار و بقیه را لغو کن
+            $keep_id = $active_subscriptions[0]['id'];
+            
+            $stmt = $pdo->prepare("
+                UPDATE user_subscriptions 
+                SET status = 'cancelled', updated_at = NOW() 
+                WHERE user_id = ? AND status = 'active' AND id != ?
+            ");
+            $stmt->execute([$user_id, $keep_id]);
+            
+            $pdo->commit();
+            return count($active_subscriptions) - 1; // تعداد اشتراک‌های لغو شده
+        }
+        
+        $pdo->commit();
+        return 0;
+        
+    } catch (Exception $e) {
+        $pdo->rollBack();
+        error_log("Error ensuring single active subscription: " . $e->getMessage());
+        return false;
+    }
+}

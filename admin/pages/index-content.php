@@ -26,7 +26,6 @@ if ($userConfig) {
 }
 ?>
 
-
 <div class="container-xxl flex-grow-1 container-p-y">
     <!-- کارت تنظیمات -->
     <div class="row mb-4">
@@ -52,14 +51,11 @@ if ($userConfig) {
                             <span class="fs-6 badge bg-label-primary rounded-pill text-uppercase">
                                 <?php echo $isConfigured ? $languageText : 'تنظیم نشده'; ?>
                             </span>
-
                             <button type=" button" onclick="openConfigModal()"
                                 class=" btn btn-sm rounded-pill btn-icon btn-label-secondary">
                                 <span class="tf-icons bx bx-cog"></span>
                             </button>
-
                         </div>
-
                     </div>
                 </div>
             </div>
@@ -130,7 +126,6 @@ if ($userConfig) {
     <div class="row">
         <!-- Growth Chart-->
         <div class="col-12 col-md-4 mb-4">
-
             <div class="card h-100">
                 <div class="card-header">
                     <h5 class="card-title mb-0">گزارش کلی مطالعه شما</h5>
@@ -171,8 +166,8 @@ if ($userConfig) {
                         </li>
                         <li class="d-flex align-items-center mb-4 pb-2">
                             <div class="avatar avatar-sm flex-shrink-0 me-3">
-                                <span class="avatar-initial rounded-circle bg-label-success"><i
-                                        class="bx bx-dollar"></i></span>
+                                <span class="avatar-initial rounded-circle bg-label-warning"><i
+                                        class="bx bx-error"></i></span>
                             </div>
                             <div class="d-flex flex-column w-100">
                                 <div class="d-flex justify-content-between mb-2">
@@ -184,12 +179,11 @@ if ($userConfig) {
                                         aria-valuenow="80" aria-valuemin="0" aria-valuemax="100"></div>
                                 </div>
                             </div>
-
                         </li>
                         <li class="d-flex align-items-center mb-4 pb-2">
                             <div class="avatar avatar-sm flex-shrink-0 me-3">
-                                <span class="avatar-initial rounded-circle bg-label-success"><i
-                                        class="bx bx-dollar"></i></span>
+                                <span class="avatar-initial rounded-circle bg-label-danger"><i
+                                        class="bx bx-x-circle"></i></span>
                             </div>
                             <div class="d-flex flex-column w-100">
                                 <div class="d-flex justify-content-between mb-2">
@@ -201,9 +195,7 @@ if ($userConfig) {
                                         aria-valuenow="80" aria-valuemin="0" aria-valuemax="100"></div>
                                 </div>
                             </div>
-
                         </li>
-
                     </ul>
                 </div>
             </div>
@@ -215,7 +207,6 @@ if ($userConfig) {
                     <div class="col-md-8 col-12 pe-0">
                         <div class="card-header d-flex justify-content-between align-items-center">
                             <h5 class="card-title mb-0">گزارش ماهیانه پیشرفت</h5>
-
                         </div>
                         <div class="card-body p-0">
                             <div id="orderSummaryChart"></div>
@@ -270,17 +261,375 @@ if ($userConfig) {
         </div>
     </div>
 </div>
-<!-- سایر بخش‌های داشبورد... -->
-</div>
 
 <!-- SweetAlert2 JS -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
+<!-- تنظیم متغیرهای جاوااسکریپت -->
 <script>
     const csrfToken = '<?php echo $_SESSION['csrf_token']; ?>';
     const showConfigModal = <?php echo isset($_SESSION['show_config_modal']) && $_SESSION['show_config_modal'] ? 'true' : 'false'; ?>;
     const referenceDate = '<?php echo date('d.m.Y', strtotime($referenceDate)); ?>';
 
+    // Export to window for use in dashboard_charts_updated.js
+    window.csrfToken = csrfToken;
+    window.showConfigModal = showConfigModal;
+    window.referenceDate = referenceDate;
+</script>
+
+<!-- اسکریپت تنظیمات کاربر -->
+<script>
+    /**
+ * Dashboard Charts - با استایل‌های یکپارچه و بهبود یافته
+ */
+'use strict';
+
+(function () {
+    let cardColor, headingColor, labelColor, legendColor, borderColor, shadeColor;
+
+    // تشخیص حالت تاریک/روشن
+    if (typeof isDarkStyle !== 'undefined' && isDarkStyle) {
+        cardColor = config.colors_dark.cardColor;
+        headingColor = config.colors_dark.headingColor;
+        labelColor = config.colors_dark.textMuted;
+        legendColor = config.colors_dark.bodyColor;
+        borderColor = config.colors_dark.borderColor;
+        shadeColor = 'dark';
+    } else {
+        cardColor = config.colors.white;
+        headingColor = config.colors.headingColor;
+        labelColor = config.colors.textMuted;
+        legendColor = config.colors.bodyColor;
+        borderColor = config.colors.borderColor;
+        shadeColor = 'light';
+    }
+
+    // تنظیم locale فارسی برای تمام چارت‌ها
+    if (typeof Apex !== 'undefined') {
+        Apex.chart = {
+            fontFamily: 'IRANSans, Tahoma, Arial',
+            locales: [{
+                "name": "fa",
+                "options": {
+                    "months": ["فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور", "مهر", "آبان", "آذر", "دی", "بهمن", "اسفند"],
+                    "shortMonths": ["فرو", "ارد", "خرد", "تیر", "مرد", "شهر", "مهر", "آبا", "آذر", "دی", "بهم", "اسف"],
+                    "days": ["یکشنبه", "دوشنبه", "سه‌شنبه", "چهارشنبه", "پنج‌شنبه", "جمعه", "شنبه"],
+                    "shortDays": ["ی", "د", "س", "چ", "پ", "ج", "ش"],
+                    "toolbar": {
+                        "exportToSVG": "دریافت SVG",
+                        "exportToPNG": "دریافت PNG",
+                        "menu": "فهرست",
+                        "selection": "انتخاب",
+                        "selectionZoom": "بزرگنمایی انتخاب شده",
+                        "zoomIn": "بزرگ نمایی",
+                        "zoomOut": "کوچک نمایی",
+                        "pan": "جا به جایی",
+                        "reset": "بازنشانی"
+                    }
+                }
+            }],
+            defaultLocale: "fa"
+        };
+    }
+
+    async function loadDashboardStats() {
+        try {
+            const csrfToken = typeof window.csrfToken !== 'undefined' ? window.csrfToken : '';
+            const formData = new FormData();
+            formData.append('csrf_token', csrfToken);
+
+            const response = await fetch('../incloud/get_dashboard_stats.php', {
+                method: 'POST',
+                body: formData
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                updateDashboard(result.data);
+            } else {
+                console.error('خطا در دریافت آمار:', result.error);
+                if (result.needs_config && typeof window.openConfigModal === 'function') {
+                    window.openConfigModal();
+                }
+            }
+        } catch (error) {
+            console.error('خطا در بارگذاری آمار:', error);
+        }
+    }
+
+    function updateDashboard(data) {
+        updateReadinessChart(data.readiness_percentage);
+        updateGeneralStats(data);
+        updateWeeklyComparison(data);
+        updateMonthlyChart(data.monthly_chart);
+    }
+
+    function updateReadinessChart(percentage) {
+        const chartEl = document.querySelector('#growthRadialChart');
+        if (!chartEl) return;
+
+        chartEl.innerHTML = '';
+
+        const options = {
+            chart: {
+                height: 240,
+                type: 'radialBar',
+                fontFamily: 'IRANSans, Tahoma, Arial'
+            },
+            plotOptions: {
+                radialBar: {
+                    hollow: {
+                        size: '65%'
+                    },
+                    dataLabels: {
+                        show: true,
+                        name: {
+                            offsetY: -10,
+                            show: true,
+                            color: labelColor,
+                            fontSize: '13px',
+                            fontWeight: 400
+                        },
+                        value: {
+                            color: headingColor,
+                            fontSize: '30px',
+                            fontWeight: 500,
+                            show: true,
+                            formatter: function (val) {
+                                return parseInt(val) + '%';
+                            }
+                        }
+                    },
+                    track: {
+                        background: cardColor,
+                        strokeWidth: '100%'
+                    }
+                }
+            },
+            colors: [config.colors.primary],
+            fill: {
+                type: 'gradient',
+                gradient: {
+                    shade: shadeColor,
+                    type: 'horizontal',
+                    shadeIntensity: 0.5,
+                    gradientToColors: [config.colors.success],
+                    inverseColors: true,
+                    opacityFrom: 1,
+                    opacityTo: 1,
+                    stops: [0, 100]
+                }
+            },
+            stroke: {
+                lineCap: 'round'
+            },
+            labels: ['آمادگی'],
+            series: [percentage]
+        };
+
+        const chart = new ApexCharts(chartEl, options);
+        chart.render();
+    }
+
+    function updateGeneralStats(data) {
+        updateStatItem(0, 'کل سوالاتی که پاسخ دادید', data.total_answered, data.total_questions, 'bg-info');
+        updateStatItem(1, 'سوالاتی که آماده اید برای امتحان', data.green_count, data.total_questions, 'bg-success');
+
+        const halfReady = data.blue_count + data.yellow_count;
+        updateStatItem(2, 'سوالاتی که پنجاه درصد آماده اید', halfReady, data.total_questions, 'bg-warning');
+
+        const notReady = data.red_count + data.not_answered;
+        updateStatItem(3, 'سوالاتی که اصلا آماده نیستید', notReady, data.total_questions, 'bg-danger');
+    }
+
+    function updateStatItem(index, label, value, total, colorClass) {
+        const items = document.querySelectorAll('.card-body ul.p-0 > li');
+        if (!items[index]) return;
+
+        const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
+
+        const labelEl = items[index].querySelector('.d-flex.justify-content-between span:first-child');
+        const valueEl = items[index].querySelector('.d-flex.justify-content-between .text-muted');
+        const progressBar = items[index].querySelector('.progress-bar');
+
+        if (labelEl) labelEl.textContent = label;
+        if (valueEl) valueEl.textContent = value.toLocaleString('fa-IR');
+        
+        if (progressBar) {
+            progressBar.className = `progress-bar ${colorClass}`;
+            progressBar.style.width = percentage + '%';
+            progressBar.setAttribute('aria-valuenow', percentage);
+        }
+    }
+
+    function updateWeeklyComparison(data) {
+        const container = document.querySelector('.col-md-4.col-12.px-0 .card-body');
+        if (!container) return;
+
+        const improvementText = data.improvement >= 0
+            ? `کارایی ${Math.abs(data.improvement)}% بهتر نسبت به هفته قبل`
+            : `کارایی ${Math.abs(data.improvement)}% کمتر نسبت به هفته قبل`;
+
+        const weekTitle = container.querySelector('h6.mt-1');
+        const weekDesc = container.querySelector('p.mb-4');
+        
+        if (weekTitle) weekTitle.textContent = 'هفته قبل';
+        if (weekDesc) weekDesc.textContent = improvementText;
+
+        const items = container.querySelectorAll('ul li');
+        
+        if (items[0]) {
+            const thisWeekSmall = items[0].querySelector('small');
+            const thisWeekProgress = items[0].querySelector('.progress-bar');
+            if (thisWeekSmall) thisWeekSmall.textContent = data.this_week.toLocaleString('fa-IR') + ' سوال';
+            if (thisWeekProgress) {
+                const thisWeekPercentage = Math.min(100, Math.round((data.this_week / 200) * 100));
+                thisWeekProgress.style.width = thisWeekPercentage + '%';
+            }
+        }
+
+        if (items[1]) {
+            const lastWeekSmall = items[1].querySelector('small');
+            const lastWeekProgress = items[1].querySelector('.progress-bar');
+            if (lastWeekSmall) lastWeekSmall.textContent = data.last_week.toLocaleString('fa-IR') + ' سوال';
+            if (lastWeekProgress) {
+                const lastWeekPercentage = Math.min(100, Math.round((data.last_week / 200) * 100));
+                lastWeekProgress.style.width = lastWeekPercentage + '%';
+            }
+        }
+    }
+
+    function updateMonthlyChart(chartData) {
+        const chartEl = document.querySelector('#orderSummaryChart');
+        if (!chartEl) return;
+
+        chartEl.innerHTML = '';
+
+        const options = {
+            chart: {
+                height: 265,
+                type: 'area',
+                toolbar: {
+                    show: false
+                },
+                fontFamily: 'IRANSans, Tahoma, Arial',
+                dropShadow: {
+                    enabled: true,
+                    top: 18,
+                    left: 2,
+                    blur: 3,
+                    color: config.colors.primary,
+                    opacity: 0.15
+                }
+            },
+            markers: {
+                size: 6,
+                colors: 'transparent',
+                strokeColors: 'transparent',
+                strokeWidth: 4,
+                discrete: [
+                    {
+                        fillColor: cardColor,
+                        seriesIndex: 0,
+                        dataPointIndex: chartData.data.length - 1,
+                        strokeColor: config.colors.primary,
+                        strokeWidth: 4,
+                        size: 6,
+                        radius: 2
+                    }
+                ],
+                hover: {
+                    size: 7
+                }
+            },
+            series: [{
+                name: 'تعداد سوالات',
+                data: chartData.data
+            }],
+            dataLabels: {
+                enabled: false
+            },
+            stroke: {
+                curve: 'smooth',
+                lineCap: 'round',
+                width: 3
+            },
+            colors: [config.colors.primary],
+            fill: {
+                type: 'gradient',
+                gradient: {
+                    shade: shadeColor,
+                    shadeIntensity: 0.8,
+                    opacityFrom: 0.7,
+                    opacityTo: 0.25,
+                    stops: [0, 95, 100]
+                }
+            },
+            grid: {
+                show: true,
+                borderColor: borderColor,
+                padding: {
+                    top: -15,
+                    bottom: -10,
+                    left: 15,
+                    right: 10
+                }
+            },
+            xaxis: {
+                categories: chartData.labels,
+                labels: {
+                    offsetX: 0,
+                    style: {
+                        colors: labelColor,
+                        fontSize: '13px',
+                        fontFamily: 'IRANSans'
+                    }
+                },
+                axisBorder: {
+                    show: false
+                },
+                axisTicks: {
+                    show: false
+                },
+                lines: {
+                    show: false
+                }
+            },
+            yaxis: {
+                labels: {
+                    offsetX: 7,
+                    formatter: function (val) {
+                        return val.toFixed(0) + ' سوال';
+                    },
+                    style: {
+                        fontSize: '13px',
+                        colors: labelColor,
+                        fontFamily: 'IRANSans'
+                    }
+                },
+                min: 0,
+                tickAmount: 4
+            },
+            tooltip: {
+                y: {
+                    formatter: function (val) {
+                        return val + ' سوال';
+                    }
+                }
+            }
+        };
+
+        const chart = new ApexCharts(chartEl, options);
+        chart.render();
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        setTimeout(loadDashboardStats, 500);
+        setInterval(loadDashboardStats, 300000);
+    });
+
+})();
     // نمایش مودال تنظیمات در صورت نیاز
     document.addEventListener('DOMContentLoaded', function () {
         if (showConfigModal) {
@@ -290,7 +639,6 @@ if ($userConfig) {
 
     // تابع باز کردن مودال تنظیمات
     async function openConfigModal() {
-        // مرحله 1: انتخاب تاریخ امتحان
         const { value: examDateType } = await Swal.fire({
             title: 'تنظیمات اولیه',
             html: `
@@ -315,11 +663,8 @@ if ($userConfig) {
             preDeny: () => 'after'
         });
 
-        if (!examDateType) {
-            return; // کاربر کنسل کرد
-        }
+        if (!examDateType) return;
 
-        // مرحله 2: انتخاب زبان
         const { value: language } = await Swal.fire({
             title: 'انتخاب زبان مطالعه',
             html: `
@@ -344,18 +689,14 @@ if ($userConfig) {
             preDeny: () => 'EN'
         });
 
-        if (!language) {
-            return; // کاربر کنسل کرد
-        }
+        if (!language) return;
 
-        // ذخیره تنظیمات
         await saveUserConfig(examDateType, language);
     }
 
     // ذخیره تنظیمات کاربر
     async function saveUserConfig(examDateType, language) {
         try {
-            // نمایش لودینگ
             Swal.fire({
                 title: 'در حال ذخیره...',
                 html: 'لطفاً صبر کنید',
@@ -366,7 +707,6 @@ if ($userConfig) {
                 }
             });
 
-            // ارسال درخواست
             const formData = new FormData();
             formData.append('csrf_token', csrfToken);
             formData.append('exam_date_type', examDateType);
@@ -380,7 +720,6 @@ if ($userConfig) {
             const result = await response.json();
 
             if (result.success) {
-                // نمایش پیام موفقیت
                 await Swal.fire({
                     icon: 'success',
                     title: 'موفق!',
@@ -391,8 +730,6 @@ if ($userConfig) {
                     },
                     buttonsStyling: false
                 });
-
-                // رفرش صفحه
                 window.location.reload();
             } else {
                 throw new Error(result.message);
@@ -410,469 +747,10 @@ if ($userConfig) {
             });
         }
     }
+
+    // Export openConfigModal to window
+    window.openConfigModal = openConfigModal;
 </script>
-<script>
-    // dashboard_dynamic.js
-    // تابع برای دریافت و نمایش آمار داشبورد
-    async function loadDashboardStats() {
-        try {
-            const formData = new FormData();
-            formData.append('csrf_token', csrfToken);
 
-            const response = await fetch('../incloud/get_dashboard_stats.php', {
-                method: 'POST',
-                body: formData
-            });
-
-            const result = await response.json();
-
-            if (result.success) {
-                updateDashboard(result.data);
-            } else {
-                console.error('خطا در دریافت آمار:', result.error);
-            }
-        } catch (error) {
-            console.error('خطا در بارگذاری آمار:', error);
-        }
-    }
-
-    // تابع برای به‌روزرسانی المان‌های داشبورد
-    function updateDashboard(data) {
-        // به‌روزرسانی نمودار آمادگی (Radial Chart)
-        updateReadinessChart(data.readiness_percentage);
-
-        // به‌روزرسانی آمار کلی
-        updateGeneralStats(data);
-
-        // به‌روزرسانی مقایسه هفتگی
-        updateWeeklyComparison(data);
-
-        // به‌روزرسانی نمودار ماهانه
-        updateMonthlyChart(data.monthly_chart);
-    }
-
-    // نمودار آمادگی (Radial/Growth Chart)
-    function updateReadinessChart(percentage) {
-        const chartEl = document.querySelector('#growthRadialChart');
-        if (!chartEl) return;
-
-        const options = {
-            series: [percentage],
-            chart: {
-                height: 240,
-                type: 'radialBar'
-            },
-            plotOptions: {
-                radialBar: {
-                    hollow: {
-                        size: '65%'
-                    },
-                    dataLabels: {
-                        show: true,
-                        name: {
-                            offsetY: -10,
-                            show: true,
-                            color: '#888',
-                            fontSize: '13px'
-                        },
-                        value: {
-                            color: '#111',
-                            fontSize: '30px',
-                            show: true,
-                            formatter: function (val) {
-                                return parseInt(val) + '%';
-                            }
-                        }
-                    },
-                    track: {
-                        background: '#f2f2f2',
-                        strokeWidth: '100%'
-                    }
-                }
-            },
-            colors: ['#696cff'],
-            fill: {
-                type: 'gradient',
-                gradient: {
-                    shade: 'dark',
-                    type: 'horizontal',
-                    shadeIntensity: 0.5,
-                    gradientToColors: ['#28c76f'],
-                    inverseColors: true,
-                    opacityFrom: 1,
-                    opacityTo: 1,
-                    stops: [0, 100]
-                }
-            },
-            stroke: {
-                lineCap: 'round'
-            },
-            labels: ['آمادگی']
-        };
-
-        const chart = new ApexCharts(chartEl, options);
-        chart.render();
-    }
-
-    // به‌روزرسانی آمار کلی
-    function updateGeneralStats(data) {
-        // کل سوالاتی که پاسخ دادید
-        updateStatItem(0, 'کل سوالاتی که پاسخ دادید', data.total_answered, data.total_questions, 'bg-info');
-
-        // سوالات آماده (سبز)
-        updateStatItem(1, 'سوالاتی که آماده اید برای امتحان', data.green_count, data.total_questions, 'bg-success');
-
-        // سوالات نیمه آماده (آبی + زرد)
-        const halfReady = data.blue_count + data.yellow_count;
-        updateStatItem(2, 'سوالاتی که پنجاه درصد آماده اید', halfReady, data.total_questions, 'bg-primary');
-
-        // سوالات ناآماده (قرمز + خاکستری)
-        const notReady = data.red_count + data.not_answered;
-        updateStatItem(3, 'سوالاتی که اصلا آماده نیستید', notReady, data.total_questions, 'bg-danger');
-    }
-
-    // تابع کمکی برای به‌روزرسانی هر آیتم آمار
-    function updateStatItem(index, label, value, total, colorClass) {
-        const items = document.querySelectorAll('.card-body ul.p-0 > li');
-        if (!items[index]) return;
-
-        const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
-
-        items[index].querySelector('.d-flex.justify-content-between span:first-child').textContent = label;
-        items[index].querySelector('.d-flex.justify-content-between .text-muted').textContent = value.toLocaleString('fa-IR');
-
-        const progressBar = items[index].querySelector('.progress-bar');
-        progressBar.className = `progress-bar ${colorClass}`;
-        progressBar.style.width = percentage + '%';
-        progressBar.setAttribute('aria-valuenow', percentage);
-    }
-
-    // به‌روزرسانی مقایسه هفتگی
-    function updateWeeklyComparison(data) {
-        const container = document.querySelector('.col-md-4.col-12.px-0 .card-body');
-        if (!container) return;
-
-        // محاسبه درصد بهبود
-        const improvementText = data.improvement >= 0
-            ? `کارایی ${Math.abs(data.improvement)}% بهتر نسبت به هفته قبل`
-            : `کارایی ${Math.abs(data.improvement)}% کمتر نسبت به هفته قبل`;
-
-        container.querySelector('h6.mt-1').textContent = 'هفته قبل';
-        container.querySelector('p.mb-4').textContent = improvementText;
-
-        // به‌روزرسانی مقادیر
-        const thisWeekItem = container.querySelectorAll('ul li')[0];
-        const lastWeekItem = container.querySelectorAll('ul li')[1];
-
-        // این هفته
-        thisWeekItem.querySelector('small').textContent = data.this_week.toLocaleString('fa-IR') + ' سوال';
-        const thisWeekPercentage = Math.min(100, Math.round((data.this_week / 200) * 100));
-        thisWeekItem.querySelector('.progress-bar').style.width = thisWeekPercentage + '%';
-
-        // هفته گذشته
-        lastWeekItem.querySelector('small').textContent = data.last_week.toLocaleString('fa-IR') + ' سوال';
-        const lastWeekPercentage = Math.min(100, Math.round((data.last_week / 200) * 100));
-        lastWeekItem.querySelector('.progress-bar').style.width = lastWeekPercentage + '%';
-    }
-
-    // به‌روزرسانی نمودار ماهانه
-    function updateMonthlyChart(chartData) {
-        const chartEl = document.querySelector('#orderSummaryChart');
-        if (!chartEl) return;
-
-        const options = {
-            series: [{
-                name: 'تعداد سوالات',
-                data: chartData.data
-            }],
-            chart: {
-                type: 'line',
-                height: 350,
-                toolbar: {
-                    show: false
-                },
-                fontFamily: 'IRANSans, Tahoma, Arial',
-                locales: [{
-                    name: 'fa',
-                    options: {
-                        months: ['فروردین', 'اردیبهشت', 'خرداد', 'تیر', 'مرداد', 'شهریور', 'مهر', 'آبان', 'آذر', 'دی', 'بهمن', 'اسفند'],
-                        shortMonths: ['فرو', 'ارد', 'خرد', 'تیر', 'مرد', 'شهر', 'مهر', 'آبا', 'آذر', 'دی', 'بهم', 'اسف'],
-                        days: ['یکشنبه', 'دوشنبه', 'سه‌شنبه', 'چهارشنبه', 'پنج‌شنبه', 'جمعه', 'شنبه'],
-                        shortDays: ['ی', 'د', 'س', 'چ', 'پ', 'ج', 'ش']
-                    }
-                }],
-                defaultLocale: 'fa'
-            },
-            stroke: {
-                curve: 'smooth',
-                width: 3
-            },
-            colors: ['#696cff'],
-            xaxis: {
-                categories: chartData.labels,
-                labels: {
-                    style: {
-                        fontFamily: 'IRANSans'
-                    }
-                }
-            },
-            yaxis: {
-                labels: {
-                    style: {
-                        fontFamily: 'IRANSans'
-                    },
-                    formatter: function (val) {
-                        return val.toFixed(0);
-                    }
-                }
-            },
-            dataLabels: {
-                enabled: false
-            },
-            grid: {
-                borderColor: '#f1f1f1',
-                strokeDashArray: 4
-            },
-            tooltip: {
-                y: {
-                    formatter: function (val) {
-                        return val + ' سوال';
-                    }
-                }
-            }
-        };
-
-        const chart = new ApexCharts(chartEl, options);
-        chart.render();
-    }
-
-    // بارگذاری آمار هنگام لود شدن صفحه
-    document.addEventListener('DOMContentLoaded', function () {
-        loadDashboardStats();
-
-        // به‌روزرسانی خودکار هر 5 دقیقه
-        setInterval(loadDashboardStats, 300000);
-    });
-</script>
-<script>
-    // dashboard_dynamic.js
-    async function loadDashboardStats() {
-        try {
-            const formData = new FormData();
-            formData.append('csrf_token', csrfToken);
-
-            const response = await fetch('../incloud/get_dashboard_stats.php', {
-                method: 'POST',
-                body: formData
-            });
-
-            const result = await response.json();
-
-            if (result.success) {
-                updateDashboard(result.data);
-            } else {
-                console.error('خطا در دریافت آمار:', result.error);
-
-                // اگر نیاز به تنظیمات است، مودال را باز کن
-                if (result.needs_config) {
-                    openConfigModal();
-                }
-            }
-        } catch (error) {
-            console.error('خطا در بارگذاری آمار:', error);
-        }
-    }
-
-    function updateDashboard(data) {
-        updateReadinessChart(data.readiness_percentage);
-        updateGeneralStats(data);
-        updateWeeklyComparison(data);
-        updateMonthlyChart(data.monthly_chart);
-    }
-
-    function updateReadinessChart(percentage) {
-        const chartEl = document.querySelector('#growthRadialChart');
-        if (!chartEl) return;
-
-        // پاک کردن نمودار قبلی
-        chartEl.innerHTML = '';
-
-        const options = {
-            series: [percentage],
-            chart: {
-                height: 240,
-                type: 'radialBar'
-            },
-            plotOptions: {
-                radialBar: {
-                    hollow: {
-                        size: '65%'
-                    },
-                    dataLabels: {
-                        show: true,
-                        name: {
-                            offsetY: -10,
-                            show: true,
-                            color: '#888',
-                            fontSize: '13px'
-                        },
-                        value: {
-                            color: '#111',
-                            fontSize: '30px',
-                            show: true,
-                            formatter: function (val) {
-                                return parseInt(val) + '%';
-                            }
-                        }
-                    },
-                    track: {
-                        background: '#f2f2f2',
-                        strokeWidth: '100%'
-                    }
-                }
-            },
-            colors: ['#696cff'],
-            fill: {
-                type: 'gradient',
-                gradient: {
-                    shade: 'dark',
-                    type: 'horizontal',
-                    shadeIntensity: 0.5,
-                    gradientToColors: ['#28c76f'],
-                    inverseColors: true,
-                    opacityFrom: 1,
-                    opacityTo: 1,
-                    stops: [0, 100]
-                }
-            },
-            stroke: {
-                lineCap: 'round'
-            },
-            labels: ['آمادگی']
-        };
-
-        const chart = new ApexCharts(chartEl, options);
-        chart.render();
-    }
-
-    function updateGeneralStats(data) {
-        updateStatItem(0, 'کل سوالاتی که پاسخ دادید', data.total_answered, data.total_questions, 'bg-info');
-        updateStatItem(1, 'سوالاتی که آماده اید برای امتحان', data.green_count, data.total_questions, 'bg-success');
-
-        const halfReady = data.blue_count + data.yellow_count;
-        updateStatItem(2, 'سوالاتی که پنجاه درصد آماده اید', halfReady, data.total_questions, 'bg-primary');
-
-        const notReady = data.red_count + data.not_answered;
-        updateStatItem(3, 'سوالاتی که اصلا آماده نیستید', notReady, data.total_questions, 'bg-danger');
-    }
-
-    function updateStatItem(index, label, value, total, colorClass) {
-        const items = document.querySelectorAll('.card-body ul.p-0 > li');
-        if (!items[index]) return;
-
-        const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
-
-        items[index].querySelector('.d-flex.justify-content-between span:first-child').textContent = label;
-        items[index].querySelector('.d-flex.justify-content-between .text-muted').textContent = value.toLocaleString('fa-IR');
-
-        const progressBar = items[index].querySelector('.progress-bar');
-        progressBar.className = `progress-bar ${colorClass}`;
-        progressBar.style.width = percentage + '%';
-        progressBar.setAttribute('aria-valuenow', percentage);
-    }
-
-    function updateWeeklyComparison(data) {
-        const container = document.querySelector('.col-md-4.col-12.px-0 .card-body');
-        if (!container) return;
-
-        const improvementText = data.improvement >= 0
-            ? `کارایی ${Math.abs(data.improvement)}% بهتر نسبت به هفته قبل`
-            : `کارایی ${Math.abs(data.improvement)}% کمتر نسبت به هفته قبل`;
-
-        container.querySelector('h6.mt-1').textContent = 'هفته قبل';
-        container.querySelector('p.mb-4').textContent = improvementText;
-
-        const thisWeekItem = container.querySelectorAll('ul li')[0];
-        const lastWeekItem = container.querySelectorAll('ul li')[1];
-
-        thisWeekItem.querySelector('small').textContent = data.this_week.toLocaleString('fa-IR') + ' سوال';
-        const thisWeekPercentage = Math.min(100, Math.round((data.this_week / 200) * 100));
-        thisWeekItem.querySelector('.progress-bar').style.width = thisWeekPercentage + '%';
-
-        lastWeekItem.querySelector('small').textContent = data.last_week.toLocaleString('fa-IR') + ' سوال';
-        const lastWeekPercentage = Math.min(100, Math.round((data.last_week / 200) * 100));
-        lastWeekItem.querySelector('.progress-bar').style.width = lastWeekPercentage + '%';
-    }
-
-    function updateMonthlyChart(chartData) {
-        const chartEl = document.querySelector('#orderSummaryChart');
-        if (!chartEl) return;
-
-        // پاک کردن نمودار قبلی
-        chartEl.innerHTML = '';
-
-        const options = {
-            series: [{
-                name: 'تعداد سوالات',
-                data: chartData.data
-            }],
-            chart: {
-                type: 'line',
-                height: 350,
-                toolbar: {
-                    show: false
-                },
-                fontFamily: 'IRANSans, Tahoma, Arial'
-            },
-            stroke: {
-                curve: 'smooth',
-                width: 3
-            },
-            colors: ['#696cff'],
-            xaxis: {
-                categories: chartData.labels,
-                labels: {
-                    style: {
-                        fontFamily: 'IRANSans'
-                    }
-                }
-            },
-            yaxis: {
-                labels: {
-                    style: {
-                        fontFamily: 'IRANSans'
-                    },
-                    formatter: function (val) {
-                        return val.toFixed(0);
-                    }
-                }
-            },
-            dataLabels: {
-                enabled: false
-            },
-            grid: {
-                borderColor: '#f1f1f1',
-                strokeDashArray: 4
-            },
-            tooltip: {
-                y: {
-                    formatter: function (val) {
-                        return val + ' سوال';
-                    }
-                }
-            }
-        };
-
-        const chart = new ApexCharts(chartEl, options);
-        chart.render();
-    }
-
-    // بارگذاری آمار هنگام لود شدن صفحه
-    document.addEventListener('DOMContentLoaded', function () {
-        // صبر می‌کنیم تا اسکریپت تنظیمات اجرا شود
-        setTimeout(loadDashboardStats, 500);
-
-        // به‌روزرسانی خودکار هر 5 دقیقه
-        setInterval(loadDashboardStats, 300000);
-    });
-</script>
+<!-- اسکریپت چارت‌های داشبورد با استایل‌های بهبود یافته -->
+<!-- این فایل باید بعد از لود شدن ApexCharts فراخوانی شود -->

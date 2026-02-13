@@ -4,9 +4,9 @@ session_start();
 
 // تنظیمات کپچا
 $width = 120;
-$height = 40;
-$font_size = 20;
-$code_length = 6;
+$height = 50;
+$font_size = 30;
+$code_length = 5;
 
 // تولید کد
 $code = substr(str_shuffle('23456789ABCDEFGHJKLMNPQRSTUVWXYZ'), 0, $code_length);

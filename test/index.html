@@ -541,7 +541,7 @@ DROP TABLE IF EXISTS \`answers\`;
 
 CREATE TABLE \`answers\` (
   \`id\` int NOT NULL AUTO_INCREMENT,
-  \`question_id\` int DEFAULT NULL,
+  \`question_number\` varchar(20) DEFAULT NULL,
   \`text\` text,
   \`is_image\` tinyint(1) DEFAULT '0',
   \`original_content\` text,
@@ -551,11 +551,11 @@ CREATE TABLE \`answers\` (
   PRIMARY KEY (\`id\`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
-INSERT INTO \`answers\` (\`question_id\`, \`text\`, \`is_image\`, \`original_content\`, \`asw_type\`, \`asw_corr\`, \`asw_hint\`) VALUES\n`;
+INSERT INTO \`answers\` (\`question_number\`, \`text\`, \`is_image\`, \`original_content\`, \`asw_type\`, \`asw_corr\`, \`asw_hint\`) VALUES\n`;
 
         const rows = [];
         filteredQuestions.forEach((q, qIndex) => {
-          const questionId = qIndex + 1; // استفاده از index به عنوان question_id
+          const questionNumber = q.number || ''; // استفاده از number به عنوان question_number
 
           for (let i = 1; i <= 3; i++) {
             if (q[`asw_${i}`]) {
@@ -563,7 +563,7 @@ INSERT INTO \`answers\` (\`question_id\`, \`text\`, \`is_image\`, \`original_con
               const isImage = answerText.includes("<img") ? 1 : 0;
 
               rows.push([
-                questionId,
+                escapeSQL(questionNumber),
                 escapeSQL(answerText),
                 isImage,
                 escapeSQL(answerText),

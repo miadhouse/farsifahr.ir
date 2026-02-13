@@ -3,6 +3,30 @@
   <?php require_once(__DIR__ . '/../../incloud/functions.php'); ?>
   <?php require_once(__DIR__ . '/../../incloud/categories.php'); ?>
 <?php require_once(__DIR__ . '/../../incloud/subscription-functions.php'); ?>
+<?php
+// dashboard.php
+
+// بررسی ورود کاربر
+if (!is_logged_in() || !validate_session($pdo)) {
+    header("Location: ../index.php");
+    exit();
+}
+
+// دریافت اطلاعات کاربر
+$user_name = $_SESSION['name'] ?? 'کاربر';
+$user_role = $_SESSION['role'] ?? 'user';
+$user_email = $_SESSION['email'] ?? '';
+
+// دریافت آخرین ورودها
+$stmt = $pdo->prepare("
+    SELECT * FROM user_logs 
+    WHERE user_id = ? AND action = 'login' 
+    ORDER BY created_at DESC 
+    LIMIT 5
+");
+$stmt->execute([$_SESSION['user_id']]);
+$recent_logins = $stmt->fetchAll();
+?>
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">

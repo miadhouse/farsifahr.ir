@@ -13,14 +13,30 @@ if ($user_sub !== false && $user_sub !== null) {
   if ($user_sub['plan_slug'] !== 'free') {
     $user_plan_status = 'active';
     $today = new DateTime();
-    $expires_at = new DateTime($user_sub['expires_at']);
-    $interval = $today->diff($expires_at);
-    $days_left = (int) $interval->format('%r%a');
+    
+    // بررسی اینکه expires_at null نباشد
+    if (!empty($user_sub['expires_at'])) {
+      $expires_at = new DateTime($user_sub['expires_at']);
+      $interval = $today->diff($expires_at);
+      $days_left = (int) $interval->format('%r%a');
+    } else {
+      $expires_at = 'بدون تاریخ انقضاء';
+      $interval = '0';
+      $days_left = 0;
+    }
   } else {
     $user_plan_status = 'free';
     $expires_at = 'بدون تاریخ انقضاء';
     $interval = '0';
     $days_left = 0;
+  }
+  
+  // اطمینان از وجود کلیدهای مورد نیاز
+  if (!isset($user_sub['started_at'])) {
+    $user_sub['started_at'] = null;
+  }
+  if (!isset($user_sub['amount_paid'])) {
+    $user_sub['amount_paid'] = 0;
   }
 } else {
   // اگر هیچ اشتراکی وجود نداشت، پلن رایگان را تنظیم کنید
@@ -50,29 +66,34 @@ if ($user_sub !== false && $user_sub !== null) {
                 <h6 class="fw-semibold mb-2">اشتراک کنونی شما <span class="badge bg-gradient p-2 fs-3">
                     <h4><?= htmlspecialchars($user_sub['plan_name']) ?></h4>
                   </span> است</h6>
-                <p>قیمت کنونی اشتراک: <?= htmlspecialchars($user_sub['amount_paid']) ?> تومان</p>
+                <p>قیمت کنونی اشتراک: <?= number_format($user_sub['amount_paid']) ?> تومان</p>
               </div>
               <div class="mb-4">
                 <?php if ($user_sub['plan_slug'] == 'free'): ?>
                   <h6 class="fw-semibold mb-2">بدون تاریخ انقضا</h6>
                   <p>این اشتراک به صورت پیش فرض برای تمام کاربران فعال است.</p>
-                  <p>در این اشتراک فقط تعداد محدودی سوال فعال است. جهت استفاده کامل لطفا اشتراک خود را ارتقاء دهید.</p>
+                  <p>در این اشتراک فقط به 200 سوال اول دسترسی دارید. جهت استفاده نامحدود لطفا اشتراک VIP خود را فعال کنید.</p>
                 <?php else: ?>
                   <h6 class="fw-semibold mb-2">تاریخ انقضا :</h6>
-                  <h4 class="fw-semibold mb-2"><?= htmlspecialchars($user_sub['expires_at']) ?></h4>
-                  <h6 class="fw-semibold mb-2">شما در تاریخ <?= htmlspecialchars($user_sub['started_at']) ?> این اشتراک را
-                    خریداری کرده اید.</h6>
+                  <h4 class="fw-semibold mb-2">
+                    <?= !empty($user_sub['expires_at']) ? htmlspecialchars($user_sub['expires_at']) : 'نامشخص' ?>
+                  </h4>
+                  <h6 class="fw-semibold mb-2">
+                    <?php if (!empty($user_sub['started_at'])): ?>
+                      شما در تاریخ <?= htmlspecialchars($user_sub['started_at']) ?> این اشتراک را خریداری کرده اید.
+                    <?php endif; ?>
+                  </h6>
                 <?php endif ?>
               </div>
               <div class="mb-3">
-                <p>اشتراک استاندارد برای کسب و کار های کوچک تا متوسط</p>
+                <p><?= $user_sub['plan_slug'] == 'free' ? 'دسترسی محدود به 200 سوال اول' : 'دسترسی نامحدود به تمام سوالات' ?></p>
               </div>
             </div>
             <div class="col-md-6 mb-1">
 
               <?php if ($user_sub['plan_slug'] == 'free'): ?>
                 <div class="alert alert-warning mb-4" role="alert">
-                  <h6 class="alert-heading mb-1">جهت استفاده از تمام قابلیت های برنامه، اشتراک خود را ارتقا دهید</h6>
+                  <h6 class="alert-heading mb-1">جهت استفاده نامحدود از تمام سوالات، اشتراک VIP خود را فعال کنید</h6>
                 </div>
               <?php else: ?>
                 <?php if ($days_left >= 6): ?>
@@ -93,13 +114,17 @@ if ($user_sub !== false && $user_sub !== null) {
                 <div class="plan-statistics">
                   <?php
                   // محاسبه درصد استفاده از دوره اشتراک
-                  $total_days = 30; // یا از دیتابیس بگیرید
-                  if ($user_sub['started_at']) {
-                    $start = new DateTime($user_sub['started_at']);
-                    $end = new DateTime($user_sub['expires_at']);
-                    $total_days = $start->diff($end)->days;
+                  $total_days = 30; // مقدار پیش‌فرض
+                  if (!empty($user_sub['started_at']) && !empty($user_sub['expires_at'])) {
+                    try {
+                      $start = new DateTime($user_sub['started_at']);
+                      $end = new DateTime($user_sub['expires_at']);
+                      $total_days = $start->diff($end)->days;
+                    } catch (Exception $e) {
+                      $total_days = 30; // در صورت خطا مقدار پیش‌فرض
+                    }
                   }
-                  $used_days = $total_days - $days_left;
+                  $used_days = max(0, $total_days - $days_left); // اطمینان از مثبت بودن
                   $progress_percentage = $total_days > 0 ? round(($used_days / $total_days) * 100) : 0;
                   ?>
                   <div class="d-flex justify-content-between">
@@ -117,7 +142,7 @@ if ($user_sub !== false && $user_sub !== null) {
             </div>
             <div class="col-12">
               <button class="btn btn-primary me-2 mt-2" data-bs-toggle="modal" data-bs-target="#pricingModal">
-                <?php echo ($user_plan_status !== 'active') ? 'ارتقاء اشتراک' : 'تغییر اشتراک'; ?>
+                <?php echo ($user_plan_status === 'free') ? 'ارتقاء اشتراک' : 'تغییر اشتراک'; ?>
               </button>
               <?php if ($user_plan_status !== 'free'): ?>
                 <button class="btn btn-label-secondary cancel-subscription mt-2">لغو اشتراک</button>
@@ -147,76 +172,292 @@ if ($user_sub !== false && $user_sub !== null) {
                 </div>
                 <h2 class="title split-collab tmp-scroll-trigger tmp-fade-in animation-order-2">قیمتگذاری ساده و شفاف
                 </h2>
-                <p>طرحی را انتخاب کنید که به بهترین وجه با نیازهای شما مطابقت داشته باشد. همه طرح‌ها شامل ویژگی‌های اصلی
-                  ما هستند.</p>
+                <p>طرحی را انتخاب کنید که به بهترین وجه با نیازهای شما مطابقت داشته باشد.</p>
               </div>
 
-              <div class="row align-items-center">
-                <ul class="pricing_table">
+              <div class="row align-items-center justify-content-center">
+                <?php
+                // دریافت همه پلن‌های فعال
+                $stmt = $pdo->prepare("SELECT * FROM subscription_plans WHERE is_active = 1 ORDER BY sort_order ASC");
+                $stmt->execute();
+                $plans = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-                  <?php
-                  // دریافت همه پلن‌ها و ویژگی‌ها
-                  $plans = get_all_subscription_plans($pdo);
-                  $all_features = get_all_features($pdo);
+                foreach ($plans as $plan):
+                  // کلاس رنگ پلن
+                  $plan_class = '';
+                  $card_class = '';
+                  if ($plan['slug'] == 'vip') {
+                    $plan_class = 'text-primary';
+                    $card_class = 'border-primary';
+                  }
+                  ?>
 
-                  foreach ($plans as $plan):
-                    $features = get_plan_features($plan['id'], $pdo);
-
-                    // برای تطبیق سریع ویژگی‌ها
-                    $feature_map = [];
-                    foreach ($features as $f) {
-                      $feature_map[$f['id']] = $f;
-                    }
-
-                    // کلاس رنگ پلن
-                    $plan_class = '';
-                    if (strpos(strtolower($plan['name']), 'gold') !== false) {
-                      $plan_class = 'text-gold';
-                    } elseif (strpos(strtolower($plan['name']), 'silver') !== false) {
-                      $plan_class = 'text-silver';
-                    } elseif (strpos(strtolower($plan['name']), 'bronze') !== false) {
-                      $plan_class = 'text-bronze';
-                    }
-
-                    // قیمت
-                    $monthly_price = calculate_plan_price($plan['id'], false, $pdo);
-                    ?>
-
-                    <li class="price_block <?= $plan_class ?>">
-                      <h3><?= htmlspecialchars($plan['name']) ?></h3>
-                      <div class="price">
-                        <div class="price_figure">
-                          <span class="price_number"><?= format_price($monthly_price['price']) ?></span>
-                        </div>
+                  <div class="col-lg-6 col-md-6 mb-4">
+                    <div class="card <?= $card_class ?> h-100">
+                      <div class="card-header text-center bg-label-primary">
+                        <h3 class="<?= $plan_class ?> mb-0"><?= htmlspecialchars($plan['name']) ?></h3>
                       </div>
+                      <div class="card-body">
+                        <p class="text-center mb-4"><?= htmlspecialchars($plan['description']) ?></p>
 
-                      <ul class="features">
-                        <?php foreach ($all_features as $feature):
-                          $is_enabled = isset($feature_map[$feature['id']]);
-                          $value = $is_enabled
-                            ? format_feature_value($feature_map[$feature['id']]['feature_value'], $feature_map[$feature['id']]['is_unlimited'])
-                            : '-';
+                        <?php if ($plan['slug'] == 'free'): ?>
+                          <!-- پلن رایگان -->
+                          <div class="text-center mb-4">
+                            <h2 class="display-4 fw-bold">رایگان</h2>
+                            <p class="text-muted">دسترسی محدود به 200 سوال اول</p>
+                          </div>
+                          <ul class="list-unstyled mb-4">
+                            <li class="mb-2">
+                              <i class="fa fa-check-circle text-success"></i> دسترسی به 200 سوال اول
+                            </li>
+                            <li class="mb-2">
+                              <i class="fa fa-check-circle text-success"></i> بدون محدودیت زمانی
+                            </li>
+                            <li class="mb-2">
+                              <i class="fa fa-times-circle text-muted"></i> دسترسی به سوالات بالاتر از 200
+                            </li>
+                          </ul>
+                          <div class="text-center">
+                            <button class="btn btn-outline-secondary btn-lg w-100" disabled>پلن فعلی شما</button>
+                          </div>
 
-                          $icon_class = $is_enabled ? 'enabled-icon' : 'disabled-icon';
-                          $icon_html = $is_enabled
-                            ? ' <i class="fa fa-check-circle text-success fs-3"></i> '
-                            : ' <i class="fa fa-times-circle fs-3"></i> ';
-                          ?>
-                          <li class="<?= $icon_class ?> text-start">
-                            <?= $icon_html ?>     <?= htmlspecialchars($feature['name']) ?>
-                          </li>
-                        <?php endforeach; ?>
-                      </ul>
+                        <?php else: ?>
+                          <!-- پلن VIP -->
+                          <div class="mb-4">
+                            <h5 class="text-center mb-3">انتخاب دوره اشتراک:</h5>
+                            
+                            <!-- دوره 2 هفته‌ای -->
+                            <?php if ($plan['price_2_weeks'] > 0): ?>
+                            <div class="pricing-option mb-3 p-3 border rounded">
+                              <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                  <h6 class="mb-1">2 هفته (14 روز)</h6>
+                                  <p class="text-muted small mb-0">دسترسی نامحدود به تمام سوالات</p>
+                                </div>
+                                <div class="text-end">
+                                  <h4 class="mb-1 text-primary"><?= number_format($plan['price_2_weeks']) ?> تومان</h4>
+                                  <a href="invoice-request.php?plan-id=<?= $plan['id'] ?>&duration=2_weeks" 
+                                     class="btn btn-sm btn-primary">خرید</a>
+                                </div>
+                              </div>
+                            </div>
+                            <?php endif; ?>
 
-                      <div class="footer w-100">
-                        <a href="invoice-request.php?plan-id=<?= $plan['id'] ?>"
-                          class="action_button btn btn-primary p-3 fs-3 w-100">خرید</a>
+                            <!-- دوره 1 ماهه -->
+                            <?php if ($plan['price_1_month'] > 0): ?>
+                            <div class="pricing-option mb-3 p-3 border rounded">
+                              <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                  <h6 class="mb-1">1 ماه (30 روز)</h6>
+                                  <p class="text-muted small mb-0">دسترسی نامحدود به تمام سوالات</p>
+                                </div>
+                                <div class="text-end">
+                                  <h4 class="mb-1 text-primary"><?= number_format($plan['price_1_month']) ?> تومان</h4>
+                                  <a href="invoice-request.php?plan-id=<?= $plan['id'] ?>&duration=1_month" 
+                                     class="btn btn-sm btn-primary">خرید</a>
+                                </div>
+                              </div>
+                            </div>
+                            <?php endif; ?>
+
+                            <!-- دوره 3 ماهه -->
+                            <?php if ($plan['price_3_months'] > 0 && $plan['price_1_month'] > 0): 
+                              $saving_3m = ($plan['price_1_month'] * 3) - $plan['price_3_months'];
+                              $discount_3m = round(($saving_3m / ($plan['price_1_month'] * 3)) * 100);
+                            ?>
+                            <div class="pricing-option mb-3 p-3 border rounded border-success bg-light">
+                              <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                  <h6 class="mb-1">
+                                    3 ماه (90 روز) 
+                                    <span class="badge bg-success">پیشنهاد ویژه - <?= $discount_3m ?>% تخفیف</span>
+                                  </h6>
+                                  <p class="text-muted small mb-0">دسترسی نامحدود به تمام سوالات</p>
+                                  <?php if ($saving_3m > 0): ?>
+                                  <p class="text-success small mb-0 fw-bold">
+                                    <i class="fa fa-tag"></i> صرفه‌جویی: <?= number_format($saving_3m) ?> تومان
+                                  </p>
+                                  <?php endif; ?>
+                                </div>
+                                <div class="text-end">
+                                  <?php if ($saving_3m > 0): ?>
+                                  <small class="text-decoration-line-through text-muted d-block">
+                                    <?= number_format($plan['price_1_month'] * 3) ?> تومان
+                                  </small>
+                                  <?php endif; ?>
+                                  <h4 class="mb-1 text-success"><?= number_format($plan['price_3_months']) ?> تومان</h4>
+                                  <a href="invoice-request.php?plan-id=<?= $plan['id'] ?>&duration=3_months" 
+                                     class="btn btn-sm btn-success">خرید</a>
+                                </div>
+                              </div>
+                            </div>
+                            <?php endif; ?>
+
+                            <!-- دوره 6 ماهه -->
+                            <?php if ($plan['price_6_months'] > 0 && $plan['price_1_month'] > 0): 
+                              $saving_6m = ($plan['price_1_month'] * 6) - $plan['price_6_months'];
+                              $discount_6m = round(($saving_6m / ($plan['price_1_month'] * 6)) * 100);
+                            ?>
+                            <div class="pricing-option mb-3 p-3 border rounded border-info">
+                              <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                  <h6 class="mb-1">
+                                    6 ماه (180 روز) 
+                                    <span class="badge bg-info"><?= $discount_6m ?>% تخفیف</span>
+                                  </h6>
+                                  <p class="text-muted small mb-0">دسترسی نامحدود به تمام سوالات</p>
+                                  <?php if ($saving_6m > 0): ?>
+                                  <p class="text-success small mb-0 fw-bold">
+                                    <i class="fa fa-tag"></i> صرفه‌جویی: <?= number_format($saving_6m) ?> تومان
+                                  </p>
+                                  <?php endif; ?>
+                                </div>
+                                <div class="text-end">
+                                  <?php if ($saving_6m > 0): ?>
+                                  <small class="text-decoration-line-through text-muted d-block">
+                                    <?= number_format($plan['price_1_month'] * 6) ?> تومان
+                                  </small>
+                                  <?php endif; ?>
+                                  <h4 class="mb-1 text-info"><?= number_format($plan['price_6_months']) ?> تومان</h4>
+                                  <a href="invoice-request.php?plan-id=<?= $plan['id'] ?>&duration=6_months" 
+                                     class="btn btn-sm btn-info">خرید</a>
+                                </div>
+                              </div>
+                            </div>
+                            <?php endif; ?>
+
+                            <!-- دوره 1 ساله -->
+                            <?php if ($plan['price_1_year'] > 0 && $plan['price_1_month'] > 0): 
+                              $saving_1y = ($plan['price_1_month'] * 12) - $plan['price_1_year'];
+                              $discount_1y = round(($saving_1y / ($plan['price_1_month'] * 12)) * 100);
+                            ?>
+                            <div class="pricing-option mb-3 p-3 border rounded border-warning bg-light">
+                              <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                  <h6 class="mb-1">
+                                    1 سال (365 روز) 
+                                    <span class="badge bg-warning text-dark">
+                                      <i class="fa fa-star"></i> بهترین قیمت - <?= $discount_1y ?>% تخفیف
+                                    </span>
+                                  </h6>
+                                  <p class="text-muted small mb-0">دسترسی نامحدود به تمام سوالات</p>
+                                  <?php if ($saving_1y > 0): ?>
+                                  <p class="text-success small mb-0 fw-bold">
+                                    <i class="fa fa-tag"></i> صرفه‌جویی: <?= number_format($saving_1y) ?> تومان
+                                  </p>
+                                  <?php endif; ?>
+                                </div>
+                                <div class="text-end">
+                                  <?php if ($saving_1y > 0): ?>
+                                  <small class="text-decoration-line-through text-muted d-block">
+                                    <?= number_format($plan['price_1_month'] * 12) ?> تومان
+                                  </small>
+                                  <?php endif; ?>
+                                  <h4 class="mb-1 text-warning"><?= number_format($plan['price_1_year']) ?> تومان</h4>
+                                  <a href="invoice-request.php?plan-id=<?= $plan['id'] ?>&duration=1_year" 
+                                     class="btn btn-sm btn-warning">خرید</a>
+                                </div>
+                              </div>
+                            </div>
+                            <?php endif; ?>
+                          </div>
+
+                          <ul class="list-unstyled mb-4">
+                            <li class="mb-2">
+                              <i class="fa fa-check-circle text-success"></i> دسترسی نامحدود به تمام سوالات
+                            </li>
+                            <li class="mb-2">
+                              <i class="fa fa-check-circle text-success"></i> آپدیت‌های رایگان
+                            </li>
+                            <li class="mb-2">
+                              <i class="fa fa-check-circle text-success"></i> پشتیبانی اختصاصی
+                            </li>
+                            <li class="mb-2">
+                              <i class="fa fa-check-circle text-success"></i> دانلود نامحدود محتوا
+                            </li>
+                          </ul>
+
+                        <?php endif; ?>
                       </div>
-                    </li>
+                    </div>
+                  </div>
 
-                  <?php endforeach; ?>
-                </ul>
+                <?php endforeach; ?>
               </div>
+
+              <!-- Price Comparison Table -->
+              <div class="row mt-5">
+                <div class="col-12">
+                  <div class="card">
+                    <div class="card-header">
+                      <h5 class="card-title mb-0">مقایسه قیمت‌ها</h5>
+                    </div>
+                    <div class="card-body">
+                      <div class="table-responsive">
+                        <table class="table table-bordered text-center">
+                          <thead class="table-light">
+                            <tr>
+                              <th>دوره زمانی</th>
+                              <th>قیمت</th>
+                              <th>قیمت روزانه</th>
+                              <th>تخفیف نسبت به ماهانه</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <?php
+                            $vip_plan = null;
+                            foreach ($plans as $p) {
+                              if ($p['slug'] == 'vip') {
+                                $vip_plan = $p;
+                                break;
+                              }
+                            }
+                            
+                            if ($vip_plan):
+                              $durations = [
+                                ['key' => 'price_2_weeks', 'days' => 14, 'label' => '2 هفته'],
+                                ['key' => 'price_1_month', 'days' => 30, 'label' => '1 ماه'],
+                                ['key' => 'price_3_months', 'days' => 90, 'label' => '3 ماه'],
+                                ['key' => 'price_6_months', 'days' => 180, 'label' => '6 ماه'],
+                                ['key' => 'price_1_year', 'days' => 365, 'label' => '1 سال']
+                              ];
+                              
+                              foreach ($durations as $dur):
+                                if ($vip_plan[$dur['key']] <= 0) continue;
+                                
+                                $price = $vip_plan[$dur['key']];
+                                $daily_price = $price / $dur['days'];
+                                $monthly_equivalent = ($price / $dur['days']) * 30;
+                                $discount_vs_monthly = 0;
+                                
+                                if ($vip_plan['price_1_month'] > 0 && $dur['key'] != 'price_1_month') {
+                                  $discount_vs_monthly = round((1 - ($monthly_equivalent / $vip_plan['price_1_month'])) * 100);
+                                }
+                            ?>
+                            <tr>
+                              <td class="fw-semibold"><?= $dur['label'] ?></td>
+                              <td><?= number_format($price) ?> تومان</td>
+                              <td><?= number_format($daily_price, 0) ?> تومان</td>
+                              <td>
+                                <?php if ($discount_vs_monthly > 0): ?>
+                                  <span class="badge bg-success"><?= $discount_vs_monthly ?>% تخفیف</span>
+                                <?php else: ?>
+                                  <span class="text-muted">-</span>
+                                <?php endif; ?>
+                              </td>
+                            </tr>
+                            <?php 
+                              endforeach;
+                            endif; 
+                            ?>
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
             </div>
           </section>
           <!--/ Pricing Plans -->
