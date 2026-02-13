@@ -14,7 +14,7 @@ class Answer extends Model
     
     // فیلدهای قابل پر شدن
     protected $fillable = [
-        'question_id',
+        'question_number',
         'text',
         'en_text',
         'farsi_text',
@@ -33,12 +33,12 @@ class Answer extends Model
     protected $casts = [
         'is_image' => 'boolean',
         'asw_corr' => 'boolean',
-        'question_id' => 'integer',
+        'question_number' => 'string',
     ];
     
     // رابطه با جدول questions
     public function question()
     {
-        return $this->belongsTo(Question::class, 'question_id');
+        return $this->belongsTo(Question::class, 'question_number');
     }
 }

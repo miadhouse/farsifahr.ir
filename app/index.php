@@ -343,7 +343,6 @@ $currentQuestion = $selectedQuestions[$currentQuestionIndex];
             display: none;
             animation: fadeIn 0.2s ease-in;
             pointer-events: auto;
-            /* اضافه کردن این خط */
         }
 
         .vocab-icons::before {
@@ -480,18 +479,6 @@ $currentQuestion = $selectedQuestions[$currentQuestionIndex];
             animation: slideInRight 0.3s ease;
         }
 
-        @keyframes slideInRight {
-            from {
-                transform: translateX(100%);
-                opacity: 0;
-            }
-
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
-        }
-
         .btn-circle {
             border-radius: 50%;
             margin-right: 10px;
@@ -521,25 +508,153 @@ $currentQuestion = $selectedQuestions[$currentQuestionIndex];
             opacity: 0.6;
             cursor: not-allowed;
         }
+
+        /* ============================================
+           استایل‌های جدید برای ترجمه و توضیح
+           ============================================ */
+        
+        /* Translation/Explanation Content Box */
+        .translation-box, .explanation-box {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            animation: slideDown 0.3s ease;
+            position: relative;
+        }
+
+        .explanation-box {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .translation-box h6, .explanation-box h6 {
+            margin: 0 0 10px 0;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .translation-box p, .explanation-box p {
+            margin: 0;
+            line-height: 1.6;
+            direction: rtl;
+            text-align: right;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Answer Translation/Explanation Styles */
+        .answer-translation, .answer-explanation {
+            margin-top: 8px;
+            padding: 10px;
+            border-radius: 8px;
+            background-color: rgba(102, 126, 234, 0.1);
+            border-right: 3px solid #667eea;
+            direction: rtl;
+            text-align: right;
+            font-size: 0.9rem;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .answer-explanation {
+            background-color: rgba(240, 147, 251, 0.1);
+            border-right-color: #f093fb;
+        }
+
+        .answer-translation strong, .answer-explanation strong {
+            color: #667eea;
+        }
+
+        .answer-explanation strong {
+            color: #f5576c;
+        }
+
+        /* Active State for Buttons */
+        #translateBtn.active {
+            background-color: #667eea !important;
+            color: white !important;
+            box-shadow: 0 0 10px rgba(102, 126, 234, 0.5);
+        }
+
+        #explainBtn.active {
+            background-color: #f5576c !important;
+            color: white !important;
+            box-shadow: 0 0 10px rgba(245, 87, 108, 0.5);
+        }
+
+        /* Button Hover Effects */
+        #translateBtn:hover, #explainBtn:hover {
+            transform: scale(1.05);
+            transition: all 0.2s ease;
+        }
+
+        /* Empty State */
+        .no-translation, .no-explanation {
+            padding: 10px;
+            border-radius: 8px;
+            background-color: #f8f9fa;
+            color: #6c757d;
+            text-align: center;
+            font-style: italic;
+            direction: rtl;
+        }
+
+        /* Pretext Translation */
+        .pretext-translation, .pretext-explanation {
+            margin-top: 10px;
+            padding: 12px;
+            border-radius: 8px;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.15) 0%, rgba(118, 75, 162, 0.15) 100%);
+            border-right: 4px solid #667eea;
+            direction: rtl;
+            text-align: right;
+        }
+
+        .pretext-explanation {
+            background: linear-gradient(135deg, rgba(240, 147, 251, 0.15) 0%, rgba(245, 87, 108, 0.15) 100%);
+            border-right-color: #f5576c;
+        }
     </style>
 </head>
 
 <body style="height: 100%;background-color: #d3f5da;" class="<?= $mode === 'practice' ? 'practice-mode' : '' ?>">
     <div class="container" style="height: 100%;">
         <div class="text-white bg-success d-flex justify-content-between align-items-center p-2 px-4"
-            style="border-bottom-right-radius: 30px;border-bottom-left-radius: 30px;position: sticky;top: 0;">
-            <div class="d-flex align-items-center">
+            style="border-bottom-right-radius: 30px;border-bottom-left-radius: 30px;position: sticky;top: 0;z-index: 1000;">
+            <div class="d-flex align-items-center gap-2">
                 <a class="btn btn-warning btn-sm btn-danger btn-circle" href="../admin/practice.php"> <i
                         class="fas fa-times"></i></a>
                 <span id="code"></span>
-                <!-- <?php if ($mode === 'practice'): ?>
-                    <span class="ms-3 badge bg-warning text-dark">Practice Mode</span>
-                <?php endif; ?> -->
+                
+                <!-- Translation & Explanation Buttons -->
+                <button class="btn btn-sm btn-light" id="translateBtn" onclick="toggleTranslation()" title="ترجمه سوال و پاسخ‌ها">
+                    <i class="fas fa-language"></i>
+                </button>
+                <button class="btn btn-sm btn-info" id="explainBtn" onclick="toggleExplanation()" title="توضیح سوال و پاسخ‌ها">
+                    <i class="fas fa-info-circle"></i>
+                </button>
             </div>
             <span>Punkte: <span id="punkt"></span></span>
         </div>
         <div class="mt-4 p-4" style="height: 100%;/*float: none;*/display: in;">
             <h1 id="text" class="fw-bold h6 mb-4 question-text"></h1>
+            
+            <!-- Question Translation/Explanation Container -->
+            <div id="question-translation-container"></div>
+            <div id="question-explanation-container"></div>
+            
             <div class="row">
                 <div class="col-12 col-md-6 " id="media">
                 </div>
@@ -548,6 +663,10 @@ $currentQuestion = $selectedQuestions[$currentQuestionIndex];
                         <div class="d-flex align-items-center">
                         </div>
                         <span id="asw_pretext" class="fw-bold"><!-- اگر موجود بود --> </span>
+                        
+                        <!-- Pretext Translation/Explanation Container -->
+                        <div id="pretext-translation-container"></div>
+                        <div id="pretext-explanation-container"></div>
 
                         <!-- Video Controls Section -->
                         <div id="video-controls" class="video-controls" style="display: none;">
@@ -583,7 +702,6 @@ $currentQuestion = $selectedQuestions[$currentQuestionIndex];
                 <div class="col-4 fw-bold text-start p-0">
                     <span class="badge bg-warning text-dark" style="direction: rtl;"> <?= $totalQuestions ?> سوال
                     </span>
-                    <!-- //<span>صفحه <?= $currentPage ?> از <?= $totalPages ?></span> -->
                 </div>
                 <div class="col-8 text-end">
                     <div class="text-end">
@@ -612,7 +730,7 @@ $currentQuestion = $selectedQuestions[$currentQuestionIndex];
         </div>
         <div class="fixed-bottom container-fluid p-0">
             <div class="d-flex justify-content-between align-items-center p-2 px-4"
-                style="background: var(--bs-success);/*border-top-left-radius: 30px;*//*border-top-right-radius: 30px;*/">
+                style="background: var(--bs-success);">
                 <button class="btn btn-light text-success" onclick="previousQuestion()">
                     <i class="fas fa-step-backward"></i>
                 </button>
@@ -725,6 +843,11 @@ $currentQuestion = $selectedQuestions[$currentQuestionIndex];
         let currentQuestionId = null;
         let currentCategoryId = null;
 
+        // ============================================
+        // متغیرهای جدید برای ترجمه و توضیح
+        // ============================================
+        let translationActive = false;
+        let explanationActive = false;
 
 
         function createFormDataWithCSRF(data = {}) {
@@ -753,7 +876,7 @@ $currentQuestion = $selectedQuestions[$currentQuestionIndex];
             loadQuestionStatuses(() => {
                 loadCurrentQuestion();
                 renderPageButtons();
-                updateNavigationButtons(); // اضافه کردن این خط
+                updateNavigationButtons();
             });
             initVocabularySystem();
             setupVocabIconsEvents();
@@ -762,6 +885,7 @@ $currentQuestion = $selectedQuestions[$currentQuestionIndex];
         window.addEventListener('resize', () => {
             renderPageButtons();
         });
+        
         function initializeVocabularySystem() {
             // Initialize vocabulary system
             initVocabularySystem();
@@ -771,6 +895,7 @@ $currentQuestion = $selectedQuestions[$currentQuestionIndex];
                 currentQuestionId = selectedQuestions[currentQuestionIndex];
             }
         }
+        
         // Vocabulary System Functions
         function initVocabularySystem() {
             // Add vocabulary selection class to content areas
@@ -1049,10 +1174,12 @@ $currentQuestion = $selectedQuestions[$currentQuestionIndex];
 
             hideVocabIcons();
         }
+        
         function closeTranslationPopup() {
             document.getElementById('translation-popup').style.display = 'none';
             document.getElementById('popup-overlay').style.display = 'none';
         }
+        
         // تابع ذخیره کلمه اصلاح شده
         function saveWord() {
             // دریافت ترجمه ویرایش شده
@@ -1123,6 +1250,7 @@ $currentQuestion = $selectedQuestions[$currentQuestionIndex];
                     showVocabToast('خطا در ارتباط با سرور', 'error');
                 });
         }
+        
         function showVocabToast(message, type = 'info') {
             const toast = document.createElement('div');
             toast.className = `alert alert-${type === 'error' ? 'danger' : type === 'success' ? 'success' : 'info'} vocab-toast alert-dismissible`;
@@ -1148,6 +1276,7 @@ $currentQuestion = $selectedQuestions[$currentQuestionIndex];
             currentQuestionId = questionId;
             currentCategoryId = categoryId;
         }
+        
         // Re-initialize vocabulary selection for newly loaded content
         function reinitializeVocabularySelection() {
             const answersElement = document.getElementById('answers');
@@ -1165,8 +1294,9 @@ $currentQuestion = $selectedQuestions[$currentQuestionIndex];
             if (typeof selectedQuestions !== 'undefined' && typeof currentQuestionIndex !== 'undefined') {
                 currentQuestionId = selectedQuestions[currentQuestionIndex];
             }
-        }        // بارگذاری وضعیت رنگی تمام سوالات
-
+        }        
+        
+        // بارگذاری وضعیت رنگی تمام سوالات
         function loadQuestionStatuses(callback) {
             const formData = createFormDataWithCSRF({
                 question_ids: JSON.stringify(selectedQuestions)
@@ -1232,6 +1362,175 @@ $currentQuestion = $selectedQuestions[$currentQuestionIndex];
                 });
         }
 
+        // ============================================
+        // توابع جدید برای ترجمه و توضیح
+        // ============================================
+        
+        function toggleTranslation() {
+            const btn = document.getElementById('translateBtn');
+            const explainBtn = document.getElementById('explainBtn');
+            
+            if (translationActive) {
+                // Hide translation
+                translationActive = false;
+                btn.classList.remove('active');
+                hideTranslationContent();
+            } else {
+                // Show translation
+                translationActive = true;
+                btn.classList.add('active');
+                
+                // Hide explanation if active
+                if (explanationActive) {
+                    explanationActive = false;
+                    explainBtn.classList.remove('active');
+                    hideExplanationContent();
+                }
+                
+                showTranslationContent();
+            }
+        }
+        function toggleExplanation() {
+            const btn = document.getElementById('explainBtn');
+            const translateBtn = document.getElementById('translateBtn');
+            
+            if (explanationActive) {
+                // Hide explanation
+                explanationActive = false;
+                btn.classList.remove('active');
+                hideExplanationContent();
+            } else {
+                // Show explanation
+                explanationActive = true;
+                btn.classList.add('active');
+                
+                // Hide translation if active
+                if (translationActive) {
+                    translationActive = false;
+                    translateBtn.classList.remove('active');
+                    hideTranslationContent();
+                }
+                
+                showExplanationContent();
+            }
+        }
+
+        function showTranslationContent() {
+            if (!currentQuestionData) return;
+            
+            const question = currentQuestionData.question;
+            const answers = currentQuestionData.answers;
+            
+            // Show question translation
+            const questionTransContainer = document.getElementById('question-translation-container');
+            if (question.farsi_text && question.farsi_text.trim()) {
+                questionTransContainer.innerHTML = `
+                    <div class="translation-box">
+                        <p>${question.farsi_text}</p>
+                    </div>
+                `;
+            } else {
+                questionTransContainer.innerHTML = `
+                    <div class="no-translation">
+                        <i class="fas fa-info-circle"></i> ترجمه‌ای برای این سوال موجود نیست
+                    </div>
+                `;
+            }
+            
+            // Show pretext translation if exists
+            const pretextTransContainer = document.getElementById('pretext-translation-container');
+            if (question.asw_farsi && question.asw_farsi.trim()) {
+                pretextTransContainer.innerHTML = `
+                    <div class="pretext-translation">
+                        <strong><i class="fas fa-language"></i> ترجمه:</strong>
+                        <p class="mb-0 mt-2">${question.asw_farsi}</p>
+                    </div>
+                `;
+            } else {
+                pretextTransContainer.innerHTML = '';
+            }
+            
+            // Show answer translations
+            if (answers && answers.length > 0) {
+                answers.forEach((answer, index) => {
+                    const answerItem = document.querySelector(`[data-answer-index="${index}"]`);
+                    if (answerItem && answer.farsi_text && answer.farsi_text.trim()) {
+                        // Remove existing translation if any
+                        const existingTrans = answerItem.querySelector('.answer-translation');
+                        if (existingTrans) existingTrans.remove();
+                        
+                        const translationDiv = document.createElement('div');
+                        translationDiv.className = 'answer-translation';
+                        translationDiv.innerHTML = ` ${answer.farsi_text}`;
+                        answerItem.appendChild(translationDiv);
+                    }
+                });
+            }
+        }
+
+        function hideTranslationContent() {
+            document.getElementById('question-translation-container').innerHTML = '';
+            document.getElementById('pretext-translation-container').innerHTML = '';
+            
+            // Remove all answer translations
+            document.querySelectorAll('.answer-translation').forEach(el => el.remove());
+        }
+
+        function showExplanationContent() {
+            if (!currentQuestionData) return;
+            
+            const question = currentQuestionData.question;
+            const answers = currentQuestionData.answers;
+            
+            // Show question explanation
+            const questionExplainContainer = document.getElementById('question-explanation-container');
+            if (question.info && question.info.trim()) {
+                questionExplainContainer.innerHTML = `
+                    <div class="explanation-box">
+                        <h6><i class="fas fa-info-circle"></i> توضیح سوال</h6>
+                        <p>${question.info}</p>
+                    </div>
+                `;
+            } else {
+                questionExplainContainer.innerHTML = `
+                    <div class="no-explanation">
+                        <i class="fas fa-info-circle"></i> توضیحی برای این سوال موجود نیست
+                    </div>
+                `;
+            }
+            
+           
+            
+            // Show answer explanations
+            if (answers && answers.length > 0) {
+                answers.forEach((answer, index) => {
+                    const answerItem = document.querySelector(`[data-answer-index="${index}"]`);
+                    if (answerItem && answer.info && answer.info.trim()) {
+                        // Remove existing explanation if any
+                        const existingExpl = answerItem.querySelector('.answer-explanation');
+                        if (existingExpl) existingExpl.remove();
+                        
+                        const explanationDiv = document.createElement('div');
+                        explanationDiv.className = 'answer-explanation';
+                        explanationDiv.innerHTML = `<strong>توضیح:</strong> ${answer.info}`;
+                        answerItem.appendChild(explanationDiv);
+                    }
+                });
+            }
+        }
+
+        function hideExplanationContent() {
+            document.getElementById('question-explanation-container').innerHTML = '';
+            document.getElementById('pretext-explanation-container').innerHTML = '';
+            
+            // Remove all answer explanations
+            document.querySelectorAll('.answer-explanation').forEach(el => el.remove());
+        }
+
+        // ============================================
+        // ادامه کد اصلی...
+        // ============================================
+        
         function loadCurrentQuestion() {
             resetQuestionState();
 
@@ -1259,7 +1558,6 @@ $currentQuestion = $selectedQuestions[$currentQuestionIndex];
                 return response.json();
             })
                 .then(data => {
-                    // باقی کد تابع loadCurrentQuestion بدون تغییر
                     if (data && data.success === false) {
                         console.error('Backend error:', data.message);
                         showErrorMessage(data.message || 'خطا در دریافت اطلاعات سوال');
@@ -1288,6 +1586,14 @@ $currentQuestion = $selectedQuestions[$currentQuestionIndex];
                         loadUserAnswersFromMemory(questionId);
                         updatePracticeButtons();
                     }
+                    
+                    // بعد از بارگذاری سوال جدید، اگر ترجمه یا توضیح فعال بود، نمایش بده
+                    if (translationActive) {
+                        showTranslationContent();
+                    }
+                    if (explanationActive) {
+                        showExplanationContent();
+                    }
                 })
                 .catch(error => {
                     console.error("خطا در بارگذاری سوال:", error);
@@ -1299,7 +1605,6 @@ $currentQuestion = $selectedQuestions[$currentQuestionIndex];
                 detail: { questionId: questionId, categoryId: currentCategoryId }
             }));
             updateNavigationButtons();
-
         }
 
         function showErrorMessage(message) {
@@ -1330,32 +1635,25 @@ $currentQuestion = $selectedQuestions[$currentQuestionIndex];
                 punktElement.innerText = '0';
             }
         }
-        // Enhanced function to log and display problematic question details
+        
         function markQuestionAsProblematic(questionId) {
             console.warn(`Question ${questionId} has no answers - marked as problematic`);
-
-            // Log to console for immediate viewing
             console.log(`🚨 PROBLEMATIC QUESTION ID: ${questionId}`);
 
-            // Show alert with question ID
             if (confirm(`سوال با کد ${questionId} فاقد پاسخ است. آیا می‌خواهید این کد را کپی کنید؟`)) {
-                // Copy to clipboard if user confirms
                 navigator.clipboard.writeText(questionId).then(() => {
                     alert(`کد سوال ${questionId} کپی شد`);
                 }).catch(() => {
-                    // Fallback for older browsers
                     prompt('کد سوال (Ctrl+C برای کپی):', questionId);
                 });
             }
 
-            // Store in localStorage for tracking
             let problematicQuestions = JSON.parse(localStorage.getItem('problematicQuestions') || '[]');
             if (!problematicQuestions.includes(questionId)) {
                 problematicQuestions.push(questionId);
                 localStorage.setItem('problematicQuestions', JSON.stringify(problematicQuestions));
             }
 
-            // Also store with timestamp and more details
             let detailedProblematicQuestions = JSON.parse(localStorage.getItem('detailedProblematicQuestions') || '[]');
             const existingEntry = detailedProblematicQuestions.find(item => item.questionId === questionId);
 
@@ -1371,7 +1669,6 @@ $currentQuestion = $selectedQuestions[$currentQuestionIndex];
             }
         }
 
-        // 7. به‌روزرسانی تابع toggleBookmark:
         function toggleBookmark() {
             const bookmarkBtn = document.getElementById('bookmark-btn');
             const bookmarkIcon = document.getElementById('bookmark-icon');
@@ -1410,7 +1707,6 @@ $currentQuestion = $selectedQuestions[$currentQuestionIndex];
                 });
         }
 
-        // 8. به‌روزرسانی تابع checkBookmarkStatus:
         function checkBookmarkStatus(questionId) {
             fetch("../incloud/check_bookmark.php?question_id=" + questionId + "&csrf_token=" + encodeURIComponent(csrfToken))
                 .then(response => response.json())
@@ -1427,16 +1723,13 @@ $currentQuestion = $selectedQuestions[$currentQuestionIndex];
             const bookmarkIcon = document.getElementById('bookmark-icon');
 
             if (isBookmarked) {
-                // ستاره پر (علامت گذاری شده)
                 bookmarkIcon.className = 'fas fa-star text-warning';
             } else {
-                // ستاره خالی (علامت گذاری نشده)
                 bookmarkIcon.className = 'far fa-star text-warning';
             }
         }
 
         function showBookmarkToast(message, type) {
-            // Create toast notification
             const toast = document.createElement('div');
             toast.className = `alert alert-${type === 'error' ? 'danger' : 'success'} bookmark-toast alert-dismissible`;
             toast.innerHTML = `
@@ -1448,7 +1741,6 @@ $currentQuestion = $selectedQuestions[$currentQuestionIndex];
 
             document.body.appendChild(toast);
 
-            // Auto remove after 3 seconds
             setTimeout(() => {
                 if (toast.parentElement) {
                     toast.remove();
@@ -1462,6 +1754,10 @@ $currentQuestion = $selectedQuestions[$currentQuestionIndex];
             hasUserAnswer = false;
             userAnswers = {};
             hideVocabIcons();
+            
+            // Reset translation and explanation states when changing questions
+            hideTranslationContent();
+            hideExplanationContent();
         }
 
         function resetVideoState() {
@@ -1472,7 +1768,6 @@ $currentQuestion = $selectedQuestions[$currentQuestionIndex];
         }
 
         function loadUserAnswersFromMemory(questionId) {
-            // فقط وضعیت حل شده را بارگذاری می‌کنیم، نه پاسخ‌های ذخیره شده
             const solvedData = localStorage.getItem('solvedQuestion_' + questionId);
 
             if (solvedData) {
@@ -1481,11 +1776,8 @@ $currentQuestion = $selectedQuestions[$currentQuestionIndex];
                     questionSolved = parsed.solved || false;
 
                     if (questionSolved) {
-                        // فقط اگر سوال حل شده باشد، پاسخ‌ها را نمایش می‌دهیم
                         setTimeout(() => {
-                            //showAnswerResults();
                             questionSolved = false;
-
                         }, 100);
                     }
                 } catch (e) {
@@ -1496,7 +1788,6 @@ $currentQuestion = $selectedQuestions[$currentQuestionIndex];
                 questionSolved = false;
             }
 
-            // پاک کردن پاسخ‌های موقت
             userAnswers = {};
             hasUserAnswer = false;
 
@@ -1514,7 +1805,6 @@ $currentQuestion = $selectedQuestions[$currentQuestionIndex];
                 }
             });
 
-            // Apply saved numeric answer if exists
             const numericInput = document.getElementById('numeric-answer');
             if (numericInput && userAnswers.numeric_value) {
                 numericInput.value = userAnswers.numeric_value;
@@ -1532,15 +1822,12 @@ $currentQuestion = $selectedQuestions[$currentQuestionIndex];
             if (mode !== 'practice') return;
 
             if (questionSolved) {
-                // Question is already solved
                 solveBtn.style.display = 'none';
                 nextBtn.style.display = 'inline-block';
             } else if (hasUserAnswer) {
-                // User has answered but not solved yet
                 solveBtn.style.display = 'inline-block';
                 nextBtn.style.display = 'none';
             } else {
-                // No answer yet
                 solveBtn.style.display = 'none';
                 nextBtn.style.display = 'none';
             }
@@ -1551,19 +1838,15 @@ $currentQuestion = $selectedQuestions[$currentQuestionIndex];
 
             questionSolved = true;
 
-            // بررسی صحت پاسخ کاربر
             const isCorrect = checkUserAnswer();
 
-            // ثبت وضعیت پاسخ در دیتابیس
             const questionId = selectedQuestions[currentQuestionIndex];
             updateAnswerStatus(questionId, isCorrect);
 
             showAnswerResults();
 
-            // Save solution state in memory only
             solvedQuestions[questionId] = isCorrect;
 
-            // Save to localStorage
             localStorage.setItem('solvedQuestion_' + questionId, JSON.stringify({
                 solved: true,
                 correct: isCorrect,
@@ -1574,17 +1857,14 @@ $currentQuestion = $selectedQuestions[$currentQuestionIndex];
             renderPageButtons();
         }
 
-        // تابع جدید برای بررسی صحت پاسخ کاربر
         function checkUserAnswer() {
             if (!currentQuestionData || !currentQuestionData.answers) return false;
 
             const answerType = currentQuestionData.answers[0]['asw_type'] || 1;
 
             if (answerType == 2) {
-                // پاسخ عددی
                 return checkNumericAnswer();
             } else {
-                // پاسخ چندگزینه‌ای
                 return checkMultipleChoiceAnswer();
             }
         }
@@ -1599,7 +1879,6 @@ $currentQuestion = $selectedQuestions[$currentQuestionIndex];
                 const isAnswerCorrect = answer.asw_corr == 1;
                 const isSelected = checkbox.checked;
 
-                // اگر پاسخ صحیح انتخاب نشده یا پاسخ غلط انتخاب شده باشد
                 if ((isAnswerCorrect && !isSelected) || (!isAnswerCorrect && isSelected)) {
                     isCorrect = false;
                 }
@@ -1624,10 +1903,8 @@ $currentQuestion = $selectedQuestions[$currentQuestionIndex];
             const answerType = currentQuestionData.answers[0]['asw_type'] || 1;
 
             if (answerType == 2) {
-                // Handle numeric answers
                 showNumericAnswerResult();
             } else {
-                // Handle checkbox answers
                 showCheckboxAnswerResults();
             }
         }
@@ -1639,7 +1916,6 @@ $currentQuestion = $selectedQuestions[$currentQuestionIndex];
             if (input && correctAnswer) {
                 const isCorrect = input.value.trim() === correctAnswer.value.trim();
 
-                // Show correct answer
                 if (!isCorrect) {
                     input.value = correctAnswer.value;
                 }
@@ -1648,7 +1924,6 @@ $currentQuestion = $selectedQuestions[$currentQuestionIndex];
                 input.style.borderColor = isCorrect ? '#28a745' : '#dc3545';
                 input.readOnly = true;
 
-                // Hide keypad
                 const keypad = document.querySelector('.numeric-keypad');
                 if (keypad) {
                     keypad.style.display = 'none';
@@ -1668,27 +1943,21 @@ $currentQuestion = $selectedQuestions[$currentQuestionIndex];
                 const isCorrect = answer.asw_corr == 1;
                 const isSelected = checkbox.checked;
 
-                // Remove existing classes
                 answerItem.classList.remove('answer-correct-selected', 'answer-incorrect-selected',
                     'answer-correct-unselected', 'answer-incorrect-unselected');
 
                 if (isCorrect && isSelected) {
-                    // Correct answer selected - Green background
                     answerItem.classList.add('answer-correct-selected');
                 } else if (!isCorrect && isSelected) {
-                    // Wrong answer selected - Red background, uncheck
                     answerItem.classList.add('answer-incorrect-selected');
                     checkbox.checked = false;
                 } else if (isCorrect && !isSelected) {
-                    // Correct answer not selected - Red background, check it
                     answerItem.classList.add('answer-correct-unselected');
                     checkbox.checked = true;
                 } else if (!isCorrect && !isSelected) {
-                    // Wrong answer not selected - Green background
                     answerItem.classList.add('answer-incorrect-unselected');
                 }
 
-                // Disable further interaction
                 checkbox.disabled = true;
                 answerItem.classList.add('disabled');
             });
@@ -1696,8 +1965,8 @@ $currentQuestion = $selectedQuestions[$currentQuestionIndex];
 
         let imageUrl = '';
         let videoUrl = '';
+        
         function updateQuestionDisplay(data) {
-            // Add comprehensive null/undefined checks
             if (!data) {
                 console.error('No data provided to updateQuestionDisplay');
                 return;
@@ -1713,16 +1982,13 @@ $currentQuestion = $selectedQuestions[$currentQuestionIndex];
             const extension = fileName ? fileName.split('.').pop().toLowerCase() : '';
             const fileNameWithoutExt = fileName ? fileName.replace(/\.[^/.]+$/, "") : '';
 
-            // Check if it's a video question
             isVideoQuestion = ['mp4', 'm4v', 'webm'].includes(extension);
 
             if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(extension)) {
-                // Regular image question
                 imageUrl = 'https://t24.theorie24.de/2025-01-v400/data/img/images/' + fileName;
                 document.getElementById("media").innerHTML = '<img id="image" src="' + imageUrl + '" alt="" class="w-100">';
                 showRegularQuestion(data);
             } else if (isVideoQuestion) {
-                // Video question
                 videoUrl = 'https://www.theorie24.de/live_images/_current_ws_2024-10-01_2025-04-01/videos/' + fileName;
                 showVideoQuestion(data, fileNameWithoutExt);
             } else {
@@ -1730,19 +1996,16 @@ $currentQuestion = $selectedQuestions[$currentQuestionIndex];
                 showRegularQuestion(data);
             }
 
-            // Safely update question details with fallback values
             document.getElementById("code").innerText = question.number || 'N/A';
             document.getElementById("punkt").innerText = question.points || '0';
         }
+        
         function showVideoQuestion(data, fileNameWithoutExt) {
-            // Set video question text
             document.getElementById("text").innerText = "Bitte starten Sie den Film, um sich mit der Situation vertraut zu machen.";
 
-            // Show video controls, hide answers
             document.getElementById("video-controls").style.display = "block";
             document.getElementById("answers").style.display = "none";
 
-            // Set initial video image
             updateVideoPlaceholder(fileNameWithoutExt);
             updateVideoControls();
         }
@@ -1809,29 +2072,24 @@ $currentQuestion = $selectedQuestions[$currentQuestionIndex];
             videoViewCount++;
             hasWatchedVideo = true;
 
-            // Update video placeholder
             if (currentQuestionData) {
                 const fileName = currentQuestionData['question']['picture'] || '';
                 const fileNameWithoutExt = fileName.replace(/\.[^/.]+$/, "");
                 updateVideoPlaceholder(fileNameWithoutExt);
             }
 
-            // Show video in modal
             const modal = new bootstrap.Modal(document.getElementById('videoModal'));
             const modalVideo = document.getElementById('modal-video');
             modalVideo.src = videoUrl;
 
             modal.show();
 
-            // Update controls
             updateVideoControls();
 
-            // Handle video end event
             modalVideo.onended = function () {
                 modal.hide();
             };
 
-            // Clean up when modal is hidden
             document.getElementById('videoModal').addEventListener('hidden.bs.modal', function () {
                 modalVideo.pause();
                 modalVideo.src = '';
@@ -1843,19 +2101,14 @@ $currentQuestion = $selectedQuestions[$currentQuestionIndex];
 
             showingAnswers = true;
 
-            // Hide video controls
             document.getElementById("video-controls").style.display = "none";
 
-            // Show answers
             document.getElementById("answers").style.display = "block";
 
-            // Update question text to actual question
             document.getElementById("text").innerText = currentQuestionData['question']['text'];
 
-            // Build answers
             answerBuilder(currentQuestionData['answers']);
 
-            // Update video placeholder to show initial image without play button
             if (currentQuestionData) {
                 const fileName = currentQuestionData['question']['picture'] || '';
                 const fileNameWithoutExt = fileName.replace(/\.[^/.]+$/, "");
@@ -1867,29 +2120,24 @@ $currentQuestion = $selectedQuestions[$currentQuestionIndex];
                     '</div>';
             }
         }
-        // اضافه کردن تابع رمزگشایی ROT13
+
         function rot13Decode(str) {
             return str.replace(/[a-zA-Z]/g, function (a) {
                 return String.fromCharCode((a <= "Z" ? 90 : 122) >= (a = a.charCodeAt(0) + 13) ? a : a - 26);
             });
         }
-        // تابع answerBuilder بهبود یافته
+
         function answerBuilder(answers = null) {
             if (answers && answers.length > 0) {
                 let answersText = "";
                 const answerType = answers[0]['asw_type'] || 1;
 
-                console.log(answers);
-                console.log('Answer Type:', answerType);
 
                 if (answerType == 2) {
-                    // Type 2: Input field with numeric keypad
                     const answer = answers[0];
                     const hint = answer['asw_hint'] || '';
-                    // رمزگشایی متن پاسخ عددی
                     let correctAnswer = answer['text'] || '';
 
-                    // In practice mode, don't show the correct answer initially
                     let displayValue = '';
                     if (mode === 'browse' || questionSolved) {
                         displayValue = correctAnswer;
@@ -1967,39 +2215,32 @@ $currentQuestion = $selectedQuestions[$currentQuestionIndex];
         </div>
     `;
                 } else {
-                    // Type 1: Regular checkbox answers
                     answers.forEach((answer, index) => {
                         let status = "";
                         let disabled = "";
 
                         if (mode === 'browse') {
-                            // In browse mode, show correct answers
                             if (answer['asw_corr'] == 1) {
                                 status = 'checked';
                             }
                             disabled = 'disabled';
                         } else if (mode === 'practice' && questionSolved) {
-                            // In practice mode after solving, disable all
                             disabled = 'disabled';
                         }
 
-                        // Check if this answer is an image
                         const isImage = answer['is_image'] == 1;
                         let answerContent = '';
 
                         if (isImage) {
-                            // Extract filename from original_content or construct from text
                             let imageName = '';
                             let isEtcImage = false;
 
                             if (answer['original_content']) {
-                                // بررسی برای %IMG_ETC% (مانند div10mult3.png)
                                 const etcMatch = answer['original_content'].match(/%IMG_ETC%\/([^"']+)/);
                                 if (etcMatch) {
                                     imageName = etcMatch[1];
                                     isEtcImage = true;
                                 } else {
-                                    // بررسی برای %IMG_ANSWER% (حالت عادی)
                                     const answerMatch = answer['original_content'].match(/%IMG_ANSWER%\/([^"']+)/);
                                     if (answerMatch) {
                                         imageName = answerMatch[1];
@@ -2008,32 +2249,25 @@ $currentQuestion = $selectedQuestions[$currentQuestionIndex];
                                 }
                             }
 
-                            // If no filename found in original_content, try to extract from text
                             if (!imageName && answer['text']) {
-                                // Extract number from text like "[تصویر: 121]" and use it with some pattern
                                 const numberMatch = answer['text'].match(/\d+/);
                                 if (numberMatch) {
-                                    // You might need to adjust this pattern based on your actual file naming convention
-                                    imageName = `answer_${answer['id']}.png`; // fallback pattern
+                                    imageName = `answer_${answer['id']}.png`;
                                     isEtcImage = false;
                                 }
                             }
 
-                            // If we still don't have imageName, try using the original_content pattern
                             if (!imageName) {
-                                imageName = `answer_${answer['id']}.png`; // ultimate fallback
+                                imageName = `answer_${answer['id']}.png`;
                                 isEtcImage = false;
                             }
 
-                            // تعیین آدرس بر اساس نوع تصویر
                             let imageUrl = '';
                             let maxWidth = '';
                             if (isEtcImage || imageName.toLowerCase().startsWith('div')) {
-                                // اگر از %IMG_ETC% آمده یا با div شروع شود، از آدرس etc استفاده کن
                                 imageUrl = `https://t24.theorie24.de/2025-01-v400/data/img/etc/de/${imageName}`;
                                 maxWidth = 300;
                             } else {
-                                // در غیر اینصورت از آدرس answers استفاده کن
                                 imageUrl = `https://t24.theorie24.de/2025-01-v400/data/img/answers/${imageName}`;
                                 maxWidth = 90;
 
@@ -2041,7 +2275,6 @@ $currentQuestion = $selectedQuestions[$currentQuestionIndex];
 
                             answerContent = `<img src="${imageUrl}" alt="Answer ${index + 1}" class="img-fluid" style="max-width:${maxWidth}px; height: auto;">`;
                         } else {
-                            // Regular text answer - رمزگشایی متن پاسخ
                             const decodedText = answer['text'];
                             answerContent = `<span class="fw-bold vocabulary-selection" name="text" status="richtig">${decodedText}</span>`;
                         }
@@ -2062,33 +2295,36 @@ $currentQuestion = $selectedQuestions[$currentQuestionIndex];
                 }
 
                 document.getElementById("answers").innerHTML = answersText;
+                
+                // بعد از ساخت پاسخ‌ها، اگر ترجمه یا توضیح فعال بود، نمایش بده
+                setTimeout(() => {
+                    if (translationActive) {
+                        showTranslationContent();
+                    }
+                    if (explanationActive) {
+                        showExplanationContent();
+                    }
+                }, 100);
             } else {
                 console.log('خطا در استخراج پاسخ');
                 return "";
             }
-        } function handleAnswerChange(checkbox) {
+        }
+        
+        function handleAnswerChange(checkbox) {
             if (mode !== 'practice' || questionSolved) return;
 
             const questionId = selectedQuestions[currentQuestionIndex];
             const answerId = checkbox.getAttribute('data-answer-id');
 
-            // Update user answers in memory
             if (checkbox.checked) {
                 userAnswers[answerId] = true;
             } else {
                 delete userAnswers[answerId];
             }
 
-            // Check if user has any answer
             hasUserAnswer = Object.keys(userAnswers).length > 0;
 
-            // Save to localStorage only (no database)
-            // localStorage.setItem('userAnswers_' + questionId, JSON.stringify({
-            //     answers: userAnswers,
-            //     timestamp: Date.now()
-            // }));
-
-            // Update buttons
             updatePracticeButtons();
 
             setTimeout(() => {
@@ -2096,14 +2332,12 @@ $currentQuestion = $selectedQuestions[$currentQuestionIndex];
             }, 100);
         }
 
-        // Helper functions for numeric keypad
         function addNumber(num) {
             const input = document.getElementById('numeric-answer');
             if (!input) return;
 
             input.value += num;
 
-            // Check if user has entered something and save to localStorage
             if (mode === 'practice' && !questionSolved) {
                 hasUserAnswer = input.value.trim().length > 0;
 
@@ -2123,11 +2357,9 @@ $currentQuestion = $selectedQuestions[$currentQuestionIndex];
             const input = document.getElementById('numeric-answer');
             if (!input) return;
 
-            // Only add comma if there isn't one already and input is not empty
             if (input.value && !input.value.includes(',')) {
                 input.value += ',';
 
-                // Save to localStorage
                 if (mode === 'practice' && !questionSolved) {
                     const questionId = selectedQuestions[currentQuestionIndex];
                     userAnswers.numeric_value = input.value;
@@ -2146,7 +2378,6 @@ $currentQuestion = $selectedQuestions[$currentQuestionIndex];
 
             input.value = input.value.slice(0, -1);
 
-            // Update practice buttons and save to localStorage
             if (mode === 'practice' && !questionSolved) {
                 hasUserAnswer = input.value.trim().length > 0;
 
@@ -2168,7 +2399,6 @@ $currentQuestion = $selectedQuestions[$currentQuestionIndex];
 
             input.value = '';
 
-            // Update practice buttons and save to localStorage
             if (mode === 'practice' && !questionSolved) {
                 hasUserAnswer = false;
 
@@ -2183,7 +2413,7 @@ $currentQuestion = $selectedQuestions[$currentQuestionIndex];
                 updatePracticeButtons();
             }
         }
-        // 9. به‌روزرسانی تابع updateSession:
+
         function updateSession(questionId) {
             const formData = createFormDataWithCSRF({
                 current_question_id: questionId
@@ -2199,7 +2429,6 @@ $currentQuestion = $selectedQuestions[$currentQuestionIndex];
         }
 
 
-        // Enhanced nextQuestion function to auto-skip problematic questions
         function nextQuestion() {
             if (currentQuestionIndex < selectedQuestions.length - 1) {
                 currentQuestionIndex++;
@@ -2207,52 +2436,26 @@ $currentQuestion = $selectedQuestions[$currentQuestionIndex];
                 renderPageButtons();
                 updateNavigationButtons();
 
-            } else {
-                // Reached the end of questions
-                // showEndOfQuestionsMessage();
             }
         }
 
-
-        // function showEndOfQuestionsMessage() {
-        //     const mediaElement = document.getElementById("media");
-        //     const textElement = document.getElementById("text");
-        //     const answersElement = document.getElementById("answers");
-
-        //     if (mediaElement) {
-        //         mediaElement.innerHTML = '<div class="alert alert-success"><i class="fas fa-check-circle"></i> تمام سوالات تمام شد</div>';
-        //     }
-
-        //     if (textElement) {
-        //         textElement.innerText = 'تبریک! تمام سوالات را مشاهده کردید';
-        //     }
-
-        //     if (answersElement) {
-        //         answersElement.innerHTML = '<div class="text-center"><a href="../admin/practice.php" class="btn btn-primary">بازگشت به صفحه اصلی</a></div>';
-        //     }
-        // }
         function previousQuestion() {
             if (currentQuestionIndex > 0) {
                 currentQuestionIndex--;
                 loadCurrentQuestion();
                 renderPageButtons();
 
-                // به‌روزرسانی دکمه‌های ناوبری
                 updateNavigationButtons();
             }
         }
 
-        // تابع جدید برای به‌روزرسانی وضعیت دکمه‌های ناوبری
         function updateNavigationButtons() {
-            // دکمه‌های Weiter در fixed-bottom
             const nextButtons = document.querySelectorAll('button[onclick="nextQuestion()"]');
             const prevButtons = document.querySelectorAll('button[onclick="previousQuestion()"]');
 
-            // دکمه‌های جهت‌دار
             const forwardBtn = document.querySelector('.fa-step-forward')?.closest('button');
             const backwardBtn = document.querySelector('.fa-step-backward')?.closest('button');
 
-            // غیرفعال کردن دکمه بعدی در سوال آخر
             if (currentQuestionIndex >= selectedQuestions.length - 1) {
                 nextButtons.forEach(btn => {
                     btn.disabled = true;
@@ -2273,7 +2476,6 @@ $currentQuestion = $selectedQuestions[$currentQuestionIndex];
                 }
             }
 
-            // غیرفعال کردن دکمه قبلی در سوال اول
             if (currentQuestionIndex <= 0) {
                 prevButtons.forEach(btn => {
                     btn.disabled = true;
@@ -2330,22 +2532,8 @@ $currentQuestion = $selectedQuestions[$currentQuestionIndex];
 
                 if (i === currentQuestionIndex) {
                     buttonClass = 'btn-dark';
-                } else if (mode === 'practice') {
-                    // Check question status from localStorage only
-                    // const solvedData = localStorage.getItem('solvedQuestion_' + questionId);
-                    // if (solvedData) {
-                    //     try {
-                    //         const parsed = JSON.parse(solvedData);
-                    //         if (parsed.solved) {
-                    //             buttonClass = parsed.correct ? 'btn-success question-btn-correct' : 'btn-danger question-btn-incorrect';
-                    //         }
-                    //     } catch (e) {
-                    //         console.error('Error parsing solved question data:', e);
-                    //     }
-                    // }
                 }
 
-                // ایجاد container برای دکمه و دایره رنگی
                 const btnContainer = document.createElement('div');
                 btnContainer.className = 'question-btn-container';
 
@@ -2355,11 +2543,9 @@ $currentQuestion = $selectedQuestions[$currentQuestionIndex];
                 btn.textContent = questionNumber;
                 btn.onclick = () => goToQuestion(i);
 
-                // اضافه کردن دایره رنگی وضعیت
                 const statusIndicator = document.createElement('div');
                 statusIndicator.className = 'question-status-indicator';
 
-                // تعیین رنگ بر اساس وضعیت سوال
                 const questionStatus = questionStatuses[questionId];
                 if (questionStatus) {
                     statusIndicator.classList.add(`status-${questionStatus.color}`);
@@ -2372,6 +2558,7 @@ $currentQuestion = $selectedQuestions[$currentQuestionIndex];
                 container.appendChild(btnContainer);
             }
         }
+        
         function setupVocabIconsEvents() {
             const vocabIcons = document.getElementById('vocab-icons');
             if (vocabIcons) {

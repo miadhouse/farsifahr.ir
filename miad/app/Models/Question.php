@@ -39,6 +39,7 @@ class Question extends Model
     
     // Cast کردن فیلدها
     protected $casts = [
+        'number' => 'string',
         'available' => 'boolean',
         'basic' => 'boolean',
         'basic_mofa' => 'boolean',
@@ -52,9 +53,9 @@ class Question extends Model
         return $this->belongsTo(Category::class, 'category_id');
     }
     
-    // رابطه با جدول answers
-    public function answers()
-    {
-        return $this->hasMany(Answer::class, 'question_id');
-    }
+// رابطه با جدول answers
+public function answers()
+{
+    return $this->hasMany(Answer::class, 'question_number', 'number');
+}
 }

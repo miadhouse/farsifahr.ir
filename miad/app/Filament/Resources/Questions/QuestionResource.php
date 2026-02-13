@@ -79,8 +79,9 @@ Section::make('توضیح سوال')
                     ])->columns(12),
              Section::make('پاسخ‌های سوال')
                     ->schema([
-                        Repeater::make('answers')
-                            ->relationship('answers')
+                    Repeater::make('answers')
+    ->relationship('answers')
+    ->label('')
                             ->label('')
                             ->schema([
                                 Textarea::make('text')
