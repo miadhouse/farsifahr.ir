@@ -157,15 +157,15 @@ if ($user_sub !== false && $user_sub !== null) {
     </div>
   </div>
 
-  <!-- Pricing Modal -->
+<!-- Pricing Modal -->
   <div class="modal fade" id="pricingModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-xl modal-simple modal-pricing">
+    <div class="modal-dialog modal-xl modal-simple modal-pricing modal-dialog-scrollable">
       <div class="modal-content bg-body p-2 p-md-5">
         <div class="modal-body">
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           <!-- Pricing Plans -->
           <section class="our-price-plan-area tmp-section-gapTop" id="pricing">
-            <div class="container">
+            <div class="container-fluid">
               <div class="section-head">
                 <div class="section-sub-title center-title tmp-scroll-trigger tmp-fade-in animation-order-1">
                   <span class="subtitle">جدول اشتراک ها</span>
@@ -192,7 +192,7 @@ if ($user_sub !== false && $user_sub !== null) {
                   }
                   ?>
 
-                  <div class="col-lg-6 col-md-6 mb-4">
+                  <div class="col-lg-6 col-md-12 mb-4">
                     <div class="card <?= $card_class ?> h-100">
                       <div class="card-header text-center bg-label-primary">
                         <h3 class="<?= $plan_class ?> mb-0"><?= htmlspecialchars($plan['name']) ?></h3>
@@ -228,16 +228,16 @@ if ($user_sub !== false && $user_sub !== null) {
                             
                             <!-- دوره 2 هفته‌ای -->
                             <?php if ($plan['price_2_weeks'] > 0): ?>
-                            <div class="pricing-option mb-3 p-3 border rounded">
-                              <div class="d-flex justify-content-between align-items-center">
-                                <div>
+                            <div class="pricing-option mb-3 p-2 p-md-3 border rounded">
+                              <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2">
+                                <div class="flex-grow-1">
                                   <h6 class="mb-1">2 هفته (14 روز)</h6>
                                   <p class="text-muted small mb-0">دسترسی نامحدود به تمام سوالات</p>
                                 </div>
-                                <div class="text-end">
-                                  <h4 class="mb-1 text-primary"><?= number_format($plan['price_2_weeks']) ?> تومان</h4>
+                                <div class="text-start text-md-end mt-2 mt-md-0">
+                                  <h5 class="mb-2 text-primary"><?= number_format($plan['price_2_weeks']) ?> تومان</h5>
                                   <a href="invoice-request.php?plan-id=<?= $plan['id'] ?>&duration=2_weeks" 
-                                     class="btn btn-sm btn-primary">خرید</a>
+                                     class="btn btn-sm btn-primary w-100">خرید</a>
                                 </div>
                               </div>
                             </div>
@@ -245,16 +245,16 @@ if ($user_sub !== false && $user_sub !== null) {
 
                             <!-- دوره 1 ماهه -->
                             <?php if ($plan['price_1_month'] > 0): ?>
-                            <div class="pricing-option mb-3 p-3 border rounded">
-                              <div class="d-flex justify-content-between align-items-center">
-                                <div>
+                            <div class="pricing-option mb-3 p-2 p-md-3 border rounded">
+                              <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2">
+                                <div class="flex-grow-1">
                                   <h6 class="mb-1">1 ماه (30 روز)</h6>
                                   <p class="text-muted small mb-0">دسترسی نامحدود به تمام سوالات</p>
                                 </div>
-                                <div class="text-end">
-                                  <h4 class="mb-1 text-primary"><?= number_format($plan['price_1_month']) ?> تومان</h4>
+                                <div class="text-start text-md-end mt-2 mt-md-0">
+                                  <h5 class="mb-2 text-primary"><?= number_format($plan['price_1_month']) ?> تومان</h5>
                                   <a href="invoice-request.php?plan-id=<?= $plan['id'] ?>&duration=1_month" 
-                                     class="btn btn-sm btn-primary">خرید</a>
+                                     class="btn btn-sm btn-primary w-100">خرید</a>
                                 </div>
                               </div>
                             </div>
@@ -265,9 +265,9 @@ if ($user_sub !== false && $user_sub !== null) {
                               $saving_3m = ($plan['price_1_month'] * 3) - $plan['price_3_months'];
                               $discount_3m = round(($saving_3m / ($plan['price_1_month'] * 3)) * 100);
                             ?>
-                            <div class="pricing-option mb-3 p-3 border rounded border-success bg-light">
-                              <div class="d-flex justify-content-between align-items-center">
-                                <div>
+                            <div class="pricing-option mb-3 p-2 p-md-3 border rounded border-success bg-light">
+                              <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2">
+                                <div class="flex-grow-1">
                                   <h6 class="mb-1">
                                     3 ماه (90 روز) 
                                     <span class="badge bg-success">پیشنهاد ویژه - <?= $discount_3m ?>% تخفیف</span>
@@ -279,15 +279,15 @@ if ($user_sub !== false && $user_sub !== null) {
                                   </p>
                                   <?php endif; ?>
                                 </div>
-                                <div class="text-end">
+                                <div class="text-start text-md-end mt-2 mt-md-0">
                                   <?php if ($saving_3m > 0): ?>
                                   <small class="text-decoration-line-through text-muted d-block">
                                     <?= number_format($plan['price_1_month'] * 3) ?> تومان
                                   </small>
                                   <?php endif; ?>
-                                  <h4 class="mb-1 text-success"><?= number_format($plan['price_3_months']) ?> تومان</h4>
+                                  <h5 class="mb-2 text-success"><?= number_format($plan['price_3_months']) ?> تومان</h5>
                                   <a href="invoice-request.php?plan-id=<?= $plan['id'] ?>&duration=3_months" 
-                                     class="btn btn-sm btn-success">خرید</a>
+                                     class="btn btn-sm btn-success w-100">خرید</a>
                                 </div>
                               </div>
                             </div>
@@ -298,9 +298,9 @@ if ($user_sub !== false && $user_sub !== null) {
                               $saving_6m = ($plan['price_1_month'] * 6) - $plan['price_6_months'];
                               $discount_6m = round(($saving_6m / ($plan['price_1_month'] * 6)) * 100);
                             ?>
-                            <div class="pricing-option mb-3 p-3 border rounded border-info">
-                              <div class="d-flex justify-content-between align-items-center">
-                                <div>
+                            <div class="pricing-option mb-3 p-2 p-md-3 border rounded border-info">
+                              <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2">
+                                <div class="flex-grow-1">
                                   <h6 class="mb-1">
                                     6 ماه (180 روز) 
                                     <span class="badge bg-info"><?= $discount_6m ?>% تخفیف</span>
@@ -312,15 +312,15 @@ if ($user_sub !== false && $user_sub !== null) {
                                   </p>
                                   <?php endif; ?>
                                 </div>
-                                <div class="text-end">
+                                <div class="text-start text-md-end mt-2 mt-md-0">
                                   <?php if ($saving_6m > 0): ?>
                                   <small class="text-decoration-line-through text-muted d-block">
                                     <?= number_format($plan['price_1_month'] * 6) ?> تومان
                                   </small>
                                   <?php endif; ?>
-                                  <h4 class="mb-1 text-info"><?= number_format($plan['price_6_months']) ?> تومان</h4>
+                                  <h5 class="mb-2 text-info"><?= number_format($plan['price_6_months']) ?> تومان</h5>
                                   <a href="invoice-request.php?plan-id=<?= $plan['id'] ?>&duration=6_months" 
-                                     class="btn btn-sm btn-info">خرید</a>
+                                     class="btn btn-sm btn-info w-100">خرید</a>
                                 </div>
                               </div>
                             </div>
@@ -331,9 +331,9 @@ if ($user_sub !== false && $user_sub !== null) {
                               $saving_1y = ($plan['price_1_month'] * 12) - $plan['price_1_year'];
                               $discount_1y = round(($saving_1y / ($plan['price_1_month'] * 12)) * 100);
                             ?>
-                            <div class="pricing-option mb-3 p-3 border rounded border-warning bg-light">
-                              <div class="d-flex justify-content-between align-items-center">
-                                <div>
+                            <div class="pricing-option mb-3 p-2 p-md-3 border rounded border-warning bg-light">
+                              <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2">
+                                <div class="flex-grow-1">
                                   <h6 class="mb-1">
                                     1 سال (365 روز) 
                                     <span class="badge bg-warning text-dark">
@@ -347,15 +347,15 @@ if ($user_sub !== false && $user_sub !== null) {
                                   </p>
                                   <?php endif; ?>
                                 </div>
-                                <div class="text-end">
+                                <div class="text-start text-md-end mt-2 mt-md-0">
                                   <?php if ($saving_1y > 0): ?>
                                   <small class="text-decoration-line-through text-muted d-block">
                                     <?= number_format($plan['price_1_month'] * 12) ?> تومان
                                   </small>
                                   <?php endif; ?>
-                                  <h4 class="mb-1 text-warning"><?= number_format($plan['price_1_year']) ?> تومان</h4>
+                                  <h5 class="mb-2 text-warning"><?= number_format($plan['price_1_year']) ?> تومان</h5>
                                   <a href="invoice-request.php?plan-id=<?= $plan['id'] ?>&duration=1_year" 
-                                     class="btn btn-sm btn-warning">خرید</a>
+                                     class="btn btn-sm btn-warning w-100">خرید</a>
                                 </div>
                               </div>
                             </div>
@@ -392,15 +392,15 @@ if ($user_sub !== false && $user_sub !== null) {
                     <div class="card-header">
                       <h5 class="card-title mb-0">مقایسه قیمت‌ها</h5>
                     </div>
-                    <div class="card-body">
+                    <div class="card-body p-0 p-md-3">
                       <div class="table-responsive">
-                        <table class="table table-bordered text-center">
+                        <table class="table table-bordered text-center mb-0">
                           <thead class="table-light">
                             <tr>
-                              <th>دوره زمانی</th>
-                              <th>قیمت</th>
-                              <th>قیمت روزانه</th>
-                              <th>تخفیف نسبت به ماهانه</th>
+                              <th class="small">دوره</th>
+                              <th class="small">قیمت</th>
+                              <th class="small d-none d-md-table-cell">قیمت روزانه</th>
+                              <th class="small d-none d-lg-table-cell">تخفیف</th>
                             </tr>
                           </thead>
                           <tbody>
@@ -435,12 +435,22 @@ if ($user_sub !== false && $user_sub !== null) {
                                 }
                             ?>
                             <tr>
-                              <td class="fw-semibold"><?= $dur['label'] ?></td>
-                              <td><?= number_format($price) ?> تومان</td>
-                              <td><?= number_format($daily_price, 0) ?> تومان</td>
-                              <td>
+                              <td class="fw-semibold small"><?= $dur['label'] ?></td>
+                              <td class="small">
+                                <div class="d-flex flex-column">
+                                  <span class="fw-bold"><?= number_format($price) ?></span>
+                                  <small class="text-muted">تومان</small>
+                                </div>
+                              </td>
+                              <td class="small d-none d-md-table-cell">
+                                <div class="d-flex flex-column">
+                                  <span><?= number_format($daily_price, 0) ?></span>
+                                  <small class="text-muted">تومان</small>
+                                </div>
+                              </td>
+                              <td class="small d-none d-lg-table-cell">
                                 <?php if ($discount_vs_monthly > 0): ?>
-                                  <span class="badge bg-success"><?= $discount_vs_monthly ?>% تخفیف</span>
+                                  <span class="badge bg-success"><?= $discount_vs_monthly ?>%</span>
                                 <?php else: ?>
                                   <span class="text-muted">-</span>
                                 <?php endif; ?>
@@ -466,6 +476,156 @@ if ($user_sub !== false && $user_sub !== null) {
     </div>
   </div>
   <!--/ Pricing Modal -->
-
+   <!-- Subscription History -->
+    <div class="col-md-12">
+      <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h5 class="mb-0">تاریخچه اشتراک‌ها</h5>
+        </div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <?php
+            // دریافت تاریخچه اشتراک‌های کاربر
+            $subscription_history = get_user_subscription_history($_SESSION['user_id'], $pdo);
+            
+            if (empty($subscription_history)):
+            ?>
+              <div class="alert alert-info text-center" role="alert">
+                <i class="fa fa-info-circle me-2"></i>
+                هیچ تاریخچه اشتراکی یافت نشد.
+              </div>
+            <?php else: ?>
+              <table class="table table-hover">
+                <thead class="table-light">
+                  <tr>
+                    <th>ردیف</th>
+                    <th>نام پلن</th>
+                    <th>مدت زمان</th>
+                    <th>مبلغ پرداختی</th>
+                    <th>تاریخ شروع</th>
+                    <th>تاریخ انقضا</th>
+                    <th>وضعیت</th>
+                    <th>روش پرداخت</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <?php 
+                  $counter = 1;
+                  foreach ($subscription_history as $history): 
+                    // تعیین رنگ badge بر اساس وضعیت
+                    $status_badges = [
+                      'active' => ['class' => 'success', 'text' => 'فعال'],
+                      'expired' => ['class' => 'danger', 'text' => 'منقضی شده'],
+                      'cancelled' => ['class' => 'secondary', 'text' => 'لغو شده'],
+                      'pending' => ['class' => 'warning', 'text' => 'در انتظار تایید']
+                    ];
+                    
+                    $status = $status_badges[$history['status']] ?? ['class' => 'secondary', 'text' => 'نامشخص'];
+                    
+                    // فرمت تاریخ‌ها
+                    $started_at = !empty($history['started_at']) ? date('Y/m/d H:i', strtotime($history['started_at'])) : 'نامشخص';
+                    $expires_at = !empty($history['expires_at']) ? date('Y/m/d H:i', strtotime($history['expires_at'])) : 'بدون انقضا';
+                    
+                    // نمایش مدت زمان
+                    $duration_text = '';
+                    if ($history['duration_days'] > 0) {
+                      if ($history['duration_days'] == 14) {
+                        $duration_text = '2 هفته';
+                      } elseif ($history['duration_days'] == 30) {
+                        $duration_text = '1 ماه';
+                      } elseif ($history['duration_days'] == 90) {
+                        $duration_text = '3 ماه';
+                      } elseif ($history['duration_days'] == 180) {
+                        $duration_text = '6 ماه';
+                      } elseif ($history['duration_days'] == 365) {
+                        $duration_text = '1 سال';
+                      } else {
+                        $duration_text = $history['duration_days'] . ' روز';
+                      }
+                    } else {
+                      $duration_text = 'نامحدود';
+                    }
+                    
+                    // نمایش روش پرداخت
+                    $payment_method = !empty($history['payment_method']) ? $history['payment_method'] : '-';
+                  ?>
+                  <tr>
+                    <td><?= $counter++ ?></td>
+                    <td>
+                      <span class="fw-semibold"><?= htmlspecialchars($history['plan_name']) ?></span>
+                      <?php if ($history['plan_slug'] == 'vip'): ?>
+                        <i class="fa fa-star text-warning ms-1"></i>
+                      <?php endif; ?>
+                    </td>
+                    <td><?= $duration_text ?></td>
+                    <td>
+                      <?php if ($history['amount_paid'] > 0): ?>
+                        <span class="fw-semibold text-success"><?= number_format($history['amount_paid']) ?> تومان</span>
+                      <?php else: ?>
+                        <span class="text-muted">رایگان</span>
+                      <?php endif; ?>
+                    </td>
+                    <td><small class="text-muted"><?= $started_at ?></small></td>
+                    <td><small class="text-muted"><?= $expires_at ?></small></td>
+                    <td>
+                      <span class="badge bg-<?= $status['class'] ?>"><?= $status['text'] ?></span>
+                    </td>
+                    <td><small class="text-muted"><?= $payment_method ?></small></td>
+                  </tr>
+                  <?php endforeach; ?>
+                </tbody>
+              </table>
+              
+          <!-- Statistics -->
+              <div class="row mt-4">
+                <div class="col-md-4">
+                  <div class="card bg-label-primary">
+                    <div class="card-body text-center">
+                      <h5 class="card-title">کل خریدها</h5>
+                      <h3 class="mb-0"><?= count($subscription_history) ?></h3>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="card bg-label-success">
+                    <div class="card-body text-center">
+                      <h5 class="card-title">کل پرداختی</h5>
+                      <h3 class="mb-0">
+                        <?php
+                        // فقط اشتراک‌های active و expired را حساب کن
+                        $total_paid = 0;
+                        foreach ($subscription_history as $sub) {
+                          if (in_array($sub['status'], ['active', 'expired'])) {
+                            $total_paid += $sub['amount_paid'];
+                          }
+                        }
+                        echo number_format($total_paid);
+                        ?> تومان
+                      </h3>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="card bg-label-info">
+                    <div class="card-body text-center">
+                      <h5 class="card-title">اشتراک‌های فعال</h5>
+                      <h3 class="mb-0">
+                        <?php
+                        $active_count = count(array_filter($subscription_history, function($sub) {
+                          return $sub['status'] === 'active';
+                        }));
+                        echo $active_count;
+                        ?>
+                      </h3>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            <?php endif; ?>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- /Subscription History -->
   <script src="../../assets/js/pages-pricing.js"></script>
 </div>
