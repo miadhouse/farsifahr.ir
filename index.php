@@ -543,7 +543,7 @@ if (is_logged_in()) {
                                     <!-- Logged in user navigation -->
                                     <li class="nav-item">
                                         <a class="nav-link <?= strpos($_SERVER['REQUEST_URI'], '/user/') !== false ? 'active' : '' ?>"
-                                            href="user/dashboard.php">
+                                            href="admin">
                                             <i class="bi bi-speedometer2 me-1"></i>داشبورد
                                         </a>
                                     </li>
@@ -591,28 +591,28 @@ if (is_logged_in()) {
                                         <i class="fa-regular fa-user-circle"></i>
                                         <span><?= $_SESSION['name'] ?></span>
                                     </button>
-                                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                                    <ul style="background-color: #212529 !important;" class="dropdown-menu bg-black text-light w-100  dropdown-menu-end" aria-labelledby="userDropdown">
                                         <li>
-                                            <a class="dropdown-item" href="user/dashboard.php">
+                                            <a class="dropdown-item bg-black text-light" href="admin">
                                                 <i class="fa-regular fa-speedometer me-2"></i>
                                                 داشبورد
                                             </a>
                                         </li>
-                                        <li>
+                                        <!-- <li>
                                             <a class="dropdown-item" href="user/profile.php">
                                                 <i class="fa-regular fa-user me-2"></i>
                                                 پروفایل
                                             </a>
-                                        </li>
+                                        </li> -->
                                         <li>
-                                            <a class="dropdown-item" href="user/subscription.php">
+                                            <a class="dropdown-item bg-black text-light" href="admin/subscription.php">
                                                 <i class="fa-regular fa-crown me-2"></i>
                                                 اشتراک
                                             </a>
                                         </li>
                                         <li><hr class="dropdown-divider"></li>
                                         <li>
-                                            <a class="dropdown-item text-danger" href="logout.php">
+                                            <a class="dropdown-item bg-black text-danger" href="logout.php">
                                                 <i class="fa-regular fa-arrow-right-from-bracket me-2"></i>
                                                 خروج
                                             </a>

@@ -39,7 +39,7 @@
       <li class="menu-item">
       <a href="invoices.php" class="menu-link">
         <i class="menu-icon tf-icons bx bx-food-menu"></i>
-        <div>صورتحساب ها</div>
+        <div>واژه آموزی</div>
       </a>
     </li>
   </ul>

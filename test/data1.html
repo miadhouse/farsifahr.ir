@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>تبدیل JS به SQL</title>
+    <title>تبدیل JS به SQL - Db1</title>
     <style>
       * {
         margin: 0;
@@ -185,7 +185,7 @@
   </head>
   <body>
     <div class="container">
-      <h1>🔄 تبدیل JS به SQL - فیلتر کلاس B</h1>
+      <h1>🔄 تبدیل JS به SQL - فیلتر کلاس B (Db1)</h1>
 
       <div class="upload-area" id="uploadArea">
         <div class="upload-icon">📁</div>
@@ -302,16 +302,16 @@
 
           // Check if function exists in iframe
           if (
-            typeof iframe.contentWindow.initDb2TableQuestions !== "function"
+            typeof iframe.contentWindow.initDb1TableQuestions !== "function"
           ) {
             document.body.removeChild(iframe);
-            throw new Error("تابع initDb2TableQuestions یافت نشد");
+            throw new Error("تابع initDb1TableQuestions یافت نشد");
           }
 
-          console.log("تابع initDb2TableQuestions یافت شد");
+          console.log("تابع initDb1TableQuestions یافت شد");
 
           // Initialize the database in iframe
-          iframe.contentWindow.initDb2TableQuestions();
+          iframe.contentWindow.initDb1TableQuestions();
 
           // Get dbTblQ from iframe
           if (!iframe.contentWindow.dbTblQ) {
@@ -497,6 +497,8 @@ CREATE TABLE \`questions\` (
   \`picture\` text,
   \`stvo\` varchar(10) DEFAULT NULL,
   \`asw_pretext\` text,
+  \`asw_farsi\` varchar(255) DEFAULT NULL,
+  \`asw_en\` varchar(255) DEFAULT NULL,
   \`points\` int DEFAULT NULL,
   \`basic\` int DEFAULT NULL,
   \`basic_mofa\` int DEFAULT NULL,
@@ -504,10 +506,14 @@ CREATE TABLE \`questions\` (
   \`category_id\` varchar(50) DEFAULT NULL,
   \`classes\` text,
   \`text\` text,
+  \`farsi_text\` varchar(255) DEFAULT NULL,
+  \`en_text\` varchar(255) DEFAULT NULL,
+  \`info\` longtext,
+  \`available\` int DEFAULT NULL,
   PRIMARY KEY (\`id\`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
-INSERT INTO \`questions\` (\`number\`, \`picture\`, \`stvo\`, \`asw_pretext\`, \`points\`, \`basic\`, \`basic_mofa\`, \`mq_flag\`, \`category_id\`, \`classes\`, \`text\`) VALUES\n`;
+INSERT INTO \`questions\` (\`number\`, \`picture\`, \`stvo\`, \`asw_pretext\`, \`asw_farsi\`, \`asw_en\`, \`points\`, \`basic\`, \`basic_mofa\`, \`mq_flag\`, \`category_id\`, \`classes\`, \`text\`, \`farsi_text\`, \`en_text\`, \`info\`, \`available\`) VALUES\n`;
 
         filteredQuestions.forEach((q, index) => {
           const values = [
@@ -515,6 +521,8 @@ INSERT INTO \`questions\` (\`number\`, \`picture\`, \`stvo\`, \`asw_pretext\`, \
             escapeSQL(q.picture || ""),
             escapeSQL(q.stvo || ""),
             escapeSQL(q.asw_pretext || ""),
+            escapeSQL(q.asw_farsi || ""),
+            escapeSQL(q.asw_en || ""),
             q.points || 0,
             q.basic || 0,
             q.basic_mofa || 0,
@@ -522,6 +530,10 @@ INSERT INTO \`questions\` (\`number\`, \`picture\`, \`stvo\`, \`asw_pretext\`, \
             escapeSQL(q.category_id || ""),
             escapeSQL(q.classes || ""),
             escapeSQL(decodeROT13(q.text || "")),
+            escapeSQL(q.farsi_text || ""),
+            escapeSQL(q.en_text || ""),
+            escapeSQL(q.info || ""),
+            q.available !== undefined ? q.available : "NULL",
           ];
 
           sql += `(${values.join(", ")})`;
@@ -543,6 +555,9 @@ CREATE TABLE \`answers\` (
   \`id\` int NOT NULL AUTO_INCREMENT,
   \`question_number\` varchar(20) DEFAULT NULL,
   \`text\` text,
+  \`en_text\` longtext,
+  \`farsi_text\` longtext,
+  \`info\` longtext,
   \`is_image\` tinyint(1) DEFAULT '0',
   \`original_content\` text,
   \`asw_type\` int DEFAULT NULL,
@@ -551,11 +566,11 @@ CREATE TABLE \`answers\` (
   PRIMARY KEY (\`id\`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
-INSERT INTO \`answers\` (\`question_number\`, \`text\`, \`is_image\`, \`original_content\`, \`asw_type\`, \`asw_corr\`, \`asw_hint\`) VALUES\n`;
+INSERT INTO \`answers\` (\`question_number\`, \`text\`, \`en_text\`, \`farsi_text\`, \`info\`, \`is_image\`, \`original_content\`, \`asw_type\`, \`asw_corr\`, \`asw_hint\`) VALUES\n`;
 
         const rows = [];
         filteredQuestions.forEach((q, qIndex) => {
-          const questionNumber = q.number || ''; // استفاده از number به عنوان question_number
+          const questionNumber = q.number || '';
 
           for (let i = 1; i <= 3; i++) {
             if (q[`asw_${i}`]) {
@@ -565,9 +580,12 @@ INSERT INTO \`answers\` (\`question_number\`, \`text\`, \`is_image\`, \`original
               rows.push([
                 escapeSQL(questionNumber),
                 escapeSQL(answerText),
+                escapeSQL(q[`en_text_${i}`] || ""),
+                escapeSQL(q[`farsi_text_${i}`] || ""),
+                escapeSQL(q[`info_${i}`] || ""),
                 isImage,
                 escapeSQL(answerText),
-                q[`asw_type_${i}`] || "NULL",
+                q[`asw_type_${i}`] !== undefined ? q[`asw_type_${i}`] : "NULL",
                 q[`asw_corr${i}`] || 0,
                 escapeSQL(q[`asw_hint_${i}`] || ""),
               ]);
@@ -606,7 +624,7 @@ INSERT INTO \`answers\` (\`question_number\`, \`text\`, \`is_image\`, \`original
         .getElementById("downloadQuestions")
         .addEventListener("click", () => {
           const sql = generateQuestionsSQL();
-          downloadFile(sql, "questions_class_b.sql", "text/sql");
+          downloadFile(sql, "questions_class_b_db1.sql", "text/sql");
         });
 
       // Download Answers SQL
@@ -614,7 +632,7 @@ INSERT INTO \`answers\` (\`question_number\`, \`text\`, \`is_image\`, \`original
         .getElementById("downloadAnswers")
         .addEventListener("click", () => {
           const sql = generateAnswersSQL();
-          downloadFile(sql, "answers_class_b.sql", "text/sql");
+          downloadFile(sql, "answers_class_b_db1.sql", "text/sql");
         });
 
       // Download file helper
