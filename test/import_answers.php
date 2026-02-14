@@ -1,513 +1,791 @@
-<?php include_once('../config/config.php'); ?>
+<?php
+/**
+ * اسکریپت وب برای import و همگام‌سازی جدول answers
+ * این نسخه از PDO موجود در config.php استفاده می‌کند
+ */
+
+require '../config/config.php';
+
+// تنظیمات آپلود
+define('MAX_FILE_SIZE', 50 * 1024 * 1024); // 50MB
+define('UPLOAD_DIR', __DIR__ . '/uploads/');
+define('DEBUG_MODE', true); // برای دیباگ - بعداً false کنید
+
+// ایجاد پوشه uploads اگر وجود ندارد
+if (!is_dir(UPLOAD_DIR)) {
+    mkdir(UPLOAD_DIR, 0755, true);
+}
+
+class AnswersImporter {
+    private $pdo;
+    private $stats = [
+        'total_in_file' => 0,
+        'existing' => 0,
+        'new_inserted' => 0,
+        'errors' => 0,
+        'error_messages' => []
+    ];
+    private $output = [];
+
+    public function __construct($pdo) {
+        $this->pdo = $pdo;
+        $this->addOutput('success', '✓ اتصال به دیتابیس برقرار است');
+    }
+
+    private function addOutput($type, $message) {
+        $this->output[] = ['type' => $type, 'message' => $message];
+    }
+
+    public function getOutput() {
+        return $this->output;
+    }
+
+    public function parseSqlFile($filepath) {
+        if (!file_exists($filepath)) {
+            $this->addOutput('error', '✗ فایل SQL یافت نشد');
+            return [];
+        }
+
+        $this->addOutput('info', '→ در حال خواندن فایل SQL...');
+        $content = file_get_contents($filepath);
+        
+        // دیباگ: نمایش تعداد کاراکترها
+        if (defined('DEBUG_MODE') && DEBUG_MODE) {
+            $this->addOutput('info', '→ حجم فایل: ' . strlen($content) . ' کاراکتر');
+            $preview = substr($content, 0, 500);
+            $this->addOutput('info', '→ پیش‌نمایش: ' . htmlspecialchars($preview) . '...');
+        }
+        
+        // حذف کامنت‌ها
+        $content = preg_replace('/--.*$/m', '', $content);
+        $content = preg_replace('/\/\*.*?\*\//s', '', $content);
+        
+        // پیدا کردن تمام دستورات INSERT
+        // پشتیبانی از فرمت‌های مختلف: INSERT INTO `answers`, INSERT INTO answers
+        $pattern = '/INSERT\s+INTO\s+`?answers`?\s*\([^)]*\)\s*VALUES\s*(.*?);/is';
+        preg_match_all($pattern, $content, $matches);
+
+        if (defined('DEBUG_MODE') && DEBUG_MODE) {
+            $this->addOutput('info', '→ تعداد INSERT یافت شده (الگو 1): ' . count($matches[0]));
+        }
+
+        if (empty($matches[1])) {
+            // اگر فرمت اول کار نکرد، فرمت دیگری را امتحان کن
+            $pattern = '/INSERT\s+INTO\s+`?answers`?.*?VALUES\s*(.*?);/is';
+            preg_match_all($pattern, $content, $matches);
+            
+            if (defined('DEBUG_MODE') && DEBUG_MODE) {
+                $this->addOutput('info', '→ تعداد INSERT یافت شده (الگو 2): ' . count($matches[0]));
+            }
+        }
+
+        if (empty($matches[1])) {
+            $this->addOutput('error', '✗ هیچ دستور INSERT معتبر در فایل یافت نشد');
+            $this->addOutput('info', '→ لطفاً مطمئن شوید فایل SQL شامل دستورات INSERT INTO answers است');
+            return [];
+        }
+
+        $records = [];
+        foreach ($matches[1] as $values_block) {
+            $records = array_merge($records, $this->parseValuesBlock($values_block));
+        }
+
+        $this->stats['total_in_file'] = count($records);
+        $this->addOutput('success', '✓ تعداد ' . count($records) . ' رکورد از فایل SQL خوانده شد');
+        
+        return $records;
+    }
+
+    private function parseValuesBlock($values_block) {
+        $records = [];
+        
+        // حذف فضاهای خالی اضافی
+        $values_block = trim($values_block);
+        
+        if (defined('DEBUG_MODE') && DEBUG_MODE) {
+            $this->addOutput('info', '→ طول بلوک VALUES: ' . strlen($values_block) . ' کاراکتر');
+            $preview = substr($values_block, 0, 300);
+            $this->addOutput('info', '→ شروع بلوک: ' . htmlspecialchars($preview));
+        }
+        
+        // پارس دستی با شمارش پرانتزها
+        $records_raw = [];
+        $current = '';
+        $depth = 0;
+        $in_string = false;
+        $string_char = '';
+        $escaped = false;
+        
+        for ($i = 0; $i < strlen($values_block); $i++) {
+            $char = $values_block[$i];
+            
+            if ($escaped) {
+                $current .= $char;
+                $escaped = false;
+                continue;
+            }
+            
+            if ($char === '\\') {
+                $escaped = true;
+                $current .= $char;
+                continue;
+            }
+            
+            if (($char === '"' || $char === "'") && !$in_string) {
+                $in_string = true;
+                $string_char = $char;
+                $current .= $char;
+                continue;
+            }
+            
+            if ($char === $string_char && $in_string) {
+                $in_string = false;
+                $current .= $char;
+                continue;
+            }
+            
+            if ($in_string) {
+                $current .= $char;
+                continue;
+            }
+            
+            if ($char === '(') {
+                if ($depth === 0) {
+                    $current = '';
+                } else {
+                    $current .= $char;
+                }
+                $depth++;
+            } elseif ($char === ')') {
+                $depth--;
+                if ($depth === 0) {
+                    $records_raw[] = $current;
+                    $current = '';
+                } else {
+                    $current .= $char;
+                }
+            } else {
+                if ($depth > 0) {
+                    $current .= $char;
+                }
+            }
+        }
+        
+        if (defined('DEBUG_MODE') && DEBUG_MODE) {
+            $this->addOutput('info', '→ تعداد رکوردهای خام یافت شده: ' . count($records_raw));
+        }
+        
+        foreach ($records_raw as $record_str) {
+            $record = $this->parseRecord($record_str);
+            if ($record) {
+                $records[] = $record;
+            }
+        }
+        
+        return $records;
+    }
+
+    private function parseRecord($record_str) {
+        $values = [];
+        $current = '';
+        $in_quotes = false;
+        $quote_char = '';
+        $escaped = false;
+
+        for ($i = 0; $i < strlen($record_str); $i++) {
+            $char = $record_str[$i];
+
+            if ($escaped) {
+                $current .= $char;
+                $escaped = false;
+                continue;
+            }
+
+            if ($char === '\\') {
+                $escaped = true;
+                $current .= $char;
+                continue;
+            }
+
+            if (($char === "'" || $char === '"') && !$in_quotes) {
+                $in_quotes = true;
+                $quote_char = $char;
+                continue;
+            }
+
+            if ($char === $quote_char && $in_quotes) {
+                $in_quotes = false;
+                $quote_char = '';
+                continue;
+            }
+
+            if ($char === ',' && !$in_quotes) {
+                $values[] = $this->cleanValue($current);
+                $current = '';
+                continue;
+            }
+
+            $current .= $char;
+        }
+
+        if ($current !== '') {
+            $values[] = $this->cleanValue($current);
+        }
+
+        if (defined('DEBUG_MODE') && DEBUG_MODE && count($values) !== 11) {
+            $this->addOutput('info', '→ تعداد فیلدها: ' . count($values) . ' (انتظار: 11)');
+            if (count($values) > 0 && count($values) < 15) {
+                $this->addOutput('info', '→ فیلدها: ' . implode(' | ', array_map(function($v) {
+                    return substr($v ?? 'NULL', 0, 30);
+                }, $values)));
+            }
+        }
+
+        if (count($values) === 11) {
+            return [
+                'question_number' => $values[0],
+                'text' => $values[1],
+                'en_text' => $values[2],
+                'farsi_text' => $values[3],
+                'info' => $values[4],
+                'is_image' => $values[5],
+                'original_content' => $values[6],
+                'asw_type' => $values[7],
+                'asw_corr' => $values[8],
+                'asw_hint' => $values[9]
+            ];
+        } elseif (count($values) === 10) {
+            // گاهی فیلد آخر (asw_hint) وجود ندارد
+            return [
+                'question_number' => $values[0],
+                'text' => $values[1],
+                'en_text' => $values[2],
+                'farsi_text' => $values[3],
+                'info' => $values[4],
+                'is_image' => $values[5],
+                'original_content' => $values[6],
+                'asw_type' => $values[7],
+                'asw_corr' => $values[8],
+                'asw_hint' => $values[9] ?? ''
+            ];
+        }
+
+        return null;
+    }
+
+    private function cleanValue($value) {
+        $value = trim($value);
+        
+        if (strtoupper($value) === 'NULL') {
+            return null;
+        }
+        
+        $value = stripslashes($value);
+        
+        return $value;
+    }
+
+    public function getExistingQuestionNumbers() {
+        $stmt = $this->pdo->query("SELECT DISTINCT question_number FROM answers WHERE question_number IS NOT NULL");
+        $results = $stmt->fetchAll(PDO::FETCH_COLUMN);
+        
+        $this->addOutput('info', '→ تعداد ' . count($results) . ' شماره سوال منحصر به فرد در دیتابیس موجود است');
+        
+        return array_flip($results);
+    }
+
+    public function getExistingRecordsForQuestion($question_number) {
+        $stmt = $this->pdo->prepare("
+            SELECT question_number, text, en_text, farsi_text, info, is_image, 
+                   original_content, asw_type, asw_corr, asw_hint
+            FROM answers 
+            WHERE question_number = ?
+        ");
+        $stmt->execute([$question_number]);
+        return $stmt->fetchAll();
+    }
+
+    private function recordsAreEqual($record1, $record2) {
+        $fields = ['text', 'en_text', 'farsi_text', 'info', 'is_image', 
+                   'original_content', 'asw_type', 'asw_corr', 'asw_hint'];
+        
+        foreach ($fields as $field) {
+            $val1 = $record1[$field] ?? null;
+            $val2 = $record2[$field] ?? null;
+            
+            $val1 = ($val1 === '' || $val1 === '0') ? null : $val1;
+            $val2 = ($val2 === '' || $val2 === '0') ? null : $val2;
+            
+            if ($val1 != $val2) {
+                return false;
+            }
+        }
+        
+        return true;
+    }
+
+    private function insertRecord($record) {
+        try {
+            $stmt = $this->pdo->prepare("
+                INSERT INTO answers 
+                (question_number, text, en_text, farsi_text, info, is_image, 
+                 original_content, asw_type, asw_corr, asw_hint)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ");
+            
+            $stmt->execute([
+                $record['question_number'],
+                $record['text'],
+                $record['en_text'],
+                $record['farsi_text'],
+                $record['info'],
+                $record['is_image'],
+                $record['original_content'],
+                $record['asw_type'],
+                $record['asw_corr'],
+                $record['asw_hint']
+            ]);
+            
+            return true;
+        } catch (PDOException $e) {
+            $this->stats['errors']++;
+            $this->stats['error_messages'][] = $e->getMessage();
+            return false;
+        }
+    }
+
+    public function syncRecords($sql_records) {
+        $this->addOutput('info', '→ شروع همگام‌سازی رکوردها...');
+        
+        $sql_grouped = [];
+        foreach ($sql_records as $record) {
+            $qn = $record['question_number'];
+            if (!isset($sql_grouped[$qn])) {
+                $sql_grouped[$qn] = [];
+            }
+            $sql_grouped[$qn][] = $record;
+        }
+
+        $existing_questions = $this->getExistingQuestionNumbers();
+
+        foreach ($sql_grouped as $question_number => $sql_records_for_question) {
+            if (!isset($existing_questions[$question_number])) {
+                $this->addOutput('info', '→ سوال جدید: ' . $question_number . ' (' . count($sql_records_for_question) . ' رکورد)');
+                
+                foreach ($sql_records_for_question as $record) {
+                    if ($this->insertRecord($record)) {
+                        $this->stats['new_inserted']++;
+                    }
+                }
+            } else {
+                $existing_records = $this->getExistingRecordsForQuestion($question_number);
+                
+                foreach ($sql_records_for_question as $sql_record) {
+                    $found = false;
+                    
+                    foreach ($existing_records as $existing_record) {
+                        if ($this->recordsAreEqual($sql_record, $existing_record)) {
+                            $found = true;
+                            $this->stats['existing']++;
+                            break;
+                        }
+                    }
+                    
+                    if (!$found) {
+                        if ($this->insertRecord($sql_record)) {
+                            $this->stats['new_inserted']++;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    public function getStats() {
+        return $this->stats;
+    }
+}
+
+// پردازش فرم
+$result = null;
+$processing = false;
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['sql_file'])) {
+    $processing = true;
+    $result = ['success' => false, 'output' => [], 'stats' => []];
+    
+    try {
+        // بررسی خطاهای آپلود
+        if ($_FILES['sql_file']['error'] !== UPLOAD_ERR_OK) {
+            throw new Exception('خطا در آپلود فایل');
+        }
+
+        // بررسی نوع فایل
+        $file_info = pathinfo($_FILES['sql_file']['name']);
+        if (!isset($file_info['extension']) || strtolower($file_info['extension']) !== 'sql') {
+            throw new Exception('فقط فایل‌های SQL قابل قبول هستند');
+        }
+
+        // بررسی حجم فایل
+        if ($_FILES['sql_file']['size'] > MAX_FILE_SIZE) {
+            throw new Exception('حجم فایل بیش از حد مجاز است');
+        }
+
+        // انتقال فایل
+        $upload_path = UPLOAD_DIR . uniqid() . '_' . basename($_FILES['sql_file']['name']);
+        if (!move_uploaded_file($_FILES['sql_file']['tmp_name'], $upload_path)) {
+            throw new Exception('خطا در ذخیره فایل');
+        }
+
+        // پردازش فایل با استفاده از $pdo موجود
+        $importer = new AnswersImporter($pdo);
+        $sql_records = $importer->parseSqlFile($upload_path);
+        
+        if (!empty($sql_records)) {
+            $importer->syncRecords($sql_records);
+        }
+        
+        $result['output'] = $importer->getOutput();
+        $result['stats'] = $importer->getStats();
+        $result['success'] = true;
+
+        // حذف فایل آپلود شده
+        @unlink($upload_path);
+
+    } catch (Exception $e) {
+        $result['output'][] = ['type' => 'error', 'message' => '✗ خطا: ' . $e->getMessage()];
+    }
+}
+?>
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ایمپورت فایل SQL</title>
+    <title>Import SQL - جدول Answers</title>
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
+
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Tahoma', 'Arial', sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
             padding: 20px;
+            direction: rtl;
         }
+
         .container {
+            max-width: 900px;
+            margin: 0 auto;
             background: white;
             border-radius: 15px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-            padding: 40px;
-            max-width: 600px;
-            width: 100%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
         }
-        h1 {
-            color: #333;
-            margin-bottom: 30px;
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
             text-align: center;
-            font-size: 28px;
         }
-        .upload-area {
-            border: 3px dashed #667eea;
+
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .upload-section {
+            background: #f8f9fa;
+            border: 3px dashed #dee2e6;
             border-radius: 10px;
             padding: 40px;
             text-align: center;
-            background: #f8f9ff;
-            margin-bottom: 20px;
-            transition: all 0.3s;
+            margin-bottom: 30px;
+            transition: all 0.3s ease;
         }
-        .upload-area:hover {
-            border-color: #764ba2;
+
+        .upload-section:hover {
+            border-color: #667eea;
             background: #f0f2ff;
         }
-        .upload-area.dragover {
-            border-color: #764ba2;
-            background: #e8ebff;
-            transform: scale(1.02);
+
+        .upload-icon {
+            font-size: 48px;
+            color: #667eea;
+            margin-bottom: 20px;
         }
+
         .file-input-wrapper {
             position: relative;
             display: inline-block;
+            cursor: pointer;
+            margin-bottom: 15px;
         }
-        input[type="file"] {
+
+        .file-input-wrapper input[type="file"] {
             position: absolute;
             opacity: 0;
             width: 100%;
             height: 100%;
             cursor: pointer;
         }
-        .file-label {
+
+        .file-input-label {
             display: inline-block;
             padding: 12px 30px;
             background: #667eea;
             color: white;
-            border-radius: 8px;
+            border-radius: 25px;
             cursor: pointer;
-            transition: all 0.3s;
+            transition: all 0.3s ease;
             font-weight: bold;
         }
-        .file-label:hover {
-            background: #764ba2;
+
+        .file-input-label:hover {
+            background: #5568d3;
             transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
         }
+
         .file-name {
-            margin-top: 15px;
-            color: #666;
+            display: block;
+            margin-top: 10px;
+            color: #495057;
             font-size: 14px;
         }
-        .upload-icon {
-            font-size: 48px;
-            color: #667eea;
-            margin-bottom: 15px;
-        }
-        .btn {
-            width: 100%;
-            padding: 15px;
-            background: #667eea;
+
+        .submit-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
+            padding: 15px 40px;
             border: none;
-            border-radius: 8px;
+            border-radius: 25px;
             font-size: 16px;
             font-weight: bold;
             cursor: pointer;
-            transition: all 0.3s;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
         }
-        .btn:hover {
-            background: #764ba2;
+
+        .submit-btn:hover:not(:disabled) {
             transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
         }
-        .btn:disabled {
-            background: #ccc;
+
+        .submit-btn:disabled {
+            opacity: 0.5;
             cursor: not-allowed;
-            transform: none;
         }
-        .result {
-            margin-top: 30px;
+
+        .output-section {
+            background: #f8f9fa;
+            border-radius: 10px;
             padding: 20px;
-            border-radius: 8px;
-            font-size: 14px;
-            line-height: 1.8;
+            margin-top: 30px;
             max-height: 500px;
             overflow-y: auto;
         }
-        .success {
-            background: #d4edda;
-            border: 1px solid #c3e6cb;
-            color: #155724;
-        }
-        .error {
-            background: #f8d7da;
-            border: 1px solid #f5c6cb;
-            color: #721c24;
-        }
-        .info {
-            background: #d1ecf1;
-            border: 1px solid #bee5eb;
-            color: #0c5460;
-        }
-        .log-item {
-            padding: 8px 0;
-            border-bottom: 1px solid rgba(0,0,0,0.1);
-        }
-        .log-item:last-child {
-            border-bottom: none;
-        }
-        .summary {
-            margin-top: 15px;
-            padding-top: 15px;
-            border-top: 2px solid rgba(0,0,0,0.2);
-            font-weight: bold;
-        }
-        .question-group {
-            background: rgba(102, 126, 234, 0.1);
+
+        .output-line {
             padding: 10px;
-            margin: 10px 0;
+            margin: 5px 0;
             border-radius: 5px;
-            border-left: 4px solid #667eea;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+        }
+
+        .output-line.success {
+            background: #d4edda;
+            color: #155724;
+            border-right: 4px solid #28a745;
+        }
+
+        .output-line.error {
+            background: #f8d7da;
+            color: #721c24;
+            border-right: 4px solid #dc3545;
+        }
+
+        .output-line.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border-right: 4px solid #17a2b8;
+        }
+
+        .stats-box {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-number {
+            font-size: 36px;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: #6c757d;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .info-box {
+            background: #e7f3ff;
+            border-right: 4px solid #2196F3;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+
+        .info-box h3 {
+            color: #1976D2;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+
+        .info-box ul {
+            margin-right: 20px;
+            color: #424242;
+            font-size: 14px;
+        }
+
+        .info-box li {
+            margin: 5px 0;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>📤 ایمپورت فایل SQL به جدول Answers</h1>
-        
-        <form method="POST" enctype="multipart/form-data" id="uploadForm">
-            <div class="upload-area" id="uploadArea">
-                <div class="upload-icon">📁</div>
-                <div class="file-input-wrapper">
-                    <label class="file-label">
-                        انتخاب فایل SQL
-                        <input type="file" name="sql_file" id="sqlFile" accept=".sql" required>
-                    </label>
-                </div>
-                <div class="file-name" id="fileName">هیچ فایلی انتخاب نشده</div>
+        <div class="header">
+            <h1>📊 Import فایل SQL</h1>
+            <p>وارد کردن رکوردهای جدید به جدول Answers</p>
+        </div>
+
+        <div class="content">
+            <div class="info-box">
+                <h3>📌 راهنما:</h3>
+                <ul>
+                    <li>فایل SQL خود را انتخاب کنید</li>
+                    <li>اسکریپت به صورت خودکار رکوردهای جدید را شناسایی می‌کند</li>
+                    <li>فقط رکوردهایی که در دیتابیس موجود نیستند اضافه می‌شوند</li>
+                    <li>حداکثر حجم فایل: 50MB</li>
+                </ul>
             </div>
-            
-            <button type="submit" class="btn" id="submitBtn">
-                ⬆️ آپلود و ایمپورت
-            </button>
-        </form>
 
-        <?php
-        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['sql_file'])) {
-            
-            // آرایه شماره سوالات موجود
-            $questions = array(
-  array('number' => '2.2.03-026-M'),
-  array('number' => '2.2.03-110'),
-  array('number' => '1.1.07-176-M'),
-  array('number' => '1.2.09-022-M'),
-  array('number' => '1.2.10-006-M'),
-  array('number' => '1.2.19-117'),
-  array('number' => '1.2.19-118-M'),
-  array('number' => '1.2.20-110-M'),
-  array('number' => '1.2.20-111-M'),
-  array('number' => '1.2.36-016-M'),
-  array('number' => '1.2.37-104'),
-  array('number' => '1.3.01-051-M'),
-  array('number' => '1.4.41-028-M'),
-  array('number' => '1.4.41-029'),
-  array('number' => '1.4.41-030'),
-  array('number' => '1.4.41-173'),
-  array('number' => '1.5.01-017'),
-  array('number' => '2.1.07-124-M'),
-  array('number' => '2.2.07-014-M'),
-  array('number' => '2.2.18-024-M'),
-  array('number' => '2.2.23-126'),
-  array('number' => '2.2.23-127'),
-  array('number' => '2.2.23-128'),
-  array('number' => '2.4.41-005-M'),
-  array('number' => '2.4.42-110')
-);
+            <form method="POST" enctype="multipart/form-data" id="uploadForm">
+                <div class="upload-section">
+                    <div class="upload-icon">📁</div>
+                    <h3>فایل SQL را اینجا آپلود کنید</h3>
+                    <div class="file-input-wrapper">
+                        <input type="file" name="sql_file" id="sql_file" accept=".sql" required onchange="updateFileName()">
+                        <label for="sql_file" class="file-input-label">
+                            انتخاب فایل
+                        </label>
+                    </div>
+                    <span class="file-name" id="fileName">هیچ فایلی انتخاب نشده</span>
+                </div>
 
-            
-            // تبدیل آرایه به لیست ساده
-            $questionNumbers = array_column($questions, 'number');
-            
-            $results = [];
-            $totalInserted = 0;
-            $totalSkipped = 0;
-            $questionsProcessed = [];
-            $hasError = false;
-            
-            try {
-                // بررسی آپلود فایل
-                if ($_FILES['sql_file']['error'] !== UPLOAD_ERR_OK) {
-                    throw new Exception('خطا در آپلود فایل');
-                }
-                
-                // بررسی نوع فایل
-                $fileName = $_FILES['sql_file']['name'];
-                $fileExt = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
-                
-                if ($fileExt !== 'sql') {
-                    throw new Exception('فقط فایل‌های SQL مجاز هستند');
-                }
-                
-                // خواندن محتوای فایل
-                $content = file_get_contents($_FILES['sql_file']['tmp_name']);
-                
-                if (empty($content)) {
-                    throw new Exception('فایل خالی است');
-                }
-                
-                $results[] = "✓ فایل {$fileName} خوانده شد";
-                $results[] = "✓ تعداد سوالات در آرایه: " . count($questionNumbers);
-                $results[] = "<hr>";
-                
-                // استخراج دستورات INSERT با ساختار جدید
-                preg_match_all("/INSERT INTO `answers` \(`question_number`, `text`, `en_text`, `farsi_text`, `info`, `is_image`, `original_content`, `asw_type`, `asw_corr`, `asw_hint`\) VALUES\s*([\s\S]*?);/i", $content, $matches);
-                
-                if (empty($matches[1])) {
-                    throw new Exception('هیچ دستور INSERT در فایل یافت نشد');
-                }
-                
-                // جمع‌آوری تمام رکوردها و گروه‌بندی بر اساس question_number
-                $allRecords = [];
-                
-                foreach ($matches[1] as $valuesBlock) {
-                    // جداسازی هر ردیف
-                    preg_match_all("/\(([^)]+(?:\([^)]*\)[^)]*)*)\)/", $valuesBlock, $rows);
+                <div style="text-align: center;">
+                    <button type="submit" class="submit-btn" id="submitBtn">
+                        🚀 شروع Import
+                    </button>
+                </div>
+            </form>
+
+            <?php if ($processing && $result): ?>
+                <div class="output-section">
+                    <h3 style="margin-bottom: 15px; color: #495057;">📋 گزارش عملیات:</h3>
                     
-                    foreach ($rows[1] as $row) {
-                        // پردازش مقادیر
-                        $values = parseValues($row);
-                        
-                        if (count($values) < 10) {
-                            continue;
-                        }
-                        
-                        $questionNumber = $values[0];
-                        
-                        // ذخیره رکورد در آرایه گروه‌بندی شده
-                        if (!isset($allRecords[$questionNumber])) {
-                            $allRecords[$questionNumber] = [];
-                        }
-                        
-                        $allRecords[$questionNumber][] = [
-                            'question_number' => $values[0],
-                            'text' => $values[1],
-                            'en_text' => $values[2],
-                            'farsi_text' => $values[3],
-                            'info' => $values[4],
-                            'is_image' => $values[5],
-                            'original_content' => $values[6],
-                            'asw_type' => $values[7],
-                            'asw_corr' => $values[8],
-                            'asw_hint' => $values[9]
-                        ];
-                    }
-                }
-                
-                // پردازش هر گروه از سوالات
-                foreach ($allRecords as $questionNumber => $records) {
-                    
-                    // بررسی اینکه آیا این question_number در آرایه وجود دارد
-                    if (!in_array($questionNumber, $questionNumbers)) {
-                        $results[] = "<div class='question-group'>⊘ <strong>{$questionNumber}</strong> رد شد (در آرایه سوالات موجود نیست - " . count($records) . " پاسخ)</div>";
-                        $totalSkipped += count($records);
-                        continue;
-                    }
-                    
-                    // بررسی وجود question_number در جدول دیتابیس
-                    $checkStmt = $pdo->prepare("SELECT COUNT(*) FROM answers WHERE question_number = ?");
-                    $checkStmt->execute([$questionNumber]);
-                    $exists = $checkStmt->fetchColumn();
-                    
-                    if ($exists > 0) {
-                        $results[] = "<div class='question-group'>⊘ <strong>{$questionNumber}</strong> رد شد (در دیتابیس موجود است - {$exists} پاسخ)</div>";
-                        $totalSkipped += count($records);
-                        continue;
-                    }
-                    
-                    // درج تمام رکوردهای این سوال
-                    $insertedCount = 0;
-                    $results[] = "<div class='question-group'>";
-                    $results[] = "📝 <strong>{$questionNumber}</strong> - در حال درج " . count($records) . " پاسخ:";
-                    
-                    foreach ($records as $record) {
-                        try {
-                            $insertStmt = $pdo->prepare("
-                                INSERT INTO answers 
-                                (question_number, text, en_text, farsi_text, info, is_image, original_content, asw_type, asw_corr, asw_hint) 
-                                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                            ");
-                            
-                            $insertStmt->execute([
-                                $record['question_number'],
-                                $record['text'],
-                                $record['en_text'],
-                                $record['farsi_text'],
-                                $record['info'],
-                                $record['is_image'],
-                                $record['original_content'],
-                                $record['asw_type'],
-                                $record['asw_corr'],
-                                $record['asw_hint']
-                            ]);
-                            
-                            $insertedCount++;
-                            $totalInserted++;
-                            
-                            // نمایش متن کوتاه شده پاسخ
-                            $shortText = mb_substr($record['text'], 0, 50);
-                            if (mb_strlen($record['text']) > 50) {
-                                $shortText .= '...';
-                            }
-                            $results[] = "&nbsp;&nbsp;&nbsp;✓ پاسخ #{$insertedCount}: {$shortText}";
-                            
-                        } catch (PDOException $e) {
-                            $results[] = "&nbsp;&nbsp;&nbsp;❌ خطا در درج پاسخ: " . $e->getMessage();
-                        }
-                    }
-                    
-                    $results[] = "✅ جمع: {$insertedCount} پاسخ اضافه شد";
-                    $results[] = "</div>";
-                    
-                    if (!isset($questionsProcessed[$questionNumber])) {
-                        $questionsProcessed[$questionNumber] = $insertedCount;
-                    }
-                }
-                
-                $cssClass = 'success';
-                
-            } catch (PDOException $e) {
-                $results[] = "❌ خطا در دیتابیس: " . $e->getMessage();
-                $hasError = true;
-                $cssClass = 'error';
-            } catch (Exception $e) {
-                $results[] = "❌ خطا: " . $e->getMessage();
-                $hasError = true;
-                $cssClass = 'error';
-            }
-            
-            // نمایش نتایج
-            if (!empty($results)) {
-                echo '<div class="result ' . $cssClass . '">';
-                foreach ($results as $result) {
-                    if ($result === '<hr>') {
-                        echo '<hr style="margin: 15px 0; border: none; border-top: 1px solid rgba(0,0,0,0.2);">';
-                    } else {
-                        echo '<div class="log-item">' . $result . '</div>';
-                    }
-                }
-                
-                if (!$hasError) {
-                    echo '<div class="summary">';
-                    echo '📊 خلاصه نتایج:<br>';
-                    echo '✅ تعداد سوالات جدید: ' . count($questionsProcessed) . '<br>';
-                    echo '✅ تعداد پاسخ‌های اضافه شده: ' . $totalInserted . '<br>';
-                    echo '⊘ تعداد پاسخ‌های رد شده: ' . $totalSkipped . '<br>';
-                    echo '📈 جمع کل پاسخ‌ها: ' . ($totalInserted + $totalSkipped);
-                    echo '</div>';
-                }
-                
-                echo '</div>';
-            }
-        }
-        
-        function parseValues($row) {
-            $values = [];
-            $current = '';
-            $inQuotes = false;
-            $quoteChar = '';
-            $escaped = false;
-            
-            for ($i = 0; $i < strlen($row); $i++) {
-                $char = $row[$i];
-                
-                if ($escaped) {
-                    $current .= $char;
-                    $escaped = false;
-                    continue;
-                }
-                
-                if ($char === '\\') {
-                    $escaped = true;
-                    $current .= $char;
-                    continue;
-                }
-                
-                if (($char === "'" || $char === '"') && !$inQuotes) {
-                    $inQuotes = true;
-                    $quoteChar = $char;
-                    continue;
-                }
-                
-                if ($char === $quoteChar && $inQuotes) {
-                    $inQuotes = false;
-                    $values[] = $current;
-                    $current = '';
-                    continue;
-                }
-                
-                if ($char === ',' && !$inQuotes) {
-                    if ($current === 'NULL' || $current === '') {
-                        $values[] = null;
-                    } elseif (is_numeric($current)) {
-                        $values[] = $current;
-                    }
-                    $current = '';
-                    continue;
-                }
-                
-                if ($inQuotes) {
-                    $current .= $char;
-                } elseif (trim($char) !== '') {
-                    $current .= $char;
-                }
-            }
-            
-            // آخرین مقدار
-            if ($current !== '') {
-                if ($current === 'NULL') {
-                    $values[] = null;
-                } else {
-                    $values[] = $current;
-                }
-            }
-            
-            return $values;
-        }
-        ?>
+                    <?php foreach ($result['output'] as $line): ?>
+                        <div class="output-line <?php echo htmlspecialchars($line['type']); ?>">
+                            <?php echo htmlspecialchars($line['message']); ?>
+                        </div>
+                    <?php endforeach; ?>
+
+                    <?php if ($result['success'] && !empty($result['stats'])): ?>
+                        <div class="stats-box">
+                            <div class="stat-card">
+                                <div class="stat-number"><?php echo $result['stats']['total_in_file']; ?></div>
+                                <div class="stat-label">کل رکوردهای فایل</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-number"><?php echo $result['stats']['new_inserted']; ?></div>
+                                <div class="stat-label">رکوردهای جدید</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-number"><?php echo $result['stats']['existing']; ?></div>
+                                <div class="stat-label">رکوردهای موجود</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-number"><?php echo $result['stats']['errors']; ?></div>
+                                <div class="stat-label">خطاها</div>
+                            </div>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            <?php endif; ?>
+        </div>
     </div>
 
     <script>
-        const fileInput = document.getElementById('sqlFile');
-        const fileName = document.getElementById('fileName');
-        const uploadArea = document.getElementById('uploadArea');
-        const submitBtn = document.getElementById('submitBtn');
-
-        // نمایش نام فایل انتخاب شده
-        fileInput.addEventListener('change', function(e) {
-            if (this.files.length > 0) {
-                fileName.textContent = '📄 ' + this.files[0].name;
-                fileName.style.color = '#667eea';
-                fileName.style.fontWeight = 'bold';
-            } else {
-                fileName.textContent = 'هیچ فایلی انتخاب نشده';
-                fileName.style.color = '#666';
-                fileName.style.fontWeight = 'normal';
-            }
-        });
-
-        // Drag & Drop
-        uploadArea.addEventListener('dragover', function(e) {
-            e.preventDefault();
-            this.classList.add('dragover');
-        });
-
-        uploadArea.addEventListener('dragleave', function(e) {
-            e.preventDefault();
-            this.classList.remove('dragover');
-        });
-
-        uploadArea.addEventListener('drop', function(e) {
-            e.preventDefault();
-            this.classList.remove('dragover');
+        function updateFileName() {
+            const input = document.getElementById('sql_file');
+            const fileNameSpan = document.getElementById('fileName');
             
-            const files = e.dataTransfer.files;
-            if (files.length > 0) {
-                fileInput.files = files;
-                fileName.textContent = '📄 ' + files[0].name;
-                fileName.style.color = '#667eea';
-                fileName.style.fontWeight = 'bold';
+            if (input.files.length > 0) {
+                fileNameSpan.textContent = input.files[0].name;
+                fileNameSpan.style.color = '#667eea';
+                fileNameSpan.style.fontWeight = 'bold';
+            } else {
+                fileNameSpan.textContent = 'هیچ فایلی انتخاب نشده';
+                fileNameSpan.style.color = '#495057';
+                fileNameSpan.style.fontWeight = 'normal';
             }
-        });
+        }
 
-        // جلوگیری از ارسال مجدد فرم
         document.getElementById('uploadForm').addEventListener('submit', function() {
-            submitBtn.disabled = true;
-            submitBtn.textContent = '⏳ در حال پردازش...';
+            const btn = document.getElementById('submitBtn');
+            btn.disabled = true;
+            btn.innerHTML = '⏳ در حال پردازش...';
         });
     </script>
 </body>

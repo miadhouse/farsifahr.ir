@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1:3306
--- Generation Time: Feb 13, 2026 at 02:42 PM
+-- Generation Time: Feb 14, 2026 at 11:48 AM
 -- Server version: 9.1.0
 -- PHP Version: 8.3.14
 
@@ -102,27 +102,27 @@ DELIMITER ;
 DROP TABLE IF EXISTS `answers`;
 CREATE TABLE IF NOT EXISTS `answers` (
   `id` int NOT NULL AUTO_INCREMENT,
-  `question_number` varchar(20) DEFAULT NULL,
-  `text` text,
-  `en_text` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci,
-  `farsi_text` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci,
-  `info` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci,
+  `question_number` varchar(20) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `text` text COLLATE utf8mb4_general_ci,
+  `en_text` longtext COLLATE utf8mb4_general_ci,
+  `farsi_text` longtext COLLATE utf8mb4_general_ci,
+  `info` longtext COLLATE utf8mb4_general_ci,
   `is_image` tinyint(1) DEFAULT '0',
-  `original_content` text,
+  `original_content` text COLLATE utf8mb4_general_ci,
   `asw_type` int DEFAULT NULL,
   `asw_corr` int DEFAULT NULL,
-  `asw_hint` text,
+  `asw_hint` text COLLATE utf8mb4_general_ci,
   PRIMARY KEY (`id`)
-) ENGINE=MyISAM AUTO_INCREMENT=3457 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=MyISAM AUTO_INCREMENT=3466 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `answers`
 --
 
 INSERT INTO `answers` (`id`, `question_number`, `text`, `en_text`, `farsi_text`, `info`, `is_image`, `original_content`, `asw_type`, `asw_corr`, `asw_hint`) VALUES
-(1, '1.1.01-001', 'Nicht auf dem eigenen Recht bestehen', NULL, '111', '<p>121212</p>', 0, 'Nicht auf dem eigenen Recht bestehen', 1, 1, ''),
-(2, '1.1.01-001', 'Mit Fehlern anderer rechnen', NULL, '2222', '<p>232323</p>', 0, 'Mit Fehlern anderer rechnen', 1, 1, ''),
-(3, '1.1.01-001', 'Vorsorglich an jeder Kreuzung anhalten', NULL, '4443', '<p>34343434</p>', 0, 'Vorsorglich an jeder Kreuzung anhalten', 1, 0, ''),
+(1, '1.1.01-001', 'Nicht auf dem eigenen Recht bestehen', '', '', '', 0, 'Nicht auf dem eigenen Recht bestehen', 1, 1, ''),
+(2, '1.1.01-001', 'Mit Fehlern anderer rechnen', '', '', '', 0, 'Mit Fehlern anderer rechnen', 1, 1, ''),
+(3, '1.1.01-001', 'Vorsorglich an jeder Kreuzung anhalten', '', '', '', 0, 'Vorsorglich an jeder Kreuzung anhalten', 1, 0, ''),
 (4, '1.1.01-002', 'Unerwartet starkes Bremsen', '', '', '', 0, 'Unerwartet starkes Bremsen', 1, 1, ''),
 (5, '1.1.01-002', 'Unaufmerksamkeit', '', '', '', 0, 'Unaufmerksamkeit', 1, 1, ''),
 (6, '1.1.01-002', 'Zu dichtes Auffahren', '', '', '', 0, 'Zu dichtes Auffahren', 1, 1, ''),
@@ -495,9 +495,9 @@ INSERT INTO `answers` (`id`, `question_number`, `text`, `en_text`, `farsi_text`,
 (373, '1.2.19-104', 'Sobald der Gegenverkehr anfährt, auch wenn das rote Blinklicht noch leuchtet', '', '', '', 0, 'Sobald der Gegenverkehr anfährt, auch wenn das rote Blinklicht noch leuchtet', 1, 0, ''),
 (374, '1.2.19-105', 'Vor dem Andreaskreuz', '', '', '', 0, 'Vor dem Andreaskreuz', 1, 1, ''),
 (375, '1.2.19-105', 'Unmittelbar vor den Schienen', '', '', '', 0, 'Unmittelbar vor den Schienen', 1, 0, ''),
-(376, '1.2.19-105', 'In Höhe der Schranke', '', '', '', 0, 'In Höhe der Schranke', 1, 0, '');
+(376, '1.2.19-105', 'In Höhe der Schranke', '', '', '', 0, 'In Höhe der Schranke', 1, 0, ''),
+(377, '1.2.19-107', 'Vor dem Andreaskreuz', '', '', '', 0, 'Vor dem Andreaskreuz', 1, 1, '');
 INSERT INTO `answers` (`id`, `question_number`, `text`, `en_text`, `farsi_text`, `info`, `is_image`, `original_content`, `asw_type`, `asw_corr`, `asw_hint`) VALUES
-(377, '1.2.19-107', 'Vor dem Andreaskreuz', '', '', '', 0, 'Vor dem Andreaskreuz', 1, 1, ''),
 (378, '1.2.19-107', 'Vor der letzten Bake', '', '', '', 0, 'Vor der letzten Bake', 1, 0, ''),
 (379, '1.2.19-107', 'Vor der ersten Bake', '', '', '', 0, 'Vor der ersten Bake', 1, 0, ''),
 (380, '1.2.19-109', 'Hinweis auf vorhandene elektrische Oberleitungen', '', '', '', 0, 'Hinweis auf vorhandene elektrische Oberleitungen', 1, 1, ''),
@@ -2918,9 +2918,9 @@ INSERT INTO `answers` (`id`, `question_number`, `text`, `en_text`, `farsi_text`,
 (2789, '2.7.02-134', 'Ein Leuchtmittel ist defekt', '', '', '', 0, 'Ein Leuchtmittel ist defekt', 1, 1, ''),
 (2790, '2.7.02-134', 'Die Sicherung ist defekt', '', '', '', 0, 'Die Sicherung ist defekt', 1, 0, ''),
 (2791, '2.7.02-134', 'Das Warnblinklicht ist eingeschaltet', '', '', '', 0, 'Das Warnblinklicht ist eingeschaltet', 1, 0, ''),
-(2792, '2.8.01-013', 'Mit einem Entzug der Fahrerlaubnis', '222', '333', '<p>4444</p>', 0, 'Mit einem Entzug der Fahrerlaubnis', 1, 1, ''),
-(2793, '2.8.01-013', 'Mit einer Verlängerung der Probezeit um weitere 3 Jahre', '65555', '666777', '<p>8888</p>', 0, 'Mit einer Verlängerung der Probezeit um weitere 3 Jahre', 1, 0, ''),
-(2794, '2.8.01-013', 'Mit einer Anordnung für ein Fahreignungsseminar', NULL, NULL, '<p></p>', 0, 'Mit einer Anordnung für ein Fahreignungsseminar', 1, 0, ''),
+(2792, '2.8.01-013', 'Mit einem Entzug der Fahrerlaubnis', '', '', '', 0, 'Mit einem Entzug der Fahrerlaubnis', 1, 1, ''),
+(2793, '2.8.01-013', 'Mit einer Verlängerung der Probezeit um weitere 3 Jahre', '', '', '', 0, 'Mit einer Verlängerung der Probezeit um weitere 3 Jahre', 1, 0, ''),
+(2794, '2.8.01-013', 'Mit einer Anordnung für ein Fahreignungsseminar', '', '', '', 0, 'Mit einer Anordnung für ein Fahreignungsseminar', 1, 0, ''),
 (2795, '1.2.05-003', '2', '', '', '', 0, '2', 2, 1, 'm'),
 (2796, '1.2.05-004', '1,5', '', '', '', 0, '1,5', 2, 1, 'm'),
 (2797, '1.2.05-005', '1,5', '', '', '', 0, '1,5', 2, 1, 'm'),
@@ -3034,9 +3034,9 @@ INSERT INTO `answers` (`id`, `question_number`, `text`, `en_text`, `farsi_text`,
 (2905, '1.2.11-006', 'Einmündungen', '', '', '', 0, 'Einmündungen', 1, 1, ''),
 (2906, '1.2.11-006', 'Fußgängerüberwege', '', '', '', 0, 'Fußgängerüberwege', 1, 1, ''),
 (2907, '1.2.11-006', 'Bushaltestellen', '', '', '', 0, 'Bushaltestellen', 1, 0, ''),
-(2908, '1.2.12-132', 'Vor Feuerwehrzufahrten', '', '', '', 0, 'Vor Feuerwehrzufahrten', 1, 1, '');
+(2908, '1.2.12-132', 'Vor Feuerwehrzufahrten', '', '', '', 0, 'Vor Feuerwehrzufahrten', 1, 1, ''),
+(2909, '1.2.12-132', 'In allen Einbahnstraßen', '', '', '', 0, 'In allen Einbahnstraßen', 1, 0, '');
 INSERT INTO `answers` (`id`, `question_number`, `text`, `en_text`, `farsi_text`, `info`, `is_image`, `original_content`, `asw_type`, `asw_corr`, `asw_hint`) VALUES
-(2909, '1.2.12-132', 'In allen Einbahnstraßen', '', '', '', 0, 'In allen Einbahnstraßen', 1, 0, ''),
 (2910, '1.2.12-132', 'In Parkverbotszonen', '', '', '', 0, 'In Parkverbotszonen', 1, 0, ''),
 (2911, '1.2.34-007', '- Verletzten Erste Hilfe leisten', '', '', '', 0, '- Verletzten Erste Hilfe leisten', 1, 1, ''),
 (2912, '1.2.34-007', '- Rettungsdienst alarmieren', '', '', '', 0, '- Rettungsdienst alarmieren', 1, 1, ''),
@@ -3376,9 +3376,9 @@ INSERT INTO `answers` (`id`, `question_number`, `text`, `en_text`, `farsi_text`,
 (3246, '2.6.03-119', '- verkleinert sich der benötigte Kurvenradius beim Abbiegen', '', '', '', 0, '- verkleinert sich der benötigte Kurvenradius beim Abbiegen', 1, 0, ''),
 (3247, '2.6.06-102', 'Die maximal zulässige Zuladung', '', '', '', 0, 'Die maximal zulässige Zuladung', 1, 1, ''),
 (3248, '2.6.06-102', 'Die Differenz aus zulässiger Gesamtmasse und Leermasse', '', '', '', 0, 'Die Differenz aus zulässiger Gesamtmasse und Leermasse', 1, 1, ''),
-(3249, '2.6.06-102', 'Die zulässige Gesamtmasse', '', '', '', 0, 'Die zulässige Gesamtmasse', 1, 0, '');
+(3249, '2.6.06-102', 'Die zulässige Gesamtmasse', '', '', '', 0, 'Die zulässige Gesamtmasse', 1, 0, ''),
+(3250, '2.7.01-161', '- kann in Kurven leichter umkippen', '', '', '', 0, '- kann in Kurven leichter umkippen', 1, 1, '');
 INSERT INTO `answers` (`id`, `question_number`, `text`, `en_text`, `farsi_text`, `info`, `is_image`, `original_content`, `asw_type`, `asw_corr`, `asw_hint`) VALUES
-(3250, '2.7.01-161', '- kann in Kurven leichter umkippen', '', '', '', 0, '- kann in Kurven leichter umkippen', 1, 1, ''),
 (3251, '2.7.01-161', '- erfordert eine besondere Beachtung der Durchfahrtshöhe', '', '', '', 0, '- erfordert eine besondere Beachtung der Durchfahrtshöhe', 1, 1, ''),
 (3252, '2.7.01-161', '- ist anfälliger für Seitenwind', '', '', '', 0, '- ist anfälliger für Seitenwind', 1, 1, ''),
 (3253, '2.7.01-162', '- erkennt ausreichend große Parklücken', '', '', '', 0, '- erkennt ausreichend große Parklücken', 1, 1, ''),
@@ -3584,7 +3584,16 @@ INSERT INTO `answers` (`id`, `question_number`, `text`, `en_text`, `farsi_text`,
 (3453, '2.7.02-050', 'Das Kühlsystem ist undicht', '', '', '', 0, 'Das Kühlsystem ist undicht', 1, 1, ''),
 (3454, '2.8.01-014', 'Mit einem Strafverfahren', '', '', '', 0, 'Mit einem Strafverfahren', 1, 1, ''),
 (3455, '2.8.01-014', 'Mit einer Überprüfung der Eignung zum Führen von Kraftfahrzeugen', '', '', '', 0, 'Mit einer Überprüfung der Eignung zum Führen von Kraftfahrzeugen', 1, 1, ''),
-(3456, '2.8.01-014', 'Mit keinen Auswirkungen, wenn ein Inhaber einer Fahrerlaubnis im Fahrzeug mitfährt', '', '', '', 0, 'Mit keinen Auswirkungen, wenn ein Inhaber einer Fahrerlaubnis im Fahrzeug mitfährt', 1, 0, '');
+(3456, '2.8.01-014', 'Mit keinen Auswirkungen, wenn ein Inhaber einer Fahrerlaubnis im Fahrzeug mitfährt', '', '', '', 0, 'Mit keinen Auswirkungen, wenn ein Inhaber einer Fahrerlaubnis im Fahrzeug mitfährt', 1, 0, ''),
+(3457, '1.2.03-104', '<img src=%IMG_ETC%/div10mult3.png alt=div10mult3.png />', '', '', '', 1, '<img src=%IMG_ETC%/div10mult3.png alt=div10mult3.png />', 1, 1, ''),
+(3458, '1.2.03-104', '<img src=%IMG_ETC%/div10mult5.png alt=div10mult5.png />', '', '', '', 1, '<img src=%IMG_ETC%/div10mult5.png alt=div10mult5.png />', 1, 0, ''),
+(3459, '1.2.03-104', '<img src=%IMG_ETC%/div100.png alt=div100.png />', '', '', '', 1, '<img src=%IMG_ETC%/div100.png alt=div100.png />', 1, 0, ''),
+(3460, '1.2.03-105', '<img src=%IMG_ETC%/div100.png alt=div100.png />', '', '', '', 1, '<img src=%IMG_ETC%/div100.png alt=div100.png />', 1, 1, ''),
+(3461, '1.2.03-105', '<img src=%IMG_ETC%/div10mult5.png alt=div10mult5.png />', '', '', '', 1, '<img src=%IMG_ETC%/div10mult5.png alt=div10mult5.png />', 1, 0, ''),
+(3462, '1.2.03-105', '<img src=%IMG_ETC%/div10mult3.png alt=div10mult3.png />', '', '', '', 1, '<img src=%IMG_ETC%/div10mult3.png alt=div10mult3.png />', 1, 0, ''),
+(3463, '2.2.03-015', '<img src=%IMG_ETC%/div100div2.png alt=div100div2.png />', '', '', '', 1, '<img src=%IMG_ETC%/div100div2.png alt=div100div2.png />', 1, 1, ''),
+(3464, '2.2.03-015', '<img src=%IMG_ETC%/div10mult5div2.png alt=div10mult5div2.png />', '', '', '', 1, '<img src=%IMG_ETC%/div10mult5div2.png alt=div10mult5div2.png />', 1, 0, ''),
+(3465, '2.2.03-015', '<img src=%IMG_ETC%/div10mult3div2.png alt=div10mult3div2.png />', '', '', '', 1, '<img src=%IMG_ETC%/div10mult3div2.png alt=div10mult3div2.png />', 1, 0, '');
 
 -- --------------------------------------------------------
 
@@ -3595,9 +3604,9 @@ INSERT INTO `answers` (`id`, `question_number`, `text`, `en_text`, `farsi_text`,
 DROP TABLE IF EXISTS `categories`;
 CREATE TABLE IF NOT EXISTS `categories` (
   `id` int NOT NULL,
-  `title` varchar(255) NOT NULL,
-  `title_en` varchar(255) DEFAULT NULL,
-  `index_code` varchar(50) NOT NULL,
+  `title` varchar(255) COLLATE utf8mb4_general_ci NOT NULL,
+  `title_en` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `index_code` varchar(50) COLLATE utf8mb4_general_ci NOT NULL,
   `parent_id` int DEFAULT NULL,
   `question_count` int DEFAULT '0',
   `category_type` tinyint NOT NULL COMMENT '0=Grundstoff, 1=Zusatzstoff',
@@ -3608,7 +3617,7 @@ CREATE TABLE IF NOT EXISTS `categories` (
   KEY `idx_category_type` (`category_type`),
   KEY `idx_index_code` (`index_code`),
   KEY `idx_level` (`level`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `categories`
@@ -3741,13 +3750,13 @@ INSERT INTO `categories` (`id`, `title`, `title_en`, `index_code`, `parent_id`, 
 DROP TABLE IF EXISTS `login_attempts`;
 CREATE TABLE IF NOT EXISTS `login_attempts` (
   `id` int NOT NULL AUTO_INCREMENT,
-  `email` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `ip_address` varchar(45) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `email` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
+  `ip_address` varchar(45) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
   `attempted_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   KEY `idx_email_ip` (`email`,`ip_address`),
   KEY `idx_attempted_at` (`attempted_at`)
-) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
@@ -3758,32 +3767,32 @@ CREATE TABLE IF NOT EXISTS `login_attempts` (
 DROP TABLE IF EXISTS `questions`;
 CREATE TABLE IF NOT EXISTS `questions` (
   `id` int NOT NULL AUTO_INCREMENT,
-  `number` varchar(20) DEFAULT NULL,
-  `picture` text,
-  `stvo` varchar(10) DEFAULT NULL,
-  `asw_pretext` text,
-  `asw_farsi` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
-  `asw_en` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
+  `number` varchar(20) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `picture` text COLLATE utf8mb4_general_ci,
+  `stvo` varchar(10) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `asw_pretext` text COLLATE utf8mb4_general_ci,
+  `asw_farsi` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `asw_en` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
   `points` int DEFAULT NULL,
   `basic` int DEFAULT NULL,
   `basic_mofa` int DEFAULT NULL,
   `mq_flag` int DEFAULT NULL,
-  `category_id` varchar(50) DEFAULT NULL,
-  `classes` text,
-  `text` text,
-  `farsi_text` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
-  `en_text` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
-  `info` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci,
+  `category_id` varchar(50) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `classes` text COLLATE utf8mb4_general_ci,
+  `text` text COLLATE utf8mb4_general_ci,
+  `farsi_text` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `en_text` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `info` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci,
   `available` int NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=1254 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=1254 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `questions`
 --
 
 INSERT INTO `questions` (`id`, `number`, `picture`, `stvo`, `asw_pretext`, `asw_farsi`, `asw_en`, `points`, `basic`, `basic_mofa`, `mq_flag`, `category_id`, `classes`, `text`, `farsi_text`, `en_text`, `info`, `available`) VALUES
-(1, '1.1.01-001', '', '', NULL, NULL, NULL, 4, 1, 1, 0, ',49,', '', 'Was versteht man unter defensivem Fahren?', 'منظور از رانندگی تدافعی چیست؟', 'What should you understand by defensive driving?', '<h2 style=\"text-align: center;\"><strong>yuiyui</strong></h2><h2 style=\"text-align: center;\"><strong><img src=\"http://localhost:8000/storage/dI32uY75683XwakOLBuJN5lJr2wtPRSpUmrJlkTF.jpg\" alt=\"yui\" width=\"116\" style=\"width: 116; height: 135;\" height=\"135\" data-id=\"dI32uY75683XwakOLBuJN5lJr2wtPRSpUmrJlkTF.jpg\"></strong></h2>', 0),
+(1, '1.1.01-001', '', '', NULL, NULL, NULL, 4, 1, 1, 0, ',49,', '', 'Was versteht man unter defensivem Fahren?', 'منظور از رانندگی تدافعی چیست؟', 'What should you understand by defensive driving?', '<p>رانندگی تدافعی به معنای رانندگی با احتیاط است، نه لزوماً پافشاری بر حق تقدم خود.<br>مشارکت در ترافیک جاده‌ای مستلزم احتیاط مداوم و احترام متقابل است. بنابراین، رانندگان تدافعی انتظار دارند که سایر کاربران جاده اشتباه کنند. علاوه بر این، رانندگان تدافعی آماده‌اند تا برای حل موقعیت‌های خطرناک، بر حقوق خود پافشاری نکنند.</p>', 0),
 (2, '1.1.01-002', '', '4.1', '', '', '', 4, 1, 1, 0, ',49,', '', 'Was kann zu Auffahrunfällen führen?', '', '', '', 0),
 (3, '1.1.01-101', '', '', 'Der Vorausfahrende', '', '', 3, 1, 0, 0, ',49,', '', 'Sie fahren innerorts hinter einem Fahrzeug mit ortsfremdem Kennzeichen. Was könnte geschehen?', '', '', '', 0),
 (4, '1.1.01-102', '', '1.2; 3.2', '', '', '', 3, 1, 0, 0, ',49,', '', 'Was sind vermeidbare Behinderungen im fließenden Verkehr?', '', '', '', 0),
@@ -5024,19 +5033,19 @@ INSERT INTO `questions` (`id`, `number`, `picture`, `stvo`, `asw_pretext`, `asw_
 DROP TABLE IF EXISTS `questions2`;
 CREATE TABLE IF NOT EXISTS `questions2` (
   `id` int NOT NULL AUTO_INCREMENT,
-  `number` varchar(20) DEFAULT NULL,
-  `picture` text,
-  `stvo` varchar(10) DEFAULT NULL,
-  `asw_pretext` text,
+  `number` varchar(20) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `picture` text COLLATE utf8mb4_general_ci,
+  `stvo` varchar(10) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `asw_pretext` text COLLATE utf8mb4_general_ci,
   `points` int DEFAULT NULL,
   `basic` int DEFAULT NULL,
   `basic_mofa` int DEFAULT NULL,
   `mq_flag` int DEFAULT NULL,
-  `category_id` varchar(50) DEFAULT NULL,
-  `classes` text,
-  `text` text,
+  `category_id` varchar(50) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `classes` text COLLATE utf8mb4_general_ci,
+  `text` text COLLATE utf8mb4_general_ci,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=1170 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=1170 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `questions2`
@@ -6226,13 +6235,13 @@ DROP TABLE IF EXISTS `question_bookmarks`;
 CREATE TABLE IF NOT EXISTS `question_bookmarks` (
   `id` int NOT NULL AUTO_INCREMENT,
   `user_id` int NOT NULL,
-  `question_id` varchar(50) NOT NULL,
+  `question_id` varchar(50) COLLATE utf8mb4_general_ci NOT NULL,
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `unique_bookmark` (`user_id`,`question_id`),
   KEY `idx_user_id` (`user_id`),
   KEY `idx_question_id` (`question_id`)
-) ENGINE=MyISAM AUTO_INCREMENT=37 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=MyISAM AUTO_INCREMENT=37 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `question_bookmarks`
@@ -6286,23 +6295,23 @@ CREATE TABLE IF NOT EXISTS `recent_successful_logins` (
 
 DROP TABLE IF EXISTS `sessions`;
 CREATE TABLE IF NOT EXISTS `sessions` (
-  `id` varchar(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `id` varchar(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
   `user_id` int NOT NULL,
-  `ip_address` varchar(45) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `user_agent` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+  `ip_address` varchar(45) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
+  `user_agent` text CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci,
   `last_activity` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   KEY `idx_user_id` (`user_id`),
   KEY `idx_last_activity` (`last_activity`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `sessions`
 --
 
 INSERT INTO `sessions` (`id`, `user_id`, `ip_address`, `user_agent`, `last_activity`, `created_at`) VALUES
-('dhu7d17u74s1g0qrednalrvdtb', 13, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', '2026-02-13 14:33:24', '2026-02-13 13:42:13');
+('vlbnan8bdkpis055i6fgl69ld3', 13, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', '2026-02-14 11:26:49', '2026-02-14 11:25:59');
 
 -- --------------------------------------------------------
 
@@ -6313,9 +6322,9 @@ INSERT INTO `sessions` (`id`, `user_id`, `ip_address`, `user_agent`, `last_activ
 DROP TABLE IF EXISTS `subscription_plans`;
 CREATE TABLE IF NOT EXISTS `subscription_plans` (
   `id` int NOT NULL AUTO_INCREMENT,
-  `name` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'نام پلن',
-  `slug` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'شناسه یکتا',
-  `description` text COLLATE utf8mb4_unicode_ci COMMENT 'توضیحات',
+  `name` varchar(100) COLLATE utf8mb4_general_ci NOT NULL COMMENT 'نام پلن',
+  `slug` varchar(50) COLLATE utf8mb4_general_ci NOT NULL COMMENT 'شناسه یکتا',
+  `description` text COLLATE utf8mb4_general_ci COMMENT 'توضیحات',
   `price_2_weeks` decimal(10,2) DEFAULT '0.00' COMMENT 'قیمت 2 هفته (فقط VIP)',
   `price_1_month` decimal(10,2) DEFAULT '0.00' COMMENT 'قیمت 1 ماه (فقط VIP)',
   `price_3_months` decimal(10,2) DEFAULT '0.00' COMMENT 'قیمت 3 ماه (فقط VIP)',
@@ -6328,7 +6337,7 @@ CREATE TABLE IF NOT EXISTS `subscription_plans` (
   `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `slug` (`slug`)
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `subscription_plans`
@@ -6348,14 +6357,14 @@ DROP TABLE IF EXISTS `users`;
 CREATE TABLE IF NOT EXISTS `users` (
   `id` int NOT NULL AUTO_INCREMENT,
   `current_plan_id` int DEFAULT NULL COMMENT 'پلن فعلی کاربر',
-  `email` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `password` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `name` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `role` enum('user','admin') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'user',
-  `google_id` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `email` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
+  `password` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `name` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
+  `role` enum('user','admin') CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT 'user',
+  `google_id` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
   `email_verified` tinyint(1) DEFAULT '0',
-  `verification_token` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `reset_token` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `verification_token` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `reset_token` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
   `reset_expires` datetime DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -6364,7 +6373,7 @@ CREATE TABLE IF NOT EXISTS `users` (
   KEY `idx_google_id` (`google_id`),
   KEY `idx_reset_token` (`reset_token`),
   KEY `idx_verification_token` (`verification_token`)
-) ENGINE=InnoDB AUTO_INCREMENT=14 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=14 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `users`
@@ -6385,15 +6394,15 @@ DROP TABLE IF EXISTS `user_config`;
 CREATE TABLE IF NOT EXISTS `user_config` (
   `id` int NOT NULL AUTO_INCREMENT,
   `user_id` int NOT NULL,
-  `exam_date_type` enum('before','after') DEFAULT 'after',
-  `language` enum('DE','EN') DEFAULT 'DE',
+  `exam_date_type` enum('before','after') COLLATE utf8mb4_general_ci DEFAULT 'after',
+  `language` enum('DE','EN') COLLATE utf8mb4_general_ci DEFAULT 'DE',
   `reference_date` date NOT NULL DEFAULT '2025-04-01',
   `is_configured` tinyint(1) DEFAULT '0',
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `user_id` (`user_id`)
-) ENGINE=MyISAM AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=MyISAM AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `user_config`
@@ -6402,7 +6411,7 @@ CREATE TABLE IF NOT EXISTS `user_config` (
 INSERT INTO `user_config` (`id`, `user_id`, `exam_date_type`, `language`, `reference_date`, `is_configured`, `created_at`, `updated_at`) VALUES
 (1, 1, 'after', 'DE', '2025-04-01', 0, '2026-01-10 18:41:12', '2026-01-10 20:04:50'),
 (2, 12, 'after', 'DE', '2025-04-01', 0, '2026-01-10 18:41:12', '2026-01-10 18:41:12'),
-(3, 13, 'after', 'DE', '2025-04-01', 1, '2026-01-10 18:41:12', '2026-02-11 18:50:43');
+(3, 13, 'after', 'DE', '2025-04-01', 1, '2026-01-10 18:41:12', '2026-02-14 11:26:48');
 
 -- --------------------------------------------------------
 
@@ -6414,17 +6423,17 @@ DROP TABLE IF EXISTS `user_logs`;
 CREATE TABLE IF NOT EXISTS `user_logs` (
   `id` int NOT NULL AUTO_INCREMENT,
   `user_id` int DEFAULT NULL,
-  `email` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `action` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `ip_address` varchar(45) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `user_agent` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
-  `status` enum('success','failed') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `email` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `action` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
+  `ip_address` varchar(45) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
+  `user_agent` text CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci,
+  `status` enum('success','failed') CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   KEY `idx_user_id` (`user_id`),
   KEY `idx_action` (`action`),
   KEY `idx_created_at` (`created_at`)
-) ENGINE=InnoDB AUTO_INCREMENT=96 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=105 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `user_logs`
@@ -6472,7 +6481,16 @@ INSERT INTO `user_logs` (`id`, `user_id`, `email`, `action`, `ip_address`, `user
 (92, 13, 'miadaleali@gmail.com', 'login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', 'success', '2026-02-11 19:42:26'),
 (93, 13, 'miadaleali@gmail.com', 'login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', 'success', '2026-02-12 19:13:26'),
 (94, 13, 'miadaleali@gmail.com', 'login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', 'success', '2026-02-13 10:06:09'),
-(95, 13, 'miadaleali@gmail.com', 'login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', 'success', '2026-02-13 13:42:13');
+(95, 13, 'miadaleali@gmail.com', 'login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', 'success', '2026-02-13 13:42:13'),
+(96, 13, 'miadaleali@gmail.com', 'login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', 'success', '2026-02-13 18:04:39'),
+(97, 13, 'miadaleali@gmail.com', 'logout', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', 'success', '2026-02-13 18:09:32'),
+(98, 13, 'miadaleali@gmail.com', 'login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', 'success', '2026-02-13 18:09:42'),
+(99, 13, 'miadaleali@gmail.com', 'config_update', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', 'success', '2026-02-13 18:54:33'),
+(100, 13, 'miadaleali@gmail.com', 'config_update', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', 'success', '2026-02-13 18:56:44'),
+(101, 13, 'miadaleali@gmail.com', 'login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', 'success', '2026-02-13 20:59:57'),
+(102, 13, 'miadaleali@gmail.com', 'login', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', 'success', '2026-02-14 11:25:59'),
+(103, 13, 'miadaleali@gmail.com', 'config_update', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', 'success', '2026-02-14 11:26:37'),
+(104, 13, 'miadaleali@gmail.com', 'config_update', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', 'success', '2026-02-14 11:26:48');
 
 -- --------------------------------------------------------
 
@@ -6493,7 +6511,7 @@ CREATE TABLE IF NOT EXISTS `user_question_stats` (
   UNIQUE KEY `unique_user_question` (`user_id`,`question_id`),
   KEY `idx_user_id` (`user_id`),
   KEY `idx_question_id` (`question_id`)
-) ENGINE=MyISAM AUTO_INCREMENT=226 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=MyISAM AUTO_INCREMENT=226 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `user_question_stats`
@@ -6551,12 +6569,12 @@ CREATE TABLE IF NOT EXISTS `user_subscriptions` (
   `id` int NOT NULL AUTO_INCREMENT,
   `user_id` int NOT NULL,
   `plan_id` int NOT NULL,
-  `status` enum('active','cancelled','expired','pending') COLLATE utf8mb4_unicode_ci DEFAULT 'active',
+  `status` enum('active','cancelled','expired','pending') COLLATE utf8mb4_general_ci DEFAULT 'active',
   `expires_at` datetime DEFAULT NULL COMMENT 'تاریخ انقضا',
   `duration_days` int DEFAULT '0' COMMENT 'تعداد روزهای اشتراک',
   `amount_paid` decimal(10,2) DEFAULT '0.00',
-  `payment_method` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `transaction_id` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `payment_method` varchar(50) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `transaction_id` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
@@ -6564,7 +6582,7 @@ CREATE TABLE IF NOT EXISTS `user_subscriptions` (
   KEY `plan_id` (`plan_id`),
   KEY `idx_user_subscriptions_user_status` (`user_id`,`status`),
   KEY `idx_user_subscriptions_expires` (`expires_at`)
-) ENGINE=InnoDB AUTO_INCREMENT=15 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=15 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `user_subscriptions`
@@ -6598,7 +6616,7 @@ CREATE TABLE IF NOT EXISTS `user_vocabulary` (
   KEY `idx_user_id` (`user_id`),
   KEY `idx_word_id` (`word_id`),
   KEY `idx_question_id` (`question_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `user_vocabulary`
@@ -6621,14 +6639,14 @@ INSERT INTO `user_vocabulary` (`id`, `word_id`, `user_id`, `question_id`, `categ
 DROP TABLE IF EXISTS `vocabulary_words`;
 CREATE TABLE IF NOT EXISTS `vocabulary_words` (
   `id` int NOT NULL AUTO_INCREMENT,
-  `word` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `translation` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `word` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
+  `translation` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `word` (`word`),
   KEY `idx_word` (`word`)
-) ENGINE=InnoDB AUTO_INCREMENT=14 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=14 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `vocabulary_words`
