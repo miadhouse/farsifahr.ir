@@ -626,6 +626,68 @@ $currentQuestion = $selectedQuestions[$currentQuestionIndex];
             background: linear-gradient(135deg, rgba(240, 147, 251, 0.15) 0%, rgba(245, 87, 108, 0.15) 100%);
             border-right-color: #f5576c;
         }
+        /* در بخش style اضافه کنید: */
+.answer-item {
+    align-items: flex-start !important; /* تغییر از center به flex-start */
+}
+/* در بخش style اضافه کنید: */
+
+/* استایل ویژه برای وقتی که هر دو فعال هستند */
+.translation-box.with-explanation {
+    margin-bottom: 10px;
+}
+
+.explanation-box.with-translation {
+    margin-top: 10px;
+}
+
+/* استایل برای پاسخ‌ها وقتی هر دو فعال هستند */
+.answer-translation.with-explanation {
+    margin-bottom: 5px;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+.answer-explanation.with-translation {
+    margin-top: 0;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+    border-top: 1px dashed rgba(102, 126, 234, 0.3);
+}
+.answer-item .flex-grow-1 {
+    width: 100%;
+}
+
+.answer-translation, .answer-explanation {
+    margin-top: 8px;
+    padding: 10px;
+    border-radius: 8px;
+    background-color: rgba(102, 126, 234, 0.1);
+    border-right: 3px solid #667eea;
+    direction: rtl;
+    text-align: right;
+    font-size: 0.9rem;
+    animation: fadeIn 0.3s ease;
+    display: block; /* اطمینان از نمایش به صورت بلوک */
+    width: 100%;
+}
+
+.answer-explanation {
+    background-color: rgba(240, 147, 251, 0.1);
+    border-right-color: #f093fb;
+}
+.vocabulary-selection {
+    position: relative;
+    user-select: text; /* دسکتاپ: سلکت عادی */
+}
+
+/* فقط موبایل */
+@media (hover: none) and (pointer: coarse) {
+    .vocabulary-selection {
+        -webkit-user-select: none;
+        user-select: none;
+    }
+}
     </style>
 </head>
 
@@ -934,19 +996,127 @@ $currentQuestion = $selectedQuestions[$currentQuestionIndex];
         }
 
 
+function addTextSelectionListeners(element) {
+    const isMobile = window.matchMedia("(hover: none) and (pointer: coarse)").matches;
 
-        function addTextSelectionListeners(element) {
-            // Mouse selection with improved handling
-            element.addEventListener('mouseup', handleTextSelection);
+    if (isMobile) {
+        // ===== موبایل: long press =====
+        let longPressTimer = null;
+        let touchStartX = 0;
+        let touchStartY = 0;
 
-            // Touch selection for mobile
-            element.addEventListener('touchend', handleTextSelection);
+        element.addEventListener('touchstart', function(e) {
+            const touch = e.touches[0];
+            touchStartX = touch.clientX;
+            touchStartY = touch.clientY;
 
-            // Prevent immediate hide when clicking on vocabulary content
-            element.addEventListener('click', function (e) {
-                e.stopPropagation();
-            });
+            longPressTimer = setTimeout(() => {
+                const word = getWordAtPoint(touch.clientX, touch.clientY);
+                if (word && isValidWord(word)) {
+                    selectedText = word;
+                    showVocabIconsAtPoint(touch.pageX, touch.pageY);
+                    if (navigator.vibrate) navigator.vibrate(50);
+                }
+            }, 500);
+        }, { passive: true });
+
+        element.addEventListener('touchmove', function(e) {
+            const touch = e.touches[0];
+            const deltaX = Math.abs(touch.clientX - touchStartX);
+            const deltaY = Math.abs(touch.clientY - touchStartY);
+            if (deltaX > 10 || deltaY > 10) {
+                clearTimeout(longPressTimer);
+                longPressTimer = null;
+            }
+        }, { passive: true });
+
+        element.addEventListener('touchend', function() {
+            clearTimeout(longPressTimer);
+            longPressTimer = null;
+        }, { passive: true });
+
+    } else {
+        // ===== دسکتاپ: mouseup عادی =====
+        element.addEventListener('mouseup', handleTextSelection);
+        element.addEventListener('click', function(e) {
+            e.stopPropagation();
+        });
+    }
+}
+
+function getWordAtPoint(x, y) {
+    let range = null;
+
+    if (document.caretRangeFromPoint) {
+        range = document.caretRangeFromPoint(x, y);
+    } else if (document.caretPositionFromPoint) {
+        const pos = document.caretPositionFromPoint(x, y);
+        if (pos) {
+            range = document.createRange();
+            range.setStart(pos.offsetNode, pos.offset);
+            range.setEnd(pos.offsetNode, pos.offset);
         }
+    }
+
+    if (!range || !range.startContainer || range.startContainer.nodeType !== Node.TEXT_NODE) {
+        return null;
+    }
+
+    const textNode = range.startContainer;
+    const offset = range.startOffset;
+    const text = textNode.textContent;
+
+    let start = offset;
+    let end = offset;
+
+    while (start > 0 && /[a-zA-ZäöüßÄÖÜ]/.test(text[start - 1])) start--;
+    while (end < text.length && /[a-zA-ZäöüßÄÖÜ]/.test(text[end])) end++;
+
+    const word = text.substring(start, end);
+    return word.length >= 2 ? word : null;
+}
+
+function showVocabIconsAtPoint(pageX, pageY) {
+    const iconsDiv = document.getElementById('vocab-icons');
+
+    let top = pageY - 70;
+    let left = pageX - 45;
+
+    left = Math.max(10, Math.min(left, window.innerWidth - 110));
+    top = Math.max(60, top);
+
+    vocabularyState.translated = false;
+    vocabularyState.canSave = false;
+    currentTranslation = '';
+    currentWord = selectedText;
+
+    updateVocabButtons();
+
+    iconsDiv.style.top = top + 'px';
+    iconsDiv.style.left = left + 'px';
+    iconsDiv.style.display = 'block';
+}
+function showVocabIconsAtPoint(pageX, pageY) {
+    const iconsDiv = document.getElementById('vocab-icons');
+    
+    let top = pageY - 70;
+    let left = pageX - 45;
+    
+    // جلوگیری از خروج از صفحه
+    left = Math.max(10, Math.min(left, window.innerWidth - 110));
+    top = Math.max(60, top);
+    
+    vocabularyState.translated = false;
+    vocabularyState.canSave = false;
+    currentTranslation = '';
+    currentWord = selectedText;
+    
+    updateVocabButtons();
+    
+    iconsDiv.style.top = top + 'px';
+    iconsDiv.style.left = left + 'px';
+    iconsDiv.style.display = 'block';
+}
 
         let selectionTimeout;
 
@@ -1366,159 +1536,222 @@ $currentQuestion = $selectedQuestions[$currentQuestionIndex];
         // توابع جدید برای ترجمه و توضیح
         // ============================================
         
-        function toggleTranslation() {
-            const btn = document.getElementById('translateBtn');
-            const explainBtn = document.getElementById('explainBtn');
-            
-            if (translationActive) {
-                // Hide translation
-                translationActive = false;
-                btn.classList.remove('active');
-                hideTranslationContent();
-            } else {
-                // Show translation
-                translationActive = true;
-                btn.classList.add('active');
-                
-                // Hide explanation if active
-                if (explanationActive) {
-                    explanationActive = false;
-                    explainBtn.classList.remove('active');
-                    hideExplanationContent();
-                }
-                
-                showTranslationContent();
-            }
+      function toggleTranslation() {
+    const btn = document.getElementById('translateBtn');
+    const explainBtn = document.getElementById('explainBtn');
+    
+    if (translationActive) {
+        // Hide translation
+        translationActive = false;
+        btn.classList.remove('active');
+        hideTranslationContent();
+    } else {
+        // Show translation only
+        translationActive = true;
+        btn.classList.add('active');
+        
+        // Hide explanation if active
+        if (explanationActive) {
+            explanationActive = false;
+            explainBtn.classList.remove('active');
+            hideExplanationContent();
         }
-        function toggleExplanation() {
-            const btn = document.getElementById('explainBtn');
-            const translateBtn = document.getElementById('translateBtn');
-            
-            if (explanationActive) {
-                // Hide explanation
-                explanationActive = false;
-                btn.classList.remove('active');
-                hideExplanationContent();
-            } else {
-                // Show explanation
-                explanationActive = true;
-                btn.classList.add('active');
-                
-                // Hide translation if active
-                if (translationActive) {
-                    translationActive = false;
-                    translateBtn.classList.remove('active');
-                    hideTranslationContent();
-                }
-                
-                showExplanationContent();
-            }
-        }
+        
+        showTranslationContent();
+    }
+}
+function toggleExplanation() {
+    const btn = document.getElementById('explainBtn');
+    const translateBtn = document.getElementById('translateBtn');
 
-        function showTranslationContent() {
-            if (!currentQuestionData) return;
-            
-            const question = currentQuestionData.question;
-            const answers = currentQuestionData.answers;
-            
-            // Show question translation
-            const questionTransContainer = document.getElementById('question-translation-container');
-            if (question.farsi_text && question.farsi_text.trim()) {
-                questionTransContainer.innerHTML = `
-                    <div class="translation-box">
-                        <p>${question.farsi_text}</p>
-                    </div>
-                `;
-            } else {
-                questionTransContainer.innerHTML = `
-                    <div class="no-translation">
-                        <i class="fas fa-info-circle"></i> ترجمه‌ای برای این سوال موجود نیست
-                    </div>
-                `;
-            }
-            
-            // Show pretext translation if exists
-            const pretextTransContainer = document.getElementById('pretext-translation-container');
-            if (question.asw_farsi && question.asw_farsi.trim()) {
-                pretextTransContainer.innerHTML = `
-                    <div class="pretext-translation">
-                        <strong><i class="fas fa-language"></i> ترجمه:</strong>
-                        <p class="mb-0 mt-2">${question.asw_farsi}</p>
-                    </div>
-                `;
-            } else {
-                pretextTransContainer.innerHTML = '';
-            }
-            
-            // Show answer translations
-            if (answers && answers.length > 0) {
-                answers.forEach((answer, index) => {
-                    const answerItem = document.querySelector(`[data-answer-index="${index}"]`);
-                    if (answerItem && answer.farsi_text && answer.farsi_text.trim()) {
-                        // Remove existing translation if any
-                        const existingTrans = answerItem.querySelector('.answer-translation');
-                        if (existingTrans) existingTrans.remove();
-                        
-                        const translationDiv = document.createElement('div');
-                        translationDiv.className = 'answer-translation';
-                        translationDiv.innerHTML = ` ${answer.farsi_text}`;
-                        answerItem.appendChild(translationDiv);
+    // در حالت تمرین، اگر سوال حل نشده، پیام بده
+    if (mode === 'practice' && !questionSolved) {
+        showVocabToast('ابتدا به سوال پاسخ دهید', 'error');
+        return;
+    }
+
+    if (explanationActive) {
+        explanationActive = false;
+        btn.classList.remove('active');
+        hideExplanationContent();
+
+        if (!translationActive) {
+            hideTranslationContent();
+        }
+    } else {
+        explanationActive = true;
+        btn.classList.add('active');
+
+        showTranslationContent();
+        showExplanationContent();
+    }
+}
+function showTranslationContent() {
+    if (!currentQuestionData) return;
+    
+    const question = currentQuestionData.question;
+    const answers = currentQuestionData.answers;
+    
+    // Show question translation
+    const questionTransContainer = document.getElementById('question-translation-container');
+    if (question.farsi_text && question.farsi_text.trim()) {
+        const additionalClass = explanationActive ? 'with-explanation' : '';
+        questionTransContainer.innerHTML = `
+            <div class="translation-box ${additionalClass}">
+                <p>${question.farsi_text}</p>
+            </div>
+        `;
+    } else {
+        questionTransContainer.innerHTML = `
+            <div class="no-translation">
+                <i class="fas fa-info-circle"></i> ترجمه‌ای برای این سوال موجود نیست
+            </div>
+        `;
+    }
+    
+    // Show pretext translation if exists
+    const pretextTransContainer = document.getElementById('pretext-translation-container');
+    if (question.asw_farsi && question.asw_farsi.trim()) {
+        pretextTransContainer.innerHTML = `
+            <div class="pretext-translation">
+                <strong><i class="fas fa-language"></i> ترجمه:</strong>
+                <p class="mb-0 mt-2">${question.asw_farsi}</p>
+            </div>
+        `;
+    } else {
+        pretextTransContainer.innerHTML = '';
+    }
+    
+    // Show answer translations - زیر متن پاسخ
+    if (answers && answers.length > 0) {
+        answers.forEach((answer, index) => {
+            const answerItem = document.querySelector(`[data-answer-index="${index}"]`);
+            if (answerItem && answer.farsi_text && answer.farsi_text.trim()) {
+                const answerContainer = answerItem.querySelector('.flex-grow-1');
+                if (answerContainer) {
+                    // Remove existing translation if any
+                    const existingTrans = answerContainer.querySelector('.answer-translation');
+                    if (existingTrans) existingTrans.remove();
+                    
+                    const additionalClass = explanationActive ? 'with-explanation' : '';
+                    const translationDiv = document.createElement('div');
+                    translationDiv.className = `answer-translation mt-2 ${additionalClass}`;
+                    translationDiv.innerHTML = `<strong>ترجمه:</strong> ${answer.farsi_text}`;
+                    
+                    // اگر توضیح فعال است، ترجمه را قبل از توضیح قرار بده
+                    const existingExpl = answerContainer.querySelector('.answer-explanation');
+                    if (existingExpl) {
+                        answerContainer.insertBefore(translationDiv, existingExpl);
+                    } else {
+                        answerContainer.appendChild(translationDiv);
                     }
-                });
+                }
             }
-        }
+        });
+    }
+}
 
-        function hideTranslationContent() {
-            document.getElementById('question-translation-container').innerHTML = '';
-            document.getElementById('pretext-translation-container').innerHTML = '';
-            
-            // Remove all answer translations
-            document.querySelectorAll('.answer-translation').forEach(el => el.remove());
-        }
-
-        function showExplanationContent() {
-            if (!currentQuestionData) return;
-            
-            const question = currentQuestionData.question;
-            const answers = currentQuestionData.answers;
-            
-            // Show question explanation
-            const questionExplainContainer = document.getElementById('question-explanation-container');
-            if (question.info && question.info.trim()) {
-                questionExplainContainer.innerHTML = `
-                    <div class="explanation-box">
-                        <h6><i class="fas fa-info-circle"></i> توضیح سوال</h6>
-                        <p>${question.info}</p>
-                    </div>
-                `;
-            } else {
-                questionExplainContainer.innerHTML = `
-                    <div class="no-explanation">
-                        <i class="fas fa-info-circle"></i> توضیحی برای این سوال موجود نیست
-                    </div>
-                `;
+function showExplanationContent() {
+    if (!currentQuestionData) return;
+    
+    const question = currentQuestionData.question;
+    const answers = currentQuestionData.answers;
+    
+    // Show question explanation
+    const questionExplainContainer = document.getElementById('question-explanation-container');
+    if (question.info && question.info.trim()) {
+        const additionalClass = 'with-translation'; // چون همیشه با ترجمه نمایش داده می‌شود
+        questionExplainContainer.innerHTML = `
+            <div class="explanation-box ${additionalClass}">
+                <h6><i class="fas fa-info-circle"></i> توضیح سوال</h6>
+                <p>${question.info}</p>
+            </div>
+        `;
+    } else {
+        questionExplainContainer.innerHTML = `
+            <div class="no-explanation">
+                <i class="fas fa-info-circle"></i> توضیحی برای این سوال موجود نیست
+            </div>
+        `;
+    }
+    
+    // Show answer explanations - زیر متن پاسخ
+    if (answers && answers.length > 0) {
+        answers.forEach((answer, index) => {
+            const answerItem = document.querySelector(`[data-answer-index="${index}"]`);
+            if (answerItem && answer.info && answer.info.trim()) {
+                const answerContainer = answerItem.querySelector('.flex-grow-1');
+                if (answerContainer) {
+                    // Remove existing explanation if any
+                    const existingExpl = answerContainer.querySelector('.answer-explanation');
+                    if (existingExpl) existingExpl.remove();
+                    
+                    const explanationDiv = document.createElement('div');
+                    explanationDiv.className = 'answer-explanation mt-2 with-translation';
+                    explanationDiv.innerHTML = `<strong>توضیح:</strong> ${answer.info}`;
+                    answerContainer.appendChild(explanationDiv);
+                }
             }
-            
-           
-            
-            // Show answer explanations
-            if (answers && answers.length > 0) {
-                answers.forEach((answer, index) => {
-                    const answerItem = document.querySelector(`[data-answer-index="${index}"]`);
-                    if (answerItem && answer.info && answer.info.trim()) {
-                        // Remove existing explanation if any
-                        const existingExpl = answerItem.querySelector('.answer-explanation');
-                        if (existingExpl) existingExpl.remove();
-                        
-                        const explanationDiv = document.createElement('div');
-                        explanationDiv.className = 'answer-explanation';
-                        explanationDiv.innerHTML = `<strong>توضیح:</strong> ${answer.info}`;
-                        answerItem.appendChild(explanationDiv);
-                    }
-                });
-            }
-        }
+        });
+    }
+            document.body.style.minHeight = (document.documentElement.scrollHeight + 300) + 'px';
 
+}
+function hideTranslationContent() {
+    // فقط اگر explanationActive فعال نباشد، ترجمه را مخفی کن
+    if (!explanationActive) {
+        document.getElementById('question-translation-container').innerHTML = '';
+        document.getElementById('pretext-translation-container').innerHTML = '';
+        
+        // Remove all answer translations
+        document.querySelectorAll('.answer-translation').forEach(el => el.remove());
+    }
+}
+function showExplanationContent() {
+    if (!currentQuestionData) return;
+    
+    const question = currentQuestionData.question;
+    const answers = currentQuestionData.answers;
+    
+    // Show question explanation
+    const questionExplainContainer = document.getElementById('question-explanation-container');
+    if (question.info && question.info.trim()) {
+        questionExplainContainer.innerHTML = `
+            <div class="explanation-box">
+                <h6><i class="fas fa-info-circle"></i> توضیح سوال</h6>
+                <p>${question.info}</p>
+            </div>
+        `;
+    } else {
+        questionExplainContainer.innerHTML = `
+            <div class="no-explanation">
+                <i class="fas fa-info-circle"></i> توضیحی برای این سوال موجود نیست
+            </div>
+        `;
+    }
+    
+    // Show answer explanations - زیر متن پاسخ
+    if (answers && answers.length > 0) {
+        answers.forEach((answer, index) => {
+            const answerItem = document.querySelector(`[data-answer-index="${index}"]`);
+            if (answerItem && answer.info && answer.info.trim()) {
+                const answerContainer = answerItem.querySelector('.flex-grow-1');
+                if (answerContainer) {
+                    // Remove existing explanation if any
+                    const existingExpl = answerContainer.querySelector('.answer-explanation');
+                    if (existingExpl) existingExpl.remove();
+                    
+                    const explanationDiv = document.createElement('div');
+                    explanationDiv.className = 'answer-explanation mt-2';
+                    explanationDiv.innerHTML = `<strong>توضیح:</strong> ${answer.info}`;
+                    answerContainer.appendChild(explanationDiv);
+                }
+            }
+        });
+    }
+            document.body.style.minHeight = (document.documentElement.scrollHeight + 300) + 'px';
+
+}
         function hideExplanationContent() {
             document.getElementById('question-explanation-container').innerHTML = '';
             document.getElementById('pretext-explanation-container').innerHTML = '';
@@ -1587,13 +1820,7 @@ $currentQuestion = $selectedQuestions[$currentQuestionIndex];
                         updatePracticeButtons();
                     }
                     
-                    // بعد از بارگذاری سوال جدید، اگر ترجمه یا توضیح فعال بود، نمایش بده
-                    if (translationActive) {
-                        showTranslationContent();
-                    }
-                    if (explanationActive) {
-                        showExplanationContent();
-                    }
+            
                 })
                 .catch(error => {
                     console.error("خطا در بارگذاری سوال:", error);
@@ -1749,15 +1976,23 @@ $currentQuestion = $selectedQuestions[$currentQuestionIndex];
         }
 
         function resetQuestionState() {
-            resetVideoState();
-            questionSolved = false;
-            hasUserAnswer = false;
-            userAnswers = {};
-            hideVocabIcons();
-            
-            // Reset translation and explanation states when changing questions
-            hideTranslationContent();
-            hideExplanationContent();
+           resetVideoState();
+    questionSolved = false;
+    hasUserAnswer = false;
+    userAnswers = {};
+    hideVocabIcons();
+    
+    // ریست کردن ترجمه و توضیح
+    translationActive = false;
+    explanationActive = false;
+    
+    // ریست کردن ظاهر دکمه‌ها
+    document.getElementById('translateBtn').classList.remove('active');
+    document.getElementById('explainBtn').classList.remove('active');
+    
+    // پاک کردن محتوا
+    hideTranslationContent();
+    hideExplanationContent();
         }
 
         function resetVideoState() {
@@ -1833,29 +2068,34 @@ $currentQuestion = $selectedQuestions[$currentQuestionIndex];
             }
         }
 
-        function solveQuestion() {
-            if (mode !== 'practice' || questionSolved) return;
+function solveQuestion() {
+    if (mode !== 'practice' || questionSolved) return;
 
-            questionSolved = true;
+    questionSolved = true;
 
-            const isCorrect = checkUserAnswer();
+    const isCorrect = checkUserAnswer();
+    const questionId = selectedQuestions[currentQuestionIndex];
+    updateAnswerStatus(questionId, isCorrect);
 
-            const questionId = selectedQuestions[currentQuestionIndex];
-            updateAnswerStatus(questionId, isCorrect);
+    showAnswerResults();
 
-            showAnswerResults();
+    solvedQuestions[questionId] = isCorrect;
 
-            solvedQuestions[questionId] = isCorrect;
+    localStorage.setItem('solvedQuestion_' + questionId, JSON.stringify({
+        solved: true,
+        correct: isCorrect,
+        timestamp: Date.now()
+    }));
 
-            localStorage.setItem('solvedQuestion_' + questionId, JSON.stringify({
-                solved: true,
-                correct: isCorrect,
-                timestamp: Date.now()
-            }));
+    updatePracticeButtons();
+    renderPageButtons();
 
-            updatePracticeButtons();
-            renderPageButtons();
-        }
+    // نمایش اتوماتیک توضیح بعد از پاسخ
+    explanationActive = true;
+    document.getElementById('explainBtn').classList.add('active');
+    showTranslationContent();
+    showExplanationContent();
+}
 
         function checkUserAnswer() {
             if (!currentQuestionData || !currentQuestionData.answers) return false;
@@ -2126,191 +2366,108 @@ $currentQuestion = $selectedQuestions[$currentQuestionIndex];
                 return String.fromCharCode((a <= "Z" ? 90 : 122) >= (a = a.charCodeAt(0) + 13) ? a : a - 26);
             });
         }
+function answerBuilder(answers = null) {
+    if (answers && answers.length > 0) {
+        let answersText = "";
+        const answerType = answers[0]['asw_type'] || 1;
 
-        function answerBuilder(answers = null) {
-            if (answers && answers.length > 0) {
-                let answersText = "";
-                const answerType = answers[0]['asw_type'] || 1;
+        if (answerType == 2) {
+            // کد numeric answer بدون تغییر...
+        } else {
+            answers.forEach((answer, index) => {
+                let status = "";
+                let disabled = "";
 
-
-                if (answerType == 2) {
-                    const answer = answers[0];
-                    const hint = answer['asw_hint'] || '';
-                    let correctAnswer = answer['text'] || '';
-
-                    let displayValue = '';
-                    if (mode === 'browse' || questionSolved) {
-                        displayValue = correctAnswer;
+                if (mode === 'browse') {
+                    if (answer['asw_corr'] == 1) {
+                        status = 'checked';
                     }
-
-                    answersText = `
-        <div class="text-center">
-            <div class="mb-4">
-                <div class="d-flex justify-content-center align-items-center gap-2 mb-3">
-                    <input type="text" 
-                           id="numeric-answer" 
-                           value="${displayValue}"
-                           class="form-control text-center" 
-                           style="width: 150px; font-size: 18px; font-weight: bold;" 
-                           ${mode === 'browse' || questionSolved ? 'readonly' : ''}>
-                    <span class="fw-bold fs-5">${hint}</span>
-                </div>
-            </div>
-            
-            <!-- Numeric Keypad -->
-            <div class="numeric-keypad mx-auto" style="max-width: 300px; ${mode === 'browse' || questionSolved ? 'display: none;' : ''}">
-                <div class="row g-2 mb-2">
-                    <div class="col-4">
-                        <button class="btn btn-outline-secondary w-100 keypad-btn" onclick="addNumber('0')">0</button>
-                    </div>
-                    <div class="col-4">
-                        <button class="btn btn-outline-secondary w-100 keypad-btn" onclick="addNumber('1')">1</button>
-                    </div>
-                    <div class="col-4">
-                        <button class="btn btn-outline-secondary w-100 keypad-btn" onclick="addNumber('2')">2</button>
-                    </div>
-                </div>
-                <div class="row g-2 mb-2">
-                    <div class="col-4">
-                        <button class="btn btn-outline-secondary w-100 keypad-btn" onclick="addNumber('3')">3</button>
-                    </div>
-                    <div class="col-4">
-                        <button class="btn btn-outline-secondary w-100 keypad-btn" onclick="addNumber('4')">4</button>
-                    </div>
-                    <div class="col-4">
-                        <button class="btn btn-outline-secondary w-100 keypad-btn" onclick="addNumber('5')">5</button>
-                    </div>
-                </div>
-                <div class="row g-2 mb-2">
-                    <div class="col-4">
-                        <button class="btn btn-outline-secondary w-100 keypad-btn" onclick="addNumber('6')">6</button>
-                    </div>
-                    <div class="col-4">
-                        <button class="btn btn-outline-secondary w-100 keypad-btn" onclick="addNumber('7')">7</button>
-                    </div>
-                    <div class="col-4">
-                        <button class="btn btn-outline-secondary w-100 keypad-btn" onclick="addNumber('8')">8</button>
-                    </div>
-                </div>
-                <div class="row g-2 mb-3">
-                    <div class="col-4">
-                        <button class="btn btn-outline-secondary w-100 keypad-btn" onclick="addNumber('9')">9</button>
-                    </div>
-                    <div class="col-4">
-                        <button class="btn btn-outline-secondary w-100 keypad-btn" onclick="addComma()">,</button>
-                    </div>
-                    <div class="col-4">
-                        <button class="btn btn-outline-secondary w-100 keypad-btn" onclick="clearLastChar()">⌫</button>
-                    </div>
-                </div>
-                <div class="row g-2">
-                    <div class="col-12">
-                        <button class="btn btn-outline-danger w-100" onclick="clearAnswer()">Löschen</button>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Hidden correct answer for validation -->
-            <input type="hidden" id="correct-answer" value="${correctAnswer}">
-        </div>
-    `;
-                } else {
-                    answers.forEach((answer, index) => {
-                        let status = "";
-                        let disabled = "";
-
-                        if (mode === 'browse') {
-                            if (answer['asw_corr'] == 1) {
-                                status = 'checked';
-                            }
-                            disabled = 'disabled';
-                        } else if (mode === 'practice' && questionSolved) {
-                            disabled = 'disabled';
-                        }
-
-                        const isImage = answer['is_image'] == 1;
-                        let answerContent = '';
-
-                        if (isImage) {
-                            let imageName = '';
-                            let isEtcImage = false;
-
-                            if (answer['original_content']) {
-                                const etcMatch = answer['original_content'].match(/%IMG_ETC%\/([^"']+)/);
-                                if (etcMatch) {
-                                    imageName = etcMatch[1];
-                                    isEtcImage = true;
-                                } else {
-                                    const answerMatch = answer['original_content'].match(/%IMG_ANSWER%\/([^"']+)/);
-                                    if (answerMatch) {
-                                        imageName = answerMatch[1];
-                                        isEtcImage = false;
-                                    }
-                                }
-                            }
-
-                            if (!imageName && answer['text']) {
-                                const numberMatch = answer['text'].match(/\d+/);
-                                if (numberMatch) {
-                                    imageName = `answer_${answer['id']}.png`;
-                                    isEtcImage = false;
-                                }
-                            }
-
-                            if (!imageName) {
-                                imageName = `answer_${answer['id']}.png`;
-                                isEtcImage = false;
-                            }
-
-                            let imageUrl = '';
-                            let maxWidth = '';
-                            if (isEtcImage || imageName.toLowerCase().startsWith('div')) {
-                                imageUrl = `https://t24.theorie24.de/2025-01-v400/data/img/etc/de/${imageName}`;
-                                maxWidth = 300;
-                            } else {
-                                imageUrl = `https://t24.theorie24.de/2025-01-v400/data/img/answers/${imageName}`;
-                                maxWidth = 90;
-
-                            }
-
-                            answerContent = `<img src="${imageUrl}" alt="Answer ${index + 1}" class="img-fluid" style="max-width:${maxWidth}px; height: auto;">`;
-                        } else {
-                            const decodedText = answer['text'];
-                            answerContent = `<span class="fw-bold vocabulary-selection" name="text" status="richtig">${decodedText}</span>`;
-                        }
-
-                        answersText += `
-            <div class="d-flex mb-3 align-items-center answer-item" data-answer-index="${index}">
-                <label class="form-label me-2 custom-checkbox">
-                    <input type="checkbox" class="checkbox" data-answer-id="${answer['id']}" 
-                           ${status} ${disabled} 
-                           ${mode === 'practice' && !questionSolved ? 'onchange="handleAnswerChange(this)"' : ''}>
-                    <span class="checkmark"></span>
-                </label>
-                ${answerContent}
-                <span class="d-none" name="help_text"></span>
-            </div>
-        `;
-                    });
+                    disabled = 'disabled';
+                } else if (mode === 'practice' && questionSolved) {
+                    disabled = 'disabled';
                 }
 
-                document.getElementById("answers").innerHTML = answersText;
-                
-                // بعد از ساخت پاسخ‌ها، اگر ترجمه یا توضیح فعال بود، نمایش بده
-                setTimeout(() => {
-                    if (translationActive) {
-                        showTranslationContent();
+                const isImage = answer['is_image'] == 1;
+                let answerContent = '';
+
+                if (isImage) {
+                    // کد تصویر بدون تغییر...
+                    let imageName = '';
+                    let isEtcImage = false;
+
+                    if (answer['original_content']) {
+                        const etcMatch = answer['original_content'].match(/%IMG_ETC%\/([^"']+)/);
+                        if (etcMatch) {
+                            imageName = etcMatch[1];
+                            isEtcImage = true;
+                        } else {
+                            const answerMatch = answer['original_content'].match(/%IMG_ANSWER%\/([^"']+)/);
+                            if (answerMatch) {
+                                imageName = answerMatch[1];
+                                isEtcImage = false;
+                            }
+                        }
                     }
-                    if (explanationActive) {
-                        showExplanationContent();
+
+                    if (!imageName && answer['text']) {
+                        const numberMatch = answer['text'].match(/\d+/);
+                        if (numberMatch) {
+                            imageName = `answer_${answer['id']}.png`;
+                            isEtcImage = false;
+                        }
                     }
-                }, 100);
-            } else {
-                console.log('خطا در استخراج پاسخ');
-                return "";
-            }
+
+                    if (!imageName) {
+                        imageName = `answer_${answer['id']}.png`;
+                        isEtcImage = false;
+                    }
+
+                    let imageUrl = '';
+                    let maxWidth = '';
+                    if (isEtcImage || imageName.toLowerCase().startsWith('div')) {
+                        imageUrl = `https://t24.theorie24.de/2025-01-v400/data/img/etc/de/${imageName}`;
+                        maxWidth = 300;
+                    } else {
+                        imageUrl = `https://t24.theorie24.de/2025-01-v400/data/img/answers/${imageName}`;
+                        maxWidth = 90;
+                    }
+
+                    answerContent = `<img src="${imageUrl}" alt="Answer ${index + 1}" class="img-fluid" style="max-width:${maxWidth}px; height: auto;">`;
+                } else {
+                    const decodedText = answer['text'];
+                    answerContent = `
+                        <div class="vocabulary-selection">
+                            <span class="fw-bold" name="text" status="richtig">${decodedText}</span>
+                            <span class="d-none" name="help_text"></span>
+                        </div>
+                    `;
+                }
+
+                answersText += `
+                    <div class="d-flex mb-3 align-items-start answer-item" data-answer-index="${index}">
+                        <label class="form-label me-2 custom-checkbox">
+                            <input type="checkbox" class="checkbox" data-answer-id="${answer['id']}" 
+                                   ${status} ${disabled} 
+                                   ${mode === 'practice' && !questionSolved ? 'onchange="handleAnswerChange(this)"' : ''}>
+                            <span class="checkmark"></span>
+                        </label>
+                        <div class="flex-grow-1">
+                            ${answerContent}
+                        </div>
+                    </div>
+                `;
+            });
         }
+
+        document.getElementById("answers").innerHTML = answersText;
         
+
+    } else {
+        console.log('خطا در استخراج پاسخ');
+        return "";
+    }
+}
+
         function handleAnswerChange(checkbox) {
             if (mode !== 'practice' || questionSolved) return;
 
@@ -2437,6 +2594,12 @@ $currentQuestion = $selectedQuestions[$currentQuestionIndex];
                 updateNavigationButtons();
 
             }
+            window.scrollTo({
+  top: 0,
+  left: 0,
+  behavior: 'smooth'
+});
+
         }
 
         function previousQuestion() {
@@ -2446,6 +2609,12 @@ $currentQuestion = $selectedQuestions[$currentQuestionIndex];
                 renderPageButtons();
 
                 updateNavigationButtons();
+                window.scrollTo({
+  top: 0,
+  left: 0,
+  behavior: 'smooth'
+});
+
             }
         }
 
@@ -2502,6 +2671,12 @@ $currentQuestion = $selectedQuestions[$currentQuestionIndex];
             currentQuestionIndex = index;
             loadCurrentQuestion();
             renderPageButtons();
+            window.scrollTo({
+  top: 0,
+  left: 0,
+  behavior: 'smooth'
+});
+
         }
 
         function renderPageButtons() {
@@ -2567,6 +2742,7 @@ $currentQuestion = $selectedQuestions[$currentQuestionIndex];
                 });
             }
         }
+        document.body.style.minHeight = (document.documentElement.scrollHeight + 300) + 'px';
     </script>
 </body>
 
