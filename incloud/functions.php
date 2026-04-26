@@ -139,6 +139,39 @@ function verify_captcha($input)
     return $result;
 }
 
+// بررسی Google reCAPTCHA
+function verify_recaptcha($response)
+{
+    if (empty($response)) {
+        return false;
+    }
+
+    $url = 'https://www.google.com/recaptcha/api/siteverify';
+    $data = [
+        'secret' => RECAPTCHA_SECRET_KEY,
+        'response' => $response,
+        'remoteip' => get_user_ip()
+    ];
+
+    $options = [
+        'http' => [
+            'header'  => "Content-type: application/x-www-form-urlencoded\r\n",
+            'method'  => 'POST',
+            'content' => http_build_query($data)
+        ]
+    ];
+
+    $context  = stream_context_create($options);
+    $result = file_get_contents($url, false, $context);
+    
+    if ($result === FALSE) {
+        return false;
+    }
+
+    $resultJson = json_decode($result);
+    return $resultJson->success;
+}
+
 // ذخیره سشن در دیتابیس
 function save_session($user_id, $pdo)
 {

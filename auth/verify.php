@@ -12,7 +12,7 @@ if (empty($token)) {
 } else {
     // بررسی توکن
     $stmt = $pdo->prepare("
-        SELECT id, email, name, email_verified 
+        SELECT id, email, name, email_verified, pending_email 
         FROM users 
         WHERE verification_token = ?
     ");
@@ -21,28 +21,34 @@ if (empty($token)) {
     
     if (!$user) {
         $message = 'توکن تایید نامعتبر یا منقضی شده است.';
-    } elseif ($user['email_verified'] == 1) {
+    } elseif ($user['email_verified'] == 1 && empty($user['pending_email'])) {
         $message = 'حساب کاربری شما قبلاً تایید شده است.';
         $messageType = 'info';
         $verified = true;
     } else {
-        // تایید حساب کاربری
+        // تایید حساب کاربری یا تغییر ایمیل
         try {
+            $new_email = $user['pending_email'] ?: $user['email'];
+            
             $stmt = $pdo->prepare("
                 UPDATE users 
-                SET email_verified = 1, verification_token = NULL 
+                SET email = ?, email_verified = 1, verification_token = NULL, pending_email = NULL 
                 WHERE id = ?
             ");
-            $stmt->execute([$user['id']]);
+            $stmt->execute([$new_email, $user['id']]);
             
-            // ارسال ایمیل خوش‌آمدگویی
+            // ارسال ایمیل خوش‌آمدگویی یا تایید تغییر
             require_once __DIR__ . '/../incloud/mail-functions.php';
-            send_welcome_email($user['email'], $user['name']);
+            if (!empty($user['pending_email'])) {
+                $message = 'ایمیل شما با موفقیت تغییر یافت و تایید شد!';
+            } else {
+                send_welcome_email($new_email, $user['name']);
+                $message = 'حساب کاربری شما با موفقیت تایید شد! اکنون می‌توانید وارد شوید.';
+            }
             
             // ثبت لاگ
-            log_user_action($user['id'], $user['email'], 'email_verification', 'success', $pdo);
+            log_user_action($user['id'], $new_email, 'email_verification', 'success', $pdo);
             
-            $message = 'حساب کاربری شما با موفقیت تایید شد! اکنون می‌توانید وارد شوید.';
             $messageType = 'success';
             $verified = true;
             

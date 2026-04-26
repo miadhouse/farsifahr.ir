@@ -30,6 +30,7 @@ if (is_logged_in()) {
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
 
     <link href="assets/css/style.rtl.css" rel="stylesheet">
+    <script src="https://www.google.com/recaptcha/api.js?hl=fa" async defer></script>
 
 </head>
 <style>
@@ -1268,15 +1269,8 @@ if (is_logged_in()) {
                             <input type="password" class="form-control" name="password" required>
                         </div>
 
-                        <div class="mb-3">
-                            <label class="form-label">کد امنیتی</label>
-                            <div class="input-group">
-                                <input type="text" class="form-control" name="captcha" required>
-                                <span class="input-group-text p-0">
-                                    <img src="incloud/captcha.php" alt="کپچا" id="captchaImage" style="cursor: pointer;"
-                                        onclick="refreshCaptcha()">
-                                </span>
-                            </div>
+                        <div class="mb-3 d-flex justify-content-center">
+                            <div class="g-recaptcha" data-sitekey="<?php echo RECAPTCHA_SITE_KEY; ?>"></div>
                         </div>
 
                         <div class="mb-3 form-check">
@@ -1337,15 +1331,8 @@ if (is_logged_in()) {
                             <input type="password" class="form-control" name="password_confirm" required>
                         </div>
 
-                        <div class="mb-3">
-                            <label class="form-label">کد امنیتی</label>
-                            <div class="input-group">
-                                <input type="text" class="form-control" name="captcha" required>
-                                <span class="input-group-text p-0">
-                                    <img src="incloud/captcha.php" alt="کپچا" id="captchaImage2"
-                                        style="cursor: pointer;" onclick="refreshCaptcha2()">
-                                </span>
-                            </div>
+                        <div class="mb-3 d-flex justify-content-center">
+                            <div class="g-recaptcha" data-sitekey="<?php echo RECAPTCHA_SITE_KEY; ?>"></div>
                         </div>
 
                         <div class="d-grid gap-2">

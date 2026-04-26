@@ -13,7 +13,7 @@
     <li class="dropdown-menu-header border-bottom">
       <div class="dropdown-header d-flex align-items-center py-3">
         <h5 class="text-body mb-0 me-auto secondary-font">سبد خرید</h5>
-        <span class=" text-body"><i class="bx fs-4 bx-cart"></i></a>
+        <span class="text-body"><i class="bx fs-4 bx-cart"></i></span>
       </div>
     </li>
     <ul class="list-group list-group-flush">
@@ -34,7 +34,8 @@
               </div>
               <div class="flex-shrink-0 dropdown-notifications-actions">
                 <a href="javascript:void(0)" class="dropdown-notifications-read">در حال بازبینی</a>
-                <a class=""><span class="bx bx-trash  text-warning"></span></a>
+                <form id="cancel-pending-form" action="cancel-pending-subscription.php" method="POST" style="display:none;"></form>
+                <a href="javascript:void(0)" onclick="if(confirm('آیا از لغو این درخواست اطمینان دارید؟')) document.getElementById('cancel-pending-form').submit();" class="dropdown-notifications-archive"><span class="bx bx-trash text-danger"></span></a>
               </div>
             </div>
           </li>

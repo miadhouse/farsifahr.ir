@@ -53,6 +53,7 @@ $recent_logins = $stmt->fetchAll();
     <link rel="stylesheet" href="assets/vendor/libs/perfect-scrollbar/perfect-scrollbar.css">
     <link rel="stylesheet" href="assets/vendor/libs/typeahead-js/typeahead.css">
     <link rel="stylesheet" href="assets/vendor/libs/apex-charts/apex-charts.css">
+    <link rel="stylesheet" href="assets/vendor/libs/sweetalert2/sweetalert2.css">
 
     <!-- Page CSS -->
 

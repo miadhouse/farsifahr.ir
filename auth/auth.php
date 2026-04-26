@@ -42,18 +42,18 @@ function handle_login($pdo, $ip)
 {
     $email = trim($_POST['email'] ?? '');
     $password = $_POST['password'] ?? '';
-    $captcha = $_POST['captcha'] ?? '';
+    $recaptcha_response = $_POST['g-recaptcha-response'] ?? '';
     $remember = isset($_POST['remember']) && $_POST['remember'] === 'on';
 
     // اعتبارسنجی ورودی‌ها
-    if (empty($email) || empty($password) || empty($captcha)) {
-        echo json_encode(['success' => false, 'message' => 'لطفا تمام فیلدها را پر کنید']);
+    if (empty($email) || empty($password) || empty($recaptcha_response)) {
+        echo json_encode(['success' => false, 'message' => 'لطفا تمام فیلدها را پر کنید و کپچا را حل کنید']);
         return;
     }
 
-    // بررسی کپچا
-    if (!verify_captcha($captcha)) {
-        echo json_encode(['success' => false, 'message' => 'کد امنیتی اشتباه است']);
+    // بررسی reCAPTCHA
+    if (!verify_recaptcha($recaptcha_response)) {
+        echo json_encode(['success' => false, 'message' => 'تاییدیه کپچا نامعتبر است']);
         return;
     }
 
@@ -76,6 +76,17 @@ function handle_login($pdo, $ip)
         log_login_attempt($email, $ip, $pdo);
         log_user_action(null, $email, 'login', 'failed', $pdo);
         echo json_encode(['success' => false, 'message' => 'ایمیل یا رمز عبور اشتباه است']);
+        return;
+    }
+
+    // بررسی وضعیت تایید ایمیل
+    if ($user['email_verified'] == 0) {
+        echo json_encode([
+            'success' => false, 
+            'status' => 'unverified',
+            'email' => $email,
+            'message' => 'حساب کاربری شما تایید نشده است. لطفا ایمیل خود را بررسی کنید.'
+        ]);
         return;
     }
 
@@ -116,17 +127,17 @@ function handle_register($pdo, $ip)
     $email = trim($_POST['email'] ?? '');
     $password = $_POST['password'] ?? '';
     $password_confirm = $_POST['password_confirm'] ?? '';
-    $captcha = $_POST['captcha'] ?? '';
+    $recaptcha_response = $_POST['g-recaptcha-response'] ?? '';
 
     // اعتبارسنجی
-    if (empty($name) || empty($email) || empty($password) || empty($captcha)) {
-        echo json_encode(['success' => false, 'message' => 'لطفا تمام فیلدها را پر کنید']);
+    if (empty($name) || empty($email) || empty($password) || empty($recaptcha_response)) {
+        echo json_encode(['success' => false, 'message' => 'لطفا تمام فیلدها را پر کنید و کپچا را حل کنید']);
         return;
     }
 
-    // بررسی کپچا
-    if (!verify_captcha($captcha)) {
-        echo json_encode(['success' => false, 'message' => 'کد امنیتی اشتباه است']);
+    // بررسی reCAPTCHA
+    if (!verify_recaptcha($recaptcha_response)) {
+        echo json_encode(['success' => false, 'message' => 'تاییدیه کپچا نامعتبر است']);
         return;
     }
 

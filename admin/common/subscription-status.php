@@ -1,0 +1,69 @@
+<?php
+$navbar_active_sub = get_user_active_subscription($_SESSION['user_id'], $pdo);
+$navbar_pending_sub = get_user_pending_subscription($_SESSION['user_id'], $pdo);
+
+$status_label = 'اشتراک رایگان';
+$status_class = 'bg-label-secondary';
+
+if ($navbar_active_sub && $navbar_active_sub['plan_slug'] !== 'free') {
+    $dur_label = '';
+    if ($navbar_active_sub['duration_days'] > 0) {
+        if ($navbar_active_sub['duration_days'] == 14) $dur_label = ' (۲ هفته)';
+        elseif ($navbar_active_sub['duration_days'] == 30) $dur_label = ' (۱ ماه)';
+        elseif ($navbar_active_sub['duration_days'] == 90) $dur_label = ' (۳ ماه)';
+        elseif ($navbar_active_sub['duration_days'] == 180) $dur_label = ' (۶ ماه)';
+        elseif ($navbar_active_sub['duration_days'] == 365) $dur_label = ' (۱ سال)';
+        else $dur_label = ' (' . $navbar_active_sub['duration_days'] . ' روز)';
+    }
+    $status_label = $navbar_active_sub['plan_name'] . $dur_label;
+    $status_class = 'bg-label-success';
+} elseif ($navbar_pending_sub) {
+    $dur_label = '';
+    if ($navbar_pending_sub['duration_days'] > 0) {
+        if ($navbar_pending_sub['duration_days'] == 14) $dur_label = ' ۲ هفته';
+        elseif ($navbar_pending_sub['duration_days'] == 30) $dur_label = ' ۱ ماه';
+        elseif ($navbar_pending_sub['duration_days'] == 90) $dur_label = ' ۳ ماه';
+        elseif ($navbar_pending_sub['duration_days'] == 180) $dur_label = ' ۶ ماه';
+        elseif ($navbar_pending_sub['duration_days'] == 365) $dur_label = ' ۱ سال';
+    }
+    $status_label = $navbar_pending_sub['plan_name'] . $dur_label . ' (در حال بازبینی)';
+    $status_class = 'bg-label-warning';
+}
+?>
+
+<li class="nav-item me-2 me-xl-0 d-flex align-items-center">
+    <div class="d-flex align-items-center bg-label-light rounded-pill px-3 py-1 border shadow-sm" style="background-color: rgba(255, 255, 255, 0.05);">
+        <span class="badge <?= $status_class ?> me-1">
+            <i class="bx bx-wallet me-1 small"></i>
+            <?= htmlspecialchars($status_label) ?>
+        </span>
+        
+        <?php if (($navbar_active_sub === false || $navbar_active_sub['plan_slug'] === 'free') && !$navbar_pending_sub): ?>
+            <div class="d-flex align-items-center ms-2 border-start ps-2">
+                <a href="subscription.php" class="btn btn-xs btn-primary py-0 px-2 rounded-pill">
+                    ارتقاء <i class="bx bx-up-arrow-alt ms-1 small"></i>
+                </a>
+            </div>
+        <?php endif; ?>
+
+        <?php if ($navbar_pending_sub): ?>
+            <?php 
+                $nav_wa_msg = "سلام، من درخواست اشتراک " . $navbar_pending_sub['plan_name'] . " با مبلغ " . number_format($navbar_pending_sub['amount_paid']) . " تومان را در سایت فارسی‌فهر ثبت کردم.\nایمیل من: " . ($_SESSION['email'] ?? 'نامشخص') . "\nلطفا فعال کنید.";
+            ?>
+            <div class="d-flex align-items-center ms-2 border-start ps-2">
+                <a href="https://wa.me/989177876760?text=<?= urlencode($nav_wa_msg) ?>" 
+                   target="_blank" 
+                   class="btn btn-icon btn-xs btn-success rounded-circle me-1" 
+                   title="واتس‌اپ">
+                    <i class="bx bxl-whatsapp"></i>
+                </a>
+                <a href="https://t.me/farsifahr" 
+                   target="_blank" 
+                   class="btn btn-icon btn-xs btn-info rounded-circle" 
+                   title="تلگرام">
+                    <i class="bx bxl-telegram"></i>
+                </a>
+            </div>
+        <?php endif; ?>
+    </div>
+</li>

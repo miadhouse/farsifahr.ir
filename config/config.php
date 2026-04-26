@@ -4,12 +4,12 @@ session_start();
 
 // تنظیمات دیتابیس
 define('DB_HOST', 'localhost');
-define('DB_NAME', 'farsi-fahr2');
-define('DB_USER', 'root');
-define('DB_PASS', '');
+define('DB_NAME', 'imiad_farsifahr');
+define('DB_USER', 'imiad_miad');
+define('DB_PASS', 'QE^7u@JoE5h@aTwF');
 
 // تنظیمات سایت
-define('SITE_URL', 'http://localhost/farsifahr2/');
+define('SITE_URL', 'http://imiad.online/');
 define('SITE_NAME', value: 'گواهینامه آلمانی به فارسی');
 
 // تنظیمات ایمیل
@@ -22,6 +22,9 @@ define('SMTP_FROM', 'persian.techfact@gmail.com');
 
 
 // تنظیمات امنیتی
+define('RECAPTCHA_SITE_KEY', 'YOUR_SITE_KEY_HERE');
+define('RECAPTCHA_SECRET_KEY', 'YOUR_SECRET_KEY_HERE');
+
 define('MAX_LOGIN_ATTEMPTS', 5);
 define('LOGIN_ATTEMPT_TIMEOUT', 15); // دقیقه
 define('SESSION_LIFETIME', 3600); // ثانیه

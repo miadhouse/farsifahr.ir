@@ -16,6 +16,10 @@
         <!-- Language -->
         <!--/ Language -->
 
+        <!-- Subscription Status -->
+        <?php include("subscription-status.php"); ?>
+        <!-- /Subscription Status -->
+
         <!-- Style Switcher -->
         <?php include("style-switcher.php"); ?>
         <!--/ Style Switcher -->

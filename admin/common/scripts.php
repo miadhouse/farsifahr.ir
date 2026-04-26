@@ -13,6 +13,7 @@
 
     <!-- Vendors JS -->
     <script src="assets/vendor/libs/apex-charts/apexcharts.js"></script>
+    <script src="assets/vendor/libs/sweetalert2/sweetalert2.js"></script>
 
     <!-- Main JS -->
     <script src="assets/js/main1.js"></script>

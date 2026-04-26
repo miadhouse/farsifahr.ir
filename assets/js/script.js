@@ -1,14 +1,5 @@
 // assets/js/main.js
 
-// تابع رفرش کپچا
-function refreshCaptcha() {
-    document.getElementById('captchaImage').src = 'incloud/captcha.php?' + Date.now();
-}
-
-function refreshCaptcha2() {
-    document.getElementById('captchaImage2').src = 'incloud/captcha.php?' + Date.now();
-}
-
 // نمایش مدال بازیابی رمز
 function showResetModal() {
     const loginModal = bootstrap.Modal.getInstance(document.getElementById('loginModal'));
@@ -52,13 +43,91 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
             }).then(() => {
                 window.location.href = result.redirect;
             });
+        } else if (result.status === 'unverified') {
+            let countdown = 60;
+            let timerInterval;
+            
+            Swal.fire({
+                icon: 'warning',
+                title: 'تایید ایمیل الزامی است',
+                html: `
+                    <p>${result.message}</p>
+                    <div id="resend-wrapper">
+                        <button id="resend-btn" class="btn btn-primary btn-sm">
+                            <i class="bi bi-envelope"></i> ارسال مجدد ایمیل تایید
+                        </button>
+                    </div>
+                    <div id="timer-text" class="mt-2 text-muted small" style="display:none">
+                        امکان ارسال مجدد تا <span id="seconds">60</span> ثانیه دیگر
+                    </div>
+                `,
+                showConfirmButton: true,
+                confirmButtonText: 'متوجه شدم',
+                didOpen: () => {
+                    const resendBtn = document.getElementById('resend-btn');
+                    const timerText = document.getElementById('timer-text');
+                    const secondsSpan = document.getElementById('seconds');
+                    
+                    resendBtn.addEventListener('click', async () => {
+                        resendBtn.disabled = true;
+                        resendBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> در حال ارسال...';
+                        
+                        try {
+                            const res = await fetch('auth/resend-verification.php', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                                body: 'email=' + encodeURIComponent(result.email)
+                            });
+                            const resData = await res.json();
+                            
+                            if (resData.success) {
+                                Swal.showValidationMessage(''); // پاک کردن پیام خطا
+                                resendBtn.style.display = 'none';
+                                timerText.style.display = 'block';
+                                
+                                countdown = 60;
+                                timerInterval = setInterval(() => {
+                                    countdown--;
+                                    secondsSpan.textContent = countdown;
+                                    if (countdown <= 0) {
+                                        clearInterval(timerInterval);
+                                        resendBtn.style.display = 'inline-block';
+                                        resendBtn.disabled = false;
+                                        resendBtn.innerHTML = '<i class="bi bi-envelope"></i> ارسال مجدد ایمیل تایید';
+                                        timerText.style.display = 'none';
+                                    }
+                                }, 1000);
+                                
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'ارسال شد',
+                                    text: resData.message,
+                                    timer: 3000
+                                });
+                            } else {
+                                Swal.showValidationMessage(resData.message);
+                                resendBtn.disabled = false;
+                                resendBtn.innerHTML = '<i class="bi bi-envelope"></i> ارسال مجدد ایمیل تایید';
+                            }
+                        } catch (err) {
+                            Swal.showValidationMessage('خطا در برقراری ارتباط');
+                            resendBtn.disabled = false;
+                            resendBtn.innerHTML = '<i class="bi bi-envelope"></i> ارسال مجدد ایمیل تایید';
+                        }
+                    });
+                },
+                willClose: () => {
+                    clearInterval(timerInterval);
+                }
+            });
+            grecaptcha.reset();
         } else {
             Swal.fire({
                 icon: 'error',
                 title: 'خطا',
                 text: result.message
             });
-            refreshCaptcha();
+            grecaptcha.reset();
         }
     } catch (error) {
         Swal.fire({
@@ -121,7 +190,7 @@ document.getElementById('registerForm').addEventListener('submit', async functio
                 title: 'خطا',
                 text: result.message
             });
-            refreshCaptcha2();
+            grecaptcha.reset();
         }
     } catch (error) {
         Swal.fire({
