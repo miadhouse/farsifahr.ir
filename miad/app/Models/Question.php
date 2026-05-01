@@ -58,4 +58,10 @@ public function answers()
 {
     return $this->hasMany(Answer::class, 'question_number', 'number');
 }
+
+// رابطه با جدول تگ‌ها (دسته‌بندی‌های خاص)
+public function tags()
+{
+    return $this->belongsToMany(QuestionTag::class);
+}
 }

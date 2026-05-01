@@ -1282,9 +1282,9 @@ if (is_logged_in()) {
                             <button type="submit" class="btn btn-primary">
                                 <i class="bi bi-box-arrow-in-left"></i> ورود
                             </button>
-
-                            <button type="button" class="btn btn-danger" onclick="googleLogin()">
-                                <i class="bi bi-google"></i> ورود با گوگل
+                            <button type="button" class="btn btn-outline-danger d-flex align-items-center justify-content-center gap-2" onclick="googleLogin()" style="border: 2px solid #f56565; color: #fff; background: rgba(245, 101, 101, 0.1);">
+                                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20">
+                                ورود سریع با گوگل
                             </button>
                         </div>
 
@@ -1340,8 +1340,9 @@ if (is_logged_in()) {
                                 <i class="bi bi-person-plus"></i> ثبت نام
                             </button>
 
-                            <button type="button" class="btn btn-danger" onclick="googleLogin()">
-                                <i class="bi bi-google"></i> ثبت نام با گوگل
+                            <button type="button" class="btn btn-outline-danger d-flex align-items-center justify-content-center gap-2" onclick="googleLogin()" style="border: 2px solid #f56565; color: #fff; background: rgba(245, 101, 101, 0.1);">
+                                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20">
+                                ثبت نام سریع با گوگل
                             </button>
                         </div>
                     </form>

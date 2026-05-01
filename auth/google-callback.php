@@ -38,12 +38,17 @@ if (isset($_GET['code'])) {
                 $stmt->execute([$google_id, $user['id']]);
             }
         } else {
+            // تولید رمز عبور تصادفی قوی برای امنیت بیشتر (اگر بعدا بخواهند با ایمیل وارد شوند)
+            $random_password = bin2hex(random_bytes(16));
+            $hashed_password = hash_password($random_password);
+            
             // ثبت کاربر جدید
             $stmt = $pdo->prepare("
-                INSERT INTO users (email, name, google_id, email_verified) 
-                VALUES (?, ?, ?, 1)
+                INSERT INTO users (email, name, google_id, password, role, email_verified) 
+                VALUES (?, ?, ?, ?, 'user', 1)
             ");
-            $stmt->execute([$email, $name, $google_id]);
+            $stmt->execute([$email, $name, $google_id, $hashed_password]);
+            
             $user = [
                 'id' => $pdo->lastInsertId(),
                 'email' => $email,
@@ -65,8 +70,8 @@ if (isset($_GET['code'])) {
         // ثبت لاگ
         log_user_action($user['id'], $email, 'google_login', 'success', $pdo);
         
-        // هدایت به داشبورد
-        header("Location: dashboard.php");
+        // هدایت به پنل مدیریت
+        header("Location: " . SITE_URL . "admin/");
         exit();
         
     } catch (Exception $e) {

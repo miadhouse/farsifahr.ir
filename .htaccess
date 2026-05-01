@@ -1,7 +1,19 @@
-### Rewrite Rules Added by CyberPanel Rewrite Rule Generator
-
 RewriteEngine On
-RewriteCond %{HTTPS}  !=on
+RewriteBase /
+
+# Redirect HTTP to HTTPS
+RewriteCond %{HTTPS} !=on
 RewriteRule ^/?(.*) https://%{SERVER_NAME}/$1 [R,L]
 
-### End CyberPanel Generated Rules.
+# Optimization: Serve existing files directly
+RewriteCond %{REQUEST_FILENAME} -f
+RewriteRule ^ - [L]
+
+# Route /panel to Laravel
+RewriteRule ^panel/?(.*)$ miad/index.php [L,QSA]
+
+# Handle Livewire & Filament Assets directly for speed
+RewriteRule ^livewire/(.*)$ miad/public/livewire/$1 [L]
+RewriteRule ^vendor/filament/(.*)$ miad/public/vendor/filament/$1 [L]
+RewriteRule ^js/filament/(.*)$ miad/public/js/filament/$1 [L]
+RewriteRule ^css/filament/(.*)$ miad/public/css/filament/$1 [L]

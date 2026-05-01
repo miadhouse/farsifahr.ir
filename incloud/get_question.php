@@ -23,6 +23,15 @@ if (!isset($_POST['csrf_token']) || empty($_POST['csrf_token'])) {
     exit;
 }
 
+if (!isset($_SESSION['user_id'])) {
+    echo json_encode([
+        'success' => false,
+        'message' => 'نشست شما منقضی شده است. لطفاً صفحه را رفرش کنید.',
+        'requires_reload' => true
+    ]);
+    exit;
+}
+
 if (!isset($_POST['question_id']) || empty($_POST['question_id'])) {
     echo json_encode([
         'success' => false,

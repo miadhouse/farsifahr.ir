@@ -50,16 +50,18 @@ try {
         $questionId = htmlspecialchars($question['id']);
         $questionText = htmlspecialchars($question['text']);
 
-        echo '<div class="form-check modal-bg form-check-primary mt-3 question-item">';
+        echo '<div class="form-check modal-bg form-check-primary mt-3 question-item d-flex align-items-center justify-content-between">';
+        echo '<div>';
         echo '<input style="margin-right: -1.4em;" class="form-check-input " type="checkbox" value="' . $questionId . '" id="' . $questionId . '" checked>';
         echo '<label class="form-check-label" for="' . $questionId . '">';
         echo '<div class="question-content">';
-        // echo '<div class="question-number">';
-        // echo '<span class="badge bg-secondary me-2">' . $questionNumber . '</span>';
-        // echo '</div>';
         echo '<div class="question-text fs-6 small-tex text-bg-darkt">' . $questionText . '</div>';
         echo '</div>';
         echo '</label>';
+        echo '</div>';
+        echo '<button type="button" class="btn btn-sm btn-outline-info bot-fetch-btn" data-q-id="' . $questionId . '" title="دریافت اطلاعات از سایت آلمانی">';
+        echo '<i class="fas fa-robot"></i>';
+        echo '</button>';
         echo '</div>';
     }
 
@@ -197,22 +199,60 @@ try {
 
 <script>
     // Add some interactive behavior for the loaded questions
-    document.addEventListener('DOMContentLoaded', function () {
-        // Auto-scroll to show that content is loaded
-        setTimeout(() => {
-            const questionsContainer = document.getElementById('questionsContainer');
-            if (questionsContainer) {
-                questionsContainer.scrollTop = 0;
-            }
-        }, 100);
+    $(document).ready(function () {
+        $('.bot-fetch-btn').on('click', function(e) {
+            e.preventDefault();
+            const btn = $(this);
+            const questionId = btn.data('q-id');
+            const originalIcon = btn.html();
 
-        // Add keyboard navigation
-        document.addEventListener('keydown', function (e) {
-            if (e.target.type === 'checkbox' && (e.key === 'Enter' || e.key === ' ')) {
-                e.preventDefault();
-                e.target.checked = !e.target.checked;
-                e.target.dispatchEvent(new Event('change'));
-            }
+            Swal.fire({
+                title: 'در حال دریافت اطلاعات...',
+                text: 'لطفا منتظر بمانید، ربات در حال جستجو در سایت Führerschein-bestehen است.',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
+            btn.html('<i class="fas fa-spinner fa-spin"></i>').prop('disabled', true);
+
+            $.ajax({
+                url: '../incloud/fetch_question_info.php',
+                type: 'POST',
+                data: {
+                    action: 'bot_fetch',
+                    question_id: questionId
+                },
+                success: function(response) {
+                    btn.html(originalIcon).prop('disabled', false);
+                    if (response.success) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'موفقیت‌آمیز',
+                            text: response.message,
+                            confirmButtonText: 'عالیه'
+                        });
+                        btn.removeClass('btn-outline-info').addClass('btn-success');
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'خطا',
+                            text: response.message,
+                            confirmButtonText: 'باشه'
+                        });
+                    }
+                },
+                error: function() {
+                    btn.html(originalIcon).prop('disabled', false);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'خطا',
+                        text: 'ایرادی در برقراری ارتباط با سرور پیش آمد.',
+                        confirmButtonText: 'باشه'
+                    });
+                }
+            });
         });
     });
 </script>

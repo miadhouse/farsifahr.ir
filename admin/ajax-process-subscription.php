@@ -58,6 +58,12 @@ if ($pending_subscription) {
     exit;
 }
 
+// بررسی اشتراک فعال قبلی (VIP)
+if (is_user_vip($user_id, $pdo)) {
+    echo json_encode(['success' => false, 'message' => 'شما در حال حاضر یک اشتراک VIP فعال دارید و نمی‌توانید اشتراک دیگری خریداری کنید.']);
+    exit;
+}
+
 // ثبت درخواست
 try {
     $pdo->beginTransaction();

@@ -26,8 +26,10 @@ class AdminPanelProvider extends PanelProvider
         return $panel
             ->default()
             ->id('admin')
-            ->path('admin')
+            ->path('panel')
             ->login()
+            ->font('IRANSans')
+            ->brandName('فارسی فاهر')
             ->colors([
                 'primary' => Color::Amber,
             ])
@@ -38,8 +40,9 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\Filament\Widgets')
             ->widgets([
-                AccountWidget::class,
-                FilamentInfoWidget::class,
+                \App\Filament\Widgets\StatsOverview::class,
+                \App\Filament\Widgets\RevenueChart::class,
+                \App\Filament\Widgets\UsersChart::class,
             ])
             ->middleware([
                 EncryptCookies::class,

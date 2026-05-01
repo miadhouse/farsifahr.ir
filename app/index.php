@@ -3,10 +3,12 @@ require_once __DIR__ . '/../incloud/questions.php';
 // در ابتدای فایل PHP بعد از require_once
 // فقط token موجود در session را دریافت می‌کنیم (که موقع لاگین ساخته شده)
 $csrf_token = $_SESSION['csrf_token'] ?? '';
+$user_id = $_SESSION['user_id'] ?? null;
 
 // اگر token وجود نداشت (کاربر لاگین نیست)، خطا نمایش دهید
-if (empty($csrf_token)) {
-    die('لطفاً مجدداً وارد شوید');
+if (empty($csrf_token) || empty($user_id)) {
+    header("Location: ../auth/auth.php");
+    exit;
 }
 if (!isset($_POST['selected_questions'])) {
     die('پارامترهای لازم ارسال نشده‌اند');
@@ -64,6 +66,30 @@ $totalPages = ceil($totalQuestions / $questionsPerPage);
 // سوال فعلی
 $currentQuestion = $selectedQuestions[$currentQuestionIndex];
 
+// دسترسی کاربر
+$user_id = $_SESSION['user_id'] ?? null;
+$isVip = is_user_vip($user_id, $pdo);
+$questionLimit = get_user_question_limit($user_id, $pdo);
+
+$maxAccessibleId = 999999999; // پیش‌فرض نامحدود
+if (!$isVip && $questionLimit !== null) {
+    $examDateType = getUserExamDateType($pdo, $user_id);
+    $availableCondition = "";
+    if ($examDateType === 'before') {
+        $availableCondition = " AND (available = 0 OR available = 1)";
+    } elseif ($examDateType === 'after') {
+        $availableCondition = " AND (available = 0 OR available = 2)";
+    }
+    
+    $stmt = $pdo->prepare("SELECT id FROM questions WHERE 1=1 $availableCondition ORDER BY id ASC LIMIT 1 OFFSET " . ($questionLimit - 1));
+    $stmt->execute();
+    $limitId = $stmt->fetchColumn();
+    if ($limitId !== false) {
+        $maxAccessibleId = intval($limitId);
+    }
+}
+
+$isAdmin = isset($_SESSION['role']) && $_SESSION['role'] === 'admin';
 ?>
 <!DOCTYPE html>
 <html data-bs-theme="light" lang="en" style="height: 100%;">
@@ -74,7 +100,101 @@ $currentQuestion = $selectedQuestions[$currentQuestionIndex];
     <title>questions-page</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.12.0/css/all.css">
+    
+    <!-- Summernote CSS & JS -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-lite.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-lite.min.js"></script>
     <style>
+        /* استایل تصاویر داخل توضیحات و ترجمه‌ها */
+        .note-modal { z-index: 100001 !important; }
+        .note-modal-backdrop { z-index: 100000 !important; }
+        
+        .explanation-box img, .translation-box img, .answer-explanation img, .answer-translation img {
+            max-width: 180px !important;
+            height: auto !important;
+            border-radius: 8px;
+            margin: 10px 0;
+            display: block;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        /* استایل پنل پایین (Vocabulary Bottom Sheet) */
+        .vocab-bottom-sheet {
+            position: fixed !important;
+            bottom: -100% !important;
+            left: 0 !important;
+            right: 0 !important;
+            background: white !important;
+            border-top-left-radius: 25px !important;
+            border-top-right-radius: 25px !important;
+            box-shadow: 0 -5px 25px rgba(0, 0, 0, 0.2) !important;
+            z-index: 9999 !important;
+            transition: bottom 0.4s cubic-bezier(0.36, 1.1, 0.42, 1) !important;
+            padding: 20px !important;
+            max-height: 80vh !important;
+            overflow-y: auto !important;
+            display: block !important;
+        }
+
+        .vocab-bottom-sheet.active {
+            bottom: 0 !important;
+        }
+
+        .sheet-handle {
+            width: 40px !important;
+            height: 4px !important;
+            background: #e0e0e0 !important;
+            border-radius: 2px !important;
+            margin: -10px auto 15px !important;
+        }
+
+        .vocab-sheet-content {
+            direction: rtl !important;
+            text-align: center !important;
+        }
+
+        .vocab-word-display {
+            font-size: 1.3rem !important;
+            font-weight: bold !important;
+            color: #333 !important;
+            margin-bottom: 5px !important;
+            display: block !important;
+        }
+
+        .vocab-translation-display {
+            font-size: 1.1rem !important;
+            color: #28a745 !important;
+            background: #f8f9fa !important;
+            padding: 15px !important;
+            border-radius: 12px !important;
+            margin: 15px 0 !important;
+            border: 1px dashed #28a745 !important;
+            min-height: 50px !important;
+            display: none !important;
+        }
+
+        .vocab-translation-display.active { display: block !important; }
+
+        .vocab-actions {
+            display: flex !important;
+            gap: 12px !important;
+            justify-content: center !important;
+            margin-top: 20px !important;
+        }
+
+        .sheet-overlay {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            bottom: 0 !important;
+            background: rgba(0,0,0,0.4) !important;
+            z-index: 9998 !important;
+            display: none !important;
+            backdrop-filter: blur(2px) !important;
+        }
+
         .custom-checkbox .checkmark:after {
             border: solid #fff;
             left: 7px;
@@ -331,143 +451,86 @@ $currentQuestion = $selectedQuestions[$currentQuestionIndex];
             padding: 1px 2px;
         }
 
-        /* کنتینر آیکون‌ها */
-        .vocab-icons {
-            position: absolute;
-            background: #fff;
-            border: 2px solid #007bff;
-            border-radius: 25px;
-            padding: 5px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-            z-index: 1050;
-            display: none;
-            animation: fadeIn 0.2s ease-in;
-            pointer-events: auto;
-        }
-
-        .vocab-icons::before {
-            content: '';
-            position: absolute;
-            bottom: -6px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 0;
-            height: 0;
-            border-left: 6px solid transparent;
-            border-right: 6px solid transparent;
-            border-top: 6px solid #007bff;
-        }
-
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: scale(0.8);
-            }
-
-            to {
-                opacity: 1;
-                transform: scale(1);
-            }
-        }
-
-        .vocab-icon {
-            display: inline-block;
-            width: 35px;
-            height: 35px;
-            margin: 0 2px;
-            border: none;
-            border-radius: 50%;
-            color: white;
-            font-size: 14px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            position: relative;
-        }
-
-        .vocab-icon:hover {
-            transform: scale(1.1);
-        }
-
-        .vocab-icon.translate {
-            background: linear-gradient(45deg, #28a745, #20c997);
-        }
-
-        .vocab-icon.save {
-            background: linear-gradient(45deg, #ffc107, #fd7e14);
-        }
-
-        .vocab-icon:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            transform: none !important;
-        }
-
-        /* Loading animation */
-        .loading {
-            position: relative;
-            pointer-events: none;
-        }
-
-        .loading::after {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 16px;
-            height: 16px;
-            margin: -8px 0 0 -8px;
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            border-top: 2px solid white;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            0% {
-                transform: rotate(0deg);
-            }
-
-            100% {
-                transform: rotate(360deg);
-            }
-        }
-
-        /* Translation popup */
-        .translation-popup {
+        
+        /* استایل پنل پایین (Vocabulary Bottom Sheet) */
+        .vocab-bottom-sheet {
             position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
+            bottom: -100%;
+            left: 0;
+            right: 0;
             background: white;
-            border: 2px solid #007bff;
-            border-radius: 15px;
+            border-top-left-radius: 25px;
+            border-top-right-radius: 25px;
+            box-shadow: 0 -5px 25px rgba(0, 0, 0, 0.2);
+            z-index: 3000;
+            transition: bottom 0.4s cubic-bezier(0.36, 1.1, 0.42, 1);
             padding: 20px;
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
-            z-index: 1100;
-            min-width: 300px;
-            max-width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
         }
 
-        .translation-popup .close-btn {
-            position: absolute;
-            top: 10px;
-            right: 15px;
-            background: none;
-            border: none;
-            font-size: 20px;
-            color: #666;
-            cursor: pointer;
+        .vocab-bottom-sheet.active {
+            bottom: 0;
         }
 
-        .popup-overlay {
+        .sheet-handle {
+            width: 40px;
+            height: 4px;
+            background: #e0e0e0;
+            border-radius: 2px;
+            margin: -10px auto 15px;
+        }
+
+        .vocab-sheet-content {
+            direction: rtl;
+            text-align: center;
+        }
+
+        .vocab-word-display {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+            display: block;
+        }
+
+        .vocab-translation-display {
+            font-size: 1.1rem;
+            color: #28a745;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 12px;
+            margin: 15px 0;
+            border: 1px dashed #28a745;
+            min-height: 50px;
+            display: none;
+        }
+
+        .vocab-translation-display.active { display: block !important; }
+
+        .vocab-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .sheet-overlay {
             position: fixed;
             top: 0;
             left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: 1099;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.4);
+            z-index: 2999;
+            display: none;
+            backdrop-filter: blur(2px);
         }
+
+        .vocab-icons, .vocab-icon, .translation-popup, .popup-overlay {
+            display: none !important;
+        }
+
 
         /* Toast notifications */
         .vocab-toast {
@@ -691,8 +754,35 @@ $currentQuestion = $selectedQuestions[$currentQuestionIndex];
     </style>
 </head>
 
-<body style="height: 100%;background-color: #d3f5da;" class="<?= $mode === 'practice' ? 'practice-mode' : '' ?>">
-    <div class="container" style="height: 100%;">
+<body style="min-height: 100vh; background-color: #d3f5da;" class="<?= $mode === 'practice' ? 'practice-mode' : '' ?>">
+    <!-- Vocabulary Bottom Sheet -->
+    <div id="sheet-overlay" class="sheet-overlay" onclick="closeVocabSheet()"></div>
+    <div id="vocab-sheet" class="vocab-bottom-sheet">
+        <div class="sheet-handle"></div>
+        <div class="vocab-sheet-content">
+            <span id="sheet-original-word" class="vocab-word-display"></span>
+            
+            <div id="sheet-translation-box" class="vocab-translation-display">
+                <div contenteditable="true" id="sheet-translated-word" class="translation-editable"></div>
+                <small class="edit-hint text-muted d-block mt-2">
+                    <i class="fas fa-edit"></i> قابل ویرایش
+                </small>
+            </div>
+
+            <div class="vocab-actions">
+                <button id="sheet-translate-btn" class="btn btn-success btn-lg px-4" onclick="translateWord()">
+                    <i class="fas fa-language"></i> ترجمه
+                </button>
+                <button id="sheet-save-btn" class="btn btn-warning btn-lg px-4" onclick="saveWord()" style="display: none;">
+                    <i class="fas fa-save"></i> ذخیره در کلکشن
+                </button>
+                <button class="btn btn-outline-secondary btn-lg px-3" onclick="closeVocabSheet()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+    <div class="container" style="min-height: 100vh;">
         <div class="text-white bg-success d-flex justify-content-between align-items-center p-2 px-4"
             style="border-bottom-right-radius: 30px;border-bottom-left-radius: 30px;position: sticky;top: 0;z-index: 1000;">
             <div class="d-flex align-items-center gap-2">
@@ -707,10 +797,24 @@ $currentQuestion = $selectedQuestions[$currentQuestionIndex];
                 <button class="btn btn-sm btn-info" id="explainBtn" onclick="toggleExplanation()" title="توضیح سوال و پاسخ‌ها">
                     <i class="fas fa-info-circle"></i>
                 </button>
+                <?php if ($isAdmin): ?>
+                <button class="btn btn-sm btn-primary" id="geminiFetchBtn" onclick="geminiFetchInfo()" title="درک مطلب و ترجمه با هوش مصنوعی (Gemini)">
+                    <i class="fas fa-brain"></i>
+                </button>
+                <button class="btn btn-sm btn-warning" id="botFetchBtn" onclick="botFetchInfo()" title="واکشی ربات (ترجمه و توضیح خودکار)">
+                    <i class="fas fa-robot"></i>
+                </button>
+                <button class="btn btn-sm btn-dark" id="openSourceBtn" onclick="openSourceLink()" title="مشاهده منبع اصلی (سایت مرجع)">
+                    <i class="fas fa-external-link-alt"></i>
+                </button>
+                <button class="btn btn-sm btn-secondary" id="manageTagsBtn" onclick="openTagsModal()" title="مدیریت دسته‌های خاص (تگ‌ها)">
+                    <i class="fas fa-tags"></i>
+                </button>
+                <?php endif; ?>
             </div>
             <span>Punkte: <span id="punkt"></span></span>
         </div>
-        <div class="mt-4 p-4" style="height: 100%;/*float: none;*/display: in;">
+        <div class="mt-4 p-4" style="padding-bottom: 350px !important;">
             <h1 id="text" class="fw-bold h6 mb-4 question-text"></h1>
             
             <!-- Question Translation/Explanation Container -->
@@ -724,7 +828,7 @@ $currentQuestion = $selectedQuestions[$currentQuestionIndex];
                     <div class="d-flex flex-column gap-3">
                         <div class="d-flex align-items-center">
                         </div>
-                        <span id="asw_pretext" class="fw-bold"><!-- اگر موجود بود --> </span>
+                        <div id="asw_pretext" class="fw-bold text-end" style="width: 100%; direction: rtl;"><!-- اگر موجود بود --> </div>
                         
                         <!-- Pretext Translation/Explanation Container -->
                         <div id="pretext-translation-container"></div>
@@ -786,23 +890,128 @@ $currentQuestion = $selectedQuestions[$currentQuestionIndex];
                             onclick="toggleBookmark()" title="علامت گذاری سوال">
                             <i id="bookmark-icon" class="far fa-star text-warning"></i>
                         </button>
+                        <button id="report-btn" class="btn btn-danger mx-1 btn-sm p-1"
+                            onclick="openReportModal()" title="گزارش مشکل در سوال">
+                            <i class="fas fa-exclamation-circle"></i>
+                        </button>
                     </div>
                 </div>
             </div>
         </div>
         <div class="fixed-bottom container-fluid p-0">
-            <div class="d-flex justify-content-between align-items-center p-2 px-4"
+            <div class="d-flex justify-content-between align-items-center p-2 px-md-4 px-2"
                 style="background: var(--bs-success);">
-                <button class="btn btn-light text-success" onclick="previousQuestion()">
-                    <i class="fas fa-step-backward"></i>
-                </button>
-                <div class="d-md-block d-flex gap-1" id="question-buttons">
+                <div class="d-flex gap-1">
+                    <button class="btn btn-light text-success btn-sm px-2" onclick="goToFirstQuestion()" title="سوال اول">
+                        <i class="fas fa-fast-backward"></i>
+                    </button>
+                    <button class="btn btn-light text-success btn-sm px-2" onclick="previousQuestion()" title="قبلی">
+                        <i class="fas fa-step-backward"></i>
+                    </button>
+                </div>
+                
+                <div class="d-flex gap-1 overflow-auto mx-1 justify-content-center" id="question-buttons" style="scrollbar-width: none; -ms-overflow-style: none;">
                     <!-- Question buttons will be rendered here -->
                 </div>
 
-                <button class="btn btn-light text-success" onclick="nextQuestion()">
-                    <i class="fas fa-step-forward"></i>
-                </button>
+                <div class="d-flex gap-1">
+                    <button class="btn btn-light text-success btn-sm px-2" onclick="nextQuestion()" title="بعدی">
+                        <i class="fas fa-step-forward"></i>
+                    </button>
+                    <button class="btn btn-light text-success btn-sm px-2" onclick="goToLastQuestion()" title="سوال آخر">
+                        <i class="fas fa-fast-forward"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Report Modal -->
+    <div class="modal fade" id="reportModal" tabindex="-1" aria-hidden="true" style="z-index: 99999;">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">گزارش مشکل سوال</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" style="direction: rtl; text-align: right;">
+                    <?php
+                        $rewardDays = 10;
+                        $envPath = __DIR__ . '/../miad/.env';
+                        if (file_exists($envPath)) {
+                            $envContent = file_get_contents($envPath);
+                            if (preg_match('/^REPORT_REWARD_DAYS=(\d+)/m', $envContent, $matches)) {
+                                $rewardDays = (int)$matches[1];
+                            }
+                        }
+                    ?>
+                    <p class="text-info mb-3">
+                        <i class="fas fa-gift"></i> در صورتی که گزارش شما توسط مدیر تایید شود، <strong><?= $rewardDays ?> روز اشتراک VIP هدیه</strong> به شما تعلق خواهد گرفت. وضعیت گزارش را می‌توانید در <strong>داشبورد کاربری</strong> خود پیگیری کنید.
+                    </p>
+                    <div class="mb-3">
+                        <label for="report-message" class="form-label">توضیح مشکل:</label>
+                        <textarea id="report-message" class="form-control" rows="4" placeholder="مثلاً: ترجمه اشتباه است، تصویر لود نمی‌شود و..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">لغو</button>
+                    <button type="button" class="btn btn-danger" onclick="submitReport()">ارسال گزارش</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tags Modal -->
+    <div class="modal fade" id="tagsModal" tabindex="-1" aria-hidden="true" style="z-index: 99999;">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">مدیریت دسته‌های خاص</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" style="direction: rtl; text-align: right;">
+                    <div id="tags-loading" class="text-center my-3"><i class="fas fa-spinner fa-spin fa-2x text-primary"></i></div>
+                    <div id="tags-container" style="display: none;">
+                        <h6 class="mb-3">دسته‌های اختصاص داده شده:</h6>
+                        <div id="attached-tags" class="d-flex flex-wrap gap-2 mb-4"></div>
+                        <hr>
+                        <h6 class="mb-3">انتخاب از دسته‌های موجود:</h6>
+                        <div id="available-tags" class="d-flex flex-wrap gap-2 mb-4"></div>
+                        <hr>
+                        <h6 class="mb-3">ایجاد دسته جدید:</h6>
+                        <div class="input-group mb-3">
+                            <input type="text" id="new-tag-name" class="form-control" placeholder="نام دسته جدید...">
+                            <input type="color" id="new-tag-color" class="form-control form-control-color" value="#0d6efd" title="رنگ دسته">
+                            <button class="btn btn-outline-primary" type="button" onclick="createNewTag()">ایجاد و افزودن</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Editor Modal -->
+    <div class="modal fade" id="editorModal" tabindex="-1" aria-hidden="true" style="z-index: 99999;">
+        <div class="modal-dialog modal-dialog-xl modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">ویرایشگر پیشرفته</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" style="direction: rtl; text-align: right;">
+                    <div id="summernote"></div>
+                </div>
+                <div class="modal-footer justify-content-between">
+                    <div>
+                        <button type="button" class="btn btn-info" id="ai-image-btn" onclick="generateAiImage()">
+                            <i class="fas fa-magic"></i> تولید تصویر هوش مصنوعی
+                        </button>
+                    </div>
+                    <div>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">لغو</button>
+                        <button type="button" class="btn btn-primary" id="save-editor-btn">ذخیره</button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -824,61 +1033,21 @@ $currentQuestion = $selectedQuestions[$currentQuestionIndex];
             </div>
         </div>
     </div>
-    <div id="translation-popup" class="translation-popup" style="display: none;">
-        <button class="close-btn" onclick="closeTranslationPopup()">&times;</button>
-        <div class="text-center">
-            <div class="mb-3">
-                <h5 class="text-primary">ترجمه</h5>
-                <div class="border rounded p-3 bg-light">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <strong id="original-word" class="text-dark"></strong>
-                        <small class="text-muted">آلمانی</small>
-                    </div>
-                    <hr class="my-2">
-                    <div class="d-flex flex-column">
-                        <div class="d-flex justify-content-between align-items-center mb-1">
-                            <strong id="translated-word" class="text-success translation-editable"
-                                contenteditable="true"></strong>
-                            <small class="text-muted">فارسی</small>
-                        </div>
-                        <small class="edit-hint text-start">
-                            <i class="fas fa-info-circle"></i>
-                            برای ویرایش روی ترجمه کلیک کنید
-                        </small>
-                    </div>
-                </div>
-            </div>
-            <div class="d-flex gap-2 justify-content-center">
-                <button id="save-word-btn" class="btn btn-warning" onclick="saveWord()">
-                    <i class="fas fa-save"></i> ذخیره کلمه
-                </button>
-                <button class="btn btn-secondary" onclick="closeTranslationPopup()">
-                    <i class="fas fa-times"></i> بستن
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <div id="popup-overlay" class="popup-overlay" style="display: none;" onclick="closeTranslationPopup()"></div>
-
-    <!-- Vocabulary Icons -->
-    <div id="vocab-icons" class="vocab-icons">
-        <button class="vocab-icon translate" title="ترجمه" onclick="event.stopPropagation(); translateWord();">
-            <i class="fas fa-language"></i>
-        </button>
-        <button class="vocab-icon save" title="ذخیره (ابتدا ترجمه کنید)" onclick="event.stopPropagation(); saveWord();"
-            disabled>
-            <i class="fas fa-save"></i>
-        </button>
+    
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
         const csrfToken = '<?= $csrf_token ?>';
+        const isAdmin = <?= json_encode($isAdmin) ?>;
 
         const selectedQuestions = <?= json_encode($selectedQuestions) ?>;
         const mode = '<?= $mode ?>';
+        const isVip = <?= json_encode($isVip) ?>;
+        const questionLimit = <?= json_encode($questionLimit) ?>;
+        const maxAccessibleId = <?= $maxAccessibleId ?>;
+        
         let currentQuestionIndex = <?= $currentQuestionIndex ?>;
         let questionsPerPage;
         let currentQuestionData = null;
@@ -941,7 +1110,25 @@ $currentQuestion = $selectedQuestions[$currentQuestionIndex];
                 updateNavigationButtons();
             });
             initVocabularySystem();
-            setupVocabIconsEvents();
+            
+            // Handle video modal close
+            const videoModalEl = document.getElementById('videoModal');
+            if (videoModalEl) {
+                videoModalEl.addEventListener('hidden.bs.modal', function () {
+                    const modalVideo = document.getElementById('modal-video');
+                    if (modalVideo) {
+                        modalVideo.pause();
+                        modalVideo.src = '';
+                    }
+                    
+                    // Force remove backdrop if it gets stuck
+                    const backdrops = document.querySelectorAll('.modal-backdrop');
+                    backdrops.forEach(b => b.remove());
+                    document.body.classList.remove('modal-open');
+                    document.body.style.overflow = '';
+                    document.body.style.paddingRight = '';
+                });
+            }
         });
 
         window.addEventListener('resize', () => {
@@ -958,512 +1145,265 @@ $currentQuestion = $selectedQuestions[$currentQuestionIndex];
             }
         }
         
-        // Vocabulary System Functions
+        
+        // Vocabulary System Functions (Optimized)
         function initVocabularySystem() {
-            // Add vocabulary selection class to content areas
-            const textElement = document.getElementById('text');
-            const answersElement = document.getElementById('answers');
-
-            if (textElement) {
-                textElement.classList.add('vocabulary-selection');
-                addTextSelectionListeners(textElement);
-            }
-
-            if (answersElement) {
-                answersElement.classList.add('vocabulary-selection');
-                addTextSelectionListeners(answersElement);
-            }
-
-            // Hide icons when clicking outside - with delay to prevent immediate closure
-            document.addEventListener('click', function (e) {
-                // اگر روی vocab icons یا محتوای انتخاب شده کلیک شده، چیزی نکن
-                if (e.target.closest('#vocab-icons') ||
-                    e.target.closest('.vocab-icons') ||
-                    e.target.closest('.vocabulary-selection')) {
+            // استفاده از Event Delegation برای پایداری بیشتر
+            document.body.addEventListener('mouseup', function(event) {
+                // اگر روی پنل یا کادرهای ویرایش ادمین کلیک شده، کاری نکن
+                if (event.target.closest('#vocab-sheet') || 
+                    event.target.closest('#sheet-overlay') || 
+                    event.target.closest('[contenteditable="true"]')) {
                     return;
                 }
 
-                // تاخیر برای اطمینان از اینکه selection event اول اجرا شده
-                setTimeout(() => {
-                    hideVocabIcons();
-                }, 150);
-            }, true); // استفاده از capture mode
-
-            // Update vocabulary context when question changes
-            document.addEventListener('questionChanged', function (e) {
-                updateVocabularyContext(e.detail.questionId, e.detail.categoryId);
-            });
-        }
-
-
-function addTextSelectionListeners(element) {
-    const isMobile = window.matchMedia("(hover: none) and (pointer: coarse)").matches;
-
-    if (isMobile) {
-        // ===== موبایل: long press =====
-        let longPressTimer = null;
-        let touchStartX = 0;
-        let touchStartY = 0;
-
-        element.addEventListener('touchstart', function(e) {
-            const touch = e.touches[0];
-            touchStartX = touch.clientX;
-            touchStartY = touch.clientY;
-
-            longPressTimer = setTimeout(() => {
-                const word = getWordAtPoint(touch.clientX, touch.clientY);
-                if (word && isValidWord(word)) {
-                    selectedText = word;
-                    showVocabIconsAtPoint(touch.pageX, touch.pageY);
-                    if (navigator.vibrate) navigator.vibrate(50);
+                // فقط در بخش‌های مجاز (سوال و جواب) عمل کن
+                if (event.target.closest('.vocabulary-selection') || 
+                    event.target.closest('#text') || 
+                    event.target.closest('#answers')) {
+                    
+                    handleTextSelection(event);
                 }
-            }, 500);
-        }, { passive: true });
+            });
 
-        element.addEventListener('touchmove', function(e) {
-            const touch = e.touches[0];
-            const deltaX = Math.abs(touch.clientX - touchStartX);
-            const deltaY = Math.abs(touch.clientY - touchStartY);
-            if (deltaX > 10 || deltaY > 10) {
-                clearTimeout(longPressTimer);
-                longPressTimer = null;
-            }
-        }, { passive: true });
-
-        element.addEventListener('touchend', function() {
-            clearTimeout(longPressTimer);
-            longPressTimer = null;
-        }, { passive: true });
-
-    } else {
-        // ===== دسکتاپ: mouseup عادی =====
-        element.addEventListener('mouseup', handleTextSelection);
-        element.addEventListener('click', function(e) {
-            e.stopPropagation();
-        });
-    }
-}
-
-function getWordAtPoint(x, y) {
-    let range = null;
-
-    if (document.caretRangeFromPoint) {
-        range = document.caretRangeFromPoint(x, y);
-    } else if (document.caretPositionFromPoint) {
-        const pos = document.caretPositionFromPoint(x, y);
-        if (pos) {
-            range = document.createRange();
-            range.setStart(pos.offsetNode, pos.offset);
-            range.setEnd(pos.offsetNode, pos.offset);
+            // بستن با کلیک خارج
+            document.addEventListener('mousedown', function (e) {
+                if (e.target.closest('#vocab-sheet') || e.target.closest('#sheet-overlay')) {
+                    return;
+                }
+                if (!window.getSelection().toString().trim()) {
+                    // فقط اگر در حال انتخاب متن نیست، ببند
+                    // closeVocabSheet(); // فعلا غیرفعال برای جلوگیری از بستن ناگهانی
+                }
+            }, true);
         }
-    }
 
-    if (!range || !range.startContainer || range.startContainer.nodeType !== Node.TEXT_NODE) {
-        return null;
-    }
+        function addTextSelectionListeners(element) {
+            const isMobile = window.matchMedia("(hover: none) and (pointer: coarse)").matches;
 
-    const textNode = range.startContainer;
-    const offset = range.startOffset;
-    const text = textNode.textContent;
+            if (isMobile) {
+                let longPressTimer = null;
+                let touchStartX = 0, touchStartY = 0;
 
-    let start = offset;
-    let end = offset;
+                element.addEventListener('touchstart', function(e) {
+                    const touch = e.touches[0];
+                    touchStartX = touch.clientX;
+                    touchStartY = touch.clientY;
 
-    while (start > 0 && /[a-zA-ZäöüßÄÖÜ]/.test(text[start - 1])) start--;
-    while (end < text.length && /[a-zA-ZäöüßÄÖÜ]/.test(text[end])) end++;
+                    longPressTimer = setTimeout(() => {
+                        const word = getWordAtPoint(touch.clientX, touch.clientY);
+                        if (word && isValidWord(word)) {
+                            showVocabSheet(word);
+                            if (navigator.vibrate) navigator.vibrate(50);
+                        }
+                    }, 500);
+                }, { passive: true });
 
-    const word = text.substring(start, end);
-    return word.length >= 2 ? word : null;
-}
+                element.addEventListener('touchmove', function(e) {
+                    const touch = e.touches[0];
+                    if (Math.abs(touch.clientX - touchStartX) > 10 || Math.abs(touch.clientY - touchStartY) > 10) {
+                        clearTimeout(longPressTimer);
+                    }
+                }, { passive: true });
 
-function showVocabIconsAtPoint(pageX, pageY) {
-    const iconsDiv = document.getElementById('vocab-icons');
-
-    let top = pageY - 70;
-    let left = pageX - 45;
-
-    left = Math.max(10, Math.min(left, window.innerWidth - 110));
-    top = Math.max(60, top);
-
-    vocabularyState.translated = false;
-    vocabularyState.canSave = false;
-    currentTranslation = '';
-    currentWord = selectedText;
-
-    updateVocabButtons();
-
-    iconsDiv.style.top = top + 'px';
-    iconsDiv.style.left = left + 'px';
-    iconsDiv.style.display = 'block';
-}
-function showVocabIconsAtPoint(pageX, pageY) {
-    const iconsDiv = document.getElementById('vocab-icons');
-    
-    let top = pageY - 70;
-    let left = pageX - 45;
-    
-    // جلوگیری از خروج از صفحه
-    left = Math.max(10, Math.min(left, window.innerWidth - 110));
-    top = Math.max(60, top);
-    
-    vocabularyState.translated = false;
-    vocabularyState.canSave = false;
-    currentTranslation = '';
-    currentWord = selectedText;
-    
-    updateVocabButtons();
-    
-    iconsDiv.style.top = top + 'px';
-    iconsDiv.style.left = left + 'px';
-    iconsDiv.style.display = 'block';
-}
-
-        let selectionTimeout;
+                element.addEventListener('touchend', () => clearTimeout(longPressTimer), { passive: true });
+            } else {
+                element.addEventListener('mouseup', handleTextSelection);
+            }
+        }
 
         function handleTextSelection(event) {
-            // پاک کردن timeout قبلی اگر وجود داشته باشد
-            if (selectionTimeout) {
-                clearTimeout(selectionTimeout);
-            }
-
-            // تاخیر بیشتر برای دسکتاپ
-            const delay = window.innerWidth > 768 ? 200 : 100;
-
-            selectionTimeout = setTimeout(() => {
+            setTimeout(() => {
                 const selection = window.getSelection();
                 const text = selection.toString().trim();
-
+                
                 if (text && isValidWord(text)) {
-                    selectedText = text;
-                    selectedRange = selection.getRangeAt(0);
-                    showVocabIcons(event);
+                    showVocabSheet(text);
                 } else {
-                    // فقط اگر هیچ متن انتخاب نشده باشد، آیکون‌ها را مخفی کن
-                    if (!text) {
-                        hideVocabIcons();
+                    // اگر متنی انتخاب نشده، کلمه‌ای که روی آن کلیک شده را پیدا کن
+                    const word = getWordAtPoint(event.clientX, event.clientY);
+                    if (word && isValidWord(word)) {
+                        showVocabSheet(word);
                     }
                 }
-            }, delay);
+            }, 200);
+        }
+
+        function getWordAtPoint(x, y) {
+            let range = document.caretRangeFromPoint ? document.caretRangeFromPoint(x, y) : null;
+            if (!range || range.startContainer.nodeType !== Node.TEXT_NODE) return null;
+            const text = range.startContainer.textContent;
+            let start = range.startOffset, end = range.startOffset;
+            while (start > 0 && /[a-zA-ZäöüßÄÖÜ]/.test(text[start - 1])) start--;
+            while (end < text.length && /[a-zA-ZäöüßÄÖÜ]/.test(text[end])) end++;
+            const word = text.substring(start, end);
+            return word.length >= 2 ? word : null;
         }
 
         function isValidWord(text) {
-            // Check if it's a single word (no spaces, reasonable length)
             const trimmed = text.trim();
-            const words = trimmed.split(/\s+/);
-
-            // Only allow single words, 2-100 characters, containing letters
-            return words.length === 1 &&
-                trimmed.length >= 2 &&
-                trimmed.length <= 100 &&
-                /[a-zA-ZäöüßÄÖÜ]/.test(trimmed);
+            return trimmed.split(/\s+/).length === 1 && trimmed.length >= 2 && /[a-zA-ZäöüßÄÖÜ]/.test(trimmed);
         }
 
+        function showVocabSheet(word) {
+            selectedText = word;
+            currentWord = word;
+            const originalWordEl = document.getElementById('sheet-original-word');
+            const translationBoxEl = document.getElementById('sheet-translation-box');
+            const saveBtnEl = document.getElementById('sheet-save-btn');
+            const translateBtnEl = document.getElementById('sheet-translate-btn');
+            const sheetEl = document.getElementById('vocab-sheet');
+            const overlayEl = document.getElementById('sheet-overlay');
 
-        function showVocabIcons(event) {
-            const iconsDiv = document.getElementById('vocab-icons');
-            const selection = window.getSelection();
-
-            if (selection.rangeCount === 0) return;
-
-            const range = selection.getRangeAt(0);
-            const rect = range.getBoundingClientRect();
-
-            // Calculate position
-            const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-            const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
-
-            const top = rect.top + scrollTop - 60; // Above the selection
-            const left = rect.left + scrollLeft + (rect.width / 2) - 45; // Center horizontally
-
-            // Reset state
-            vocabularyState.translated = false;
-            vocabularyState.canSave = false;
-            currentTranslation = '';
-            currentWord = selectedText;
-
-            // Update UI
-            updateVocabButtons();
-
-            // Position and show
-            iconsDiv.style.top = top + 'px';
-            iconsDiv.style.left = left + 'px';
-            iconsDiv.style.display = 'block';
-
-            // جلوگیری از event propagation
-            event.stopPropagation();
+            if (originalWordEl) originalWordEl.textContent = word;
+            if (translationBoxEl) translationBoxEl.classList.remove('active');
+            if (saveBtnEl) saveBtnEl.style.display = 'none';
+            if (translateBtnEl) translateBtnEl.style.display = 'inline-block';
+            if (sheetEl) sheetEl.classList.add('active');
+            if (overlayEl) overlayEl.style.display = 'block';
         }
 
-        function hideVocabIcons() {
-            const iconsDiv = document.getElementById('vocab-icons');
-            if (iconsDiv.style.display === 'block') {
-                iconsDiv.style.display = 'none';
-                clearSelection();
-            }
+        function closeVocabSheet() {
+            const sheetEl = document.getElementById('vocab-sheet');
+            const overlayEl = document.getElementById('sheet-overlay');
+            
+            if (sheetEl) sheetEl.classList.remove('active');
+            if (overlayEl) overlayEl.style.display = 'none';
+            clearSelection();
         }
-
 
         function clearSelection() {
-            const selection = window.getSelection();
-            if (selection.rangeCount > 0) {
-                selection.removeAllRanges();
-            }
+            if (window.getSelection) window.getSelection().removeAllRanges();
             selectedText = '';
-            selectedRange = null;
         }
 
-        function updateVocabButtons() {
-            const translateBtn = document.querySelector('.vocab-icon.translate');
-            const saveBtn = document.querySelector('.vocab-icon.save');
-
-            // Update save button state
-            if (vocabularyState.translated && vocabularyState.canSave) {
-                saveBtn.disabled = false;
-                saveBtn.title = 'افزودن به کلکشن';
-            } else {
-                saveBtn.disabled = true;
-                saveBtn.title = vocabularyState.translated ? 'در کلکشن موجود است' : 'ابتدا ترجمه کنید';
-            }
-        }
-
-        // 10. به‌روزرسانی توابع vocabulary system:
         function translateWord() {
-            if (!selectedText) return;
+            const wordEl = document.getElementById('sheet-original-word');
+            const word = wordEl ? wordEl.textContent.trim() : null;
+            
+            if (!word) {
+                showVocabToast('کلمه‌ای انتخاب نشده است', 'error');
+                return;
+            }
 
-            const translateBtn = document.querySelector('.vocab-icon.translate');
-            translateBtn.classList.add('loading');
-            translateBtn.disabled = true;
+            const btn = document.getElementById('sheet-translate-btn');
+            const original = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            btn.disabled = true;
 
-            event.stopPropagation();
-
-            const formData = createFormDataWithCSRF({
-                word: selectedText
-            });
-
+            const formData = createFormDataWithCSRF({ word: word });
             fetch('../incloud/get_translation.php', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded'
-                },
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                 body: formData
             })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success && data.translation) {
-                        currentWordId = data.word_id;
-                        showTranslation(selectedText, data.translation, data.in_user_collection);
-                    } else {
-                        return googleTranslate(selectedText);
-                    }
-                })
-                .catch(error => {
-                    console.error('Database translation error:', error);
-                    return googleTranslate(selectedText);
-                })
-                .finally(() => {
-                    translateBtn.classList.remove('loading');
-                    translateBtn.disabled = false;
-                });
+            .then(r => r.json())
+            .then(data => {
+                if (data.success && data.translation) {
+                    displaySheetTranslation(word, data.translation, data.in_user_collection);
+                } else {
+                    googleTranslate(word);
+                }
+            })
+            .catch(() => googleTranslate(word))
+            .finally(() => {
+                btn.innerHTML = original;
+                btn.disabled = false;
+            });
         }
 
         function googleTranslate(text) {
-            const formData = createFormDataWithCSRF({
-                text: text,
-                from: 'de',
-                to: 'fa'
+            if (!text) return;
+            const formData = createFormDataWithCSRF({ 
+                text: text, 
+                from: 'de', 
+                to: 'fa' 
             });
-
-            return fetch('../incloud/google_translate.php', {
+            fetch('../incloud/google_translate.php', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded'
-                },
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                 body: formData
             })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        currentWordId = data.word_id;
-                        showTranslation(text, data.translation, false);
-                    } else {
-                        showVocabToast('خطا در ترجمه: ' + (data.error || 'نامشخص'), 'error');
-                    }
-                })
-                .catch(error => {
-                    console.error('Google Translate error:', error);
-                    showVocabToast('خطا در ارتباط با سرویس ترجمه', 'error');
-                });
-        }
-
-
-        function showTranslation(originalWord, translation, inUserCollection) {
-            currentWord = originalWord;
-            currentTranslation = translation;
-            vocabularyState.translated = true;
-            vocabularyState.canSave = !inUserCollection;
-
-            // Update UI
-            document.getElementById('original-word').textContent = originalWord;
-
-            // ترجمه را قابل ویرایش کن
-            const translatedWordElement = document.getElementById('translated-word');
-            translatedWordElement.contentEditable = true;
-            translatedWordElement.textContent = translation;
-            translatedWordElement.className = 'text-success translation-editable';
-
-            // رویداد برای تشخیص تغییرات
-            translatedWordElement.addEventListener('input', function () {
-                currentTranslation = this.textContent.trim();
-
-                // اگر ترجمه خالی شد، دکمه ذخیره را غیرفعال کن
-                const saveBtn = document.getElementById('save-word-btn');
-                if (currentTranslation.length === 0) {
-                    saveBtn.disabled = true;
-                } else if (!inUserCollection) {
-                    saveBtn.disabled = false;
-                }
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) displaySheetTranslation(text, data.translation, false);
+                else showVocabToast('خطا در ترجمه گوگل', 'error');
+            })
+            .catch(err => {
+                console.error('Google Translate Fetch Error:', err);
+                showVocabToast('خطا در ارتباط با مترجم گوگل', 'error');
             });
+        }
 
-            // Show popup
-            document.getElementById('translation-popup').style.display = 'block';
-            document.getElementById('popup-overlay').style.display = 'block';
+        function displaySheetTranslation(original, translation, inCollection) {
+            currentTranslation = translation;
+            const box = document.getElementById('sheet-translation-box');
+            const input = document.getElementById('sheet-translated-word');
+            const saveBtn = document.getElementById('sheet-save-btn');
+            const translateBtn = document.getElementById('sheet-translate-btn');
 
-            // Update buttons
-            updateVocabButtons();
-
-            // Update save button in popup
-            const saveBtn = document.getElementById('save-word-btn');
-            if (inUserCollection) {
-                saveBtn.innerHTML = '<i class="fas fa-edit"></i> ویرایش و ذخیره مجدد';
-                saveBtn.disabled = false;
-                saveBtn.className = 'btn btn-primary';
-            } else {
-                saveBtn.innerHTML = '<i class="fas fa-plus"></i> افزودن به کلکشن';
-                saveBtn.disabled = false;
-                saveBtn.className = 'btn btn-warning';
+            if (input) input.textContent = translation;
+            if (box) box.classList.add('active');
+            if (translateBtn) translateBtn.style.display = 'none';
+            
+            if (saveBtn) {
+                saveBtn.style.display = 'inline-block';
+                if (inCollection) {
+                    saveBtn.innerHTML = '<i class="fas fa-check"></i> در کلکشن موجود است';
+                    saveBtn.disabled = true;
+                    saveBtn.className = 'btn btn-outline-success btn-lg px-4';
+                } else {
+                    saveBtn.innerHTML = '<i class="fas fa-plus"></i> ذخیره کلمه';
+                    saveBtn.disabled = false;
+                    saveBtn.className = 'btn btn-warning btn-lg px-4';
+                }
             }
+        }
 
-            hideVocabIcons();
-        }
-        
-        function closeTranslationPopup() {
-            document.getElementById('translation-popup').style.display = 'none';
-            document.getElementById('popup-overlay').style.display = 'none';
-        }
-        
-        // تابع ذخیره کلمه اصلاح شده
         function saveWord() {
-            // دریافت ترجمه ویرایش شده
-            const editedTranslation = document.getElementById('translated-word').textContent.trim();
+            const edited = document.getElementById('sheet-translated-word').textContent.trim();
+            if (!edited) return;
+            const btn = document.getElementById('sheet-save-btn');
+            const original = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            btn.disabled = true;
 
-            if (!editedTranslation) {
-                showVocabToast('لطفاً ترجمه را وارد کنید', 'error');
-                return;
-            }
-
-            if (!currentWord) {
-                showVocabToast('کلمه مورد نظر یافت نشد', 'error');
-                return;
-            }
-
-            // به‌روزرسانی ترجمه فعلی
-            currentTranslation = editedTranslation;
-
-            const saveBtn = document.getElementById('save-word-btn');
-            const originalText = saveBtn.innerHTML;
-            saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> در حال ذخیره...';
-            saveBtn.disabled = true;
-
-            const contextData = {
+            const formData = createFormDataWithCSRF({
                 word: currentWord,
-                translation: currentTranslation, // ترجمه ویرایش شده
-                question_id: currentQuestionId,
-                category_id: currentCategoryId
-            };
-
-            const formData = createFormDataWithCSRF(contextData);
+                translation: edited,
+                question_id: currentQuestionId
+            });
 
             fetch('../incloud/save_vocabulary.php', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded'
-                },
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                 body: formData
             })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        vocabularyState.canSave = false;
-
-                        if (data.updated) {
-                            saveBtn.innerHTML = '<i class="fas fa-check"></i> ترجمه به‌روزرسانی شد';
-                            showVocabToast('ترجمه با موفقیت به‌روزرسانی شد', 'success');
-                        } else {
-                            saveBtn.innerHTML = '<i class="fas fa-check"></i> به کلکشن افزوده شد';
-                            showVocabToast('کلمه با موفقیت به کلکشن واژگان افزوده شد', 'success');
-                        }
-
-                        saveBtn.className = 'btn btn-success';
-
-                        setTimeout(() => {
-                            closeTranslationPopup();
-                        }, 2000);
-                    } else {
-                        saveBtn.innerHTML = originalText;
-                        saveBtn.disabled = false;
-                        showVocabToast('خطا: ' + (data.error || 'نامشخص'), 'error');
-                    }
-                })
-                .catch(error => {
-                    console.error('Save vocabulary error:', error);
-                    saveBtn.innerHTML = originalText;
-                    saveBtn.disabled = false;
-                    showVocabToast('خطا در ارتباط با سرور', 'error');
-                });
-        }
-        
-        function showVocabToast(message, type = 'info') {
-            const toast = document.createElement('div');
-            toast.className = `alert alert-${type === 'error' ? 'danger' : type === 'success' ? 'success' : 'info'} vocab-toast alert-dismissible`;
-            toast.innerHTML = `
-        <div class="d-flex justify-content-between align-items-center">
-            <span><i class="fas fa-${type === 'error' ? 'exclamation-triangle' : type === 'success' ? 'check-circle' : 'info-circle'} me-2"></i>${message}</span>
-            <button type="button" class="btn-close" onclick="this.parentElement.parentElement.remove()"></button>
-        </div>
-    `;
-
-            document.body.appendChild(toast);
-
-            // Auto remove after 4 seconds
-            setTimeout(() => {
-                if (toast.parentElement) {
-                    toast.remove();
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    btn.innerHTML = '<i class="fas fa-check"></i> ذخیره شد';
+                    btn.className = 'btn btn-success btn-lg px-4';
+                    setTimeout(closeVocabSheet, 1200);
+                } else {
+                    btn.innerHTML = original;
+                    btn.disabled = false;
+                    showVocabToast(data.error, 'error');
                 }
-            }, 4000);
+            });
         }
 
-        // Update current question context when question changes
         function updateVocabularyContext(questionId, categoryId = null) {
             currentQuestionId = questionId;
             currentCategoryId = categoryId;
         }
-        
-        // Re-initialize vocabulary selection for newly loaded content
-        function reinitializeVocabularySelection() {
-            const answersElement = document.getElementById('answers');
-            if (answersElement) {
-                answersElement.classList.add('vocabulary-selection');
-                addTextSelectionListeners(answersElement);
-            }
-        }
 
-        function initializeVocabularySystem() {
-            // Initialize vocabulary system
-            initVocabularySystem();
-
-            // Get current question and category IDs
-            if (typeof selectedQuestions !== 'undefined' && typeof currentQuestionIndex !== 'undefined') {
-                currentQuestionId = selectedQuestions[currentQuestionIndex];
-            }
+        function showVocabToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            toast.className = `alert alert-${type === 'error' ? 'danger' : 'success'} vocab-toast alert-dismissible`;
+            toast.innerHTML = `<span>${message}</span><button type="button" class="btn-close" onclick="this.parentElement.remove()"></button>`;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
         }        
         
         // بارگذاری وضعیت رنگی تمام سوالات
@@ -1558,6 +1498,9 @@ function showVocabIconsAtPoint(pageX, pageY) {
         }
         
         showTranslationContent();
+        setTimeout(() => {
+            window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' });
+        }, 100);
     }
 }
 function toggleExplanation() {
@@ -1584,8 +1527,234 @@ function toggleExplanation() {
 
         showTranslationContent();
         showExplanationContent();
+        setTimeout(() => {
+            window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' });
+        }, 100);
     }
 }
+
+function openSourceLink() {
+    if (!isAdmin || !currentQuestionData) return;
+    
+    const question = currentQuestionData.question;
+    const number = question.number.toLowerCase().replace(/\./g, '-');
+    let text = question.text.toLowerCase();
+    
+    // جایگزینی حروف آلمانی
+    const replacements = { 'ä': 'ae', 'ö': 'oe', 'ü': 'ue', 'ß': 'ss' };
+    for (let char in replacements) {
+        text = text.split(char).join(replacements[char]);
+    }
+    
+    // تبدیل به Slug
+    const slug = text.replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+    
+    const url = `https://www.fuehrerschein-bestehen.de/Erklaerungen/${slug}-${number}`;
+    window.open(url, '_blank');
+}
+
+function geminiFetchInfo() {
+    if (!isAdmin) return;
+    
+    if (!confirm('آیا مایل به درک مطلب کلی سوال و ترجمه با هوش مصنوعی (Gemini) هستید؟ (ممکن است تا یک دقیقه طول بکشد)')) {
+        return;
+    }
+    
+    const btn = document.getElementById('geminiFetchBtn');
+    const originalIcon = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    btn.disabled = true;
+    
+    const formData = createFormDataWithCSRF({
+        id: currentQuestionData.question.id
+    });
+    
+    fetch('../incloud/gemini_fetch.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showVocabToast(data.message, 'success');
+            // Reload the question to show new translations
+            setTimeout(() => {
+                loadCurrentQuestion();
+            }, 1500);
+        } else {
+            showVocabToast('خطا: ' + data.message, 'error');
+        }
+    })
+    .catch(err => {
+        console.error('Error fetching Gemini info:', err);
+        showVocabToast('خطا در ارتباط با سرور', 'error');
+    })
+    .finally(() => {
+        btn.innerHTML = originalIcon;
+        btn.disabled = false;
+    });
+}
+
+function botFetchInfo() {
+    if (!isAdmin) return;
+    
+    if (!confirm('آیا مایل به واکشی اطلاعات و ترجمه خودکار از سایت مرجع هستید؟ (ممکن است چند ثانیه طول بکشد)')) {
+        return;
+    }
+    
+    const btn = document.getElementById('botFetchBtn');
+    const originalIcon = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    btn.disabled = true;
+    
+    const formData = createFormDataWithCSRF({
+        id: currentQuestionData.question.id
+    });
+    
+    fetch('../incloud/filament_bot_fetch.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showVocabToast(data.message, 'success');
+            // Reload the question to show new translations
+            setTimeout(() => {
+                loadCurrentQuestion();
+            }, 1500);
+        } else {
+            showVocabToast('خطا: ' + data.message, 'error');
+        }
+    })
+    .catch(err => {
+        console.error('Error fetching bot info:', err);
+        showVocabToast('خطا در ارتباط با سرور', 'error');
+    })
+    .finally(() => {
+        btn.innerHTML = originalIcon;
+        btn.disabled = false;
+    });
+}
+
+function saveAdminEdit(element, type, field, id) {
+    if (!isAdmin) return;
+    
+    const newContent = element.innerHTML.trim();
+    
+    let originalContent = '';
+    if (type === 'question') {
+        originalContent = currentQuestionData.question[field] || '';
+    } else if (type === 'answer') {
+        const answer = currentQuestionData.answers.find(a => a.id == id);
+        if (answer) originalContent = answer[field] || '';
+    }
+
+    if (newContent === originalContent) {
+        // No changes made
+        return;
+    }
+
+    if (!confirm('آیا ذخیره مورد تایید است؟')) {
+        // Revert to original if cancelled
+        element.innerHTML = originalContent;
+        return;
+    }
+
+    const formData = createFormDataWithCSRF({
+        type: type,
+        field: field,
+        id: id,
+        content: newContent
+    });
+    
+    // Disable editing temporarily while saving
+    element.contentEditable = "false";
+    element.style.opacity = "0.5";
+
+    fetch('../incloud/update_qa_content.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showVocabToast('تغییرات با موفقیت ذخیره شد', 'success');
+            // Update local object
+            if (type === 'question') {
+                currentQuestionData.question[field] = newContent;
+            } else if (type === 'answer') {
+                const answer = currentQuestionData.answers.find(a => a.id == id);
+                if (answer) answer[field] = newContent;
+            }
+        } else {
+            showVocabToast('خطا: ' + data.message, 'error');
+            element.innerHTML = originalContent;
+        }
+    })
+    .catch(err => {
+        console.error('Error saving edit:', err);
+        showVocabToast('خطا در ارتباط با سرور', 'error');
+        element.innerHTML = originalContent;
+    })
+    .finally(() => {
+        element.contentEditable = "true";
+        element.style.opacity = "1";
+    });
+}
+
+function processHtmlContent(html) {
+    if (!html) return '';
+    
+    // ۱. تبدیل پیوست‌هایی که به صورت متن نمایش داده شده‌اند به تصویر
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+    
+    doc.querySelectorAll('a').forEach(link => {
+        const href = link.getAttribute('href');
+        if (href && href.match(/\.(svg|png|jpg|jpeg|webp|gif)(\?.*)?$/i)) {
+            const img = document.createElement('img');
+            img.src = href;
+            img.style.maxWidth = '100%';
+            img.style.display = 'block';
+            
+            // جایگزینی لینک با تصویر واقعی
+            if (link.parentNode && (link.parentNode.tagName === 'FIGURE' || link.innerText.includes(href.split('/').pop()))) {
+                 link.parentNode.replaceChild(img, link);
+            } else {
+                 link.replaceWith(img);
+            }
+        }
+    });
+
+    return doc.body.innerHTML;
+}
+
+function makeEditableHTML(text, type, field, id) {
+    const processedText = processHtmlContent(text);
+    if (isAdmin) {
+        let editorBtn = '';
+        let topPadding = '5px';
+        if (field === 'info') {
+            editorBtn = `
+            <button onclick="openEditorModal('${type}', '${field}', ${id})" class="btn btn-sm btn-primary" style="position: absolute; top: -15px; left: 10px; z-index: 10;" title="درج تصویر / ادیتور">
+               <i class="fas fa-image"></i>
+            </button>`;
+            topPadding = '25px';
+        }
+        
+        return `
+        <div style="position: relative; border: 1px dashed #ffc107; padding: ${topPadding} 5px 5px; border-radius: 4px; min-height: 40px; margin-top: 15px;">
+            ${editorBtn}
+            <div contenteditable="true" onblur="saveAdminEdit(this, '${type}', '${field}', ${id})">${processedText || ''}</div>
+        </div>`;
+    }
+    return processedText || '';
+}
+
 function showTranslationContent() {
     if (!currentQuestionData) return;
     
@@ -1594,28 +1763,27 @@ function showTranslationContent() {
     
     // Show question translation
     const questionTransContainer = document.getElementById('question-translation-container');
-    if (question.farsi_text && question.farsi_text.trim()) {
+    if ((question.farsi_text && question.farsi_text.trim()) || isAdmin) {
         const additionalClass = explanationActive ? 'with-explanation' : '';
+        const content = makeEditableHTML(question.farsi_text, 'question', 'farsi_text', question.id);
         questionTransContainer.innerHTML = `
             <div class="translation-box ${additionalClass}">
-                <p>${question.farsi_text}</p>
+                ${isAdmin ? `<h6><i class="fas fa-edit"></i> ویرایش ترجمه سوال</h6>` : ''}
+                <p>${content}</p>
             </div>
         `;
     } else {
-        questionTransContainer.innerHTML = `
-            <div class="no-translation">
-                <i class="fas fa-info-circle"></i> ترجمه‌ای برای این سوال موجود نیست
-            </div>
-        `;
+        questionTransContainer.innerHTML = '';
     }
     
     // Show pretext translation if exists
     const pretextTransContainer = document.getElementById('pretext-translation-container');
-    if (question.asw_farsi && question.asw_farsi.trim()) {
+    if ((question.asw_farsi && question.asw_farsi.trim()) || isAdmin) {
+        const content = makeEditableHTML(question.asw_farsi, 'question', 'asw_farsi', question.id);
         pretextTransContainer.innerHTML = `
             <div class="pretext-translation">
                 <strong><i class="fas fa-language"></i> ترجمه:</strong>
-                <p class="mb-0 mt-2">${question.asw_farsi}</p>
+                <p class="mb-0 mt-2">${content}</p>
             </div>
         `;
     } else {
@@ -1626,7 +1794,7 @@ function showTranslationContent() {
     if (answers && answers.length > 0) {
         answers.forEach((answer, index) => {
             const answerItem = document.querySelector(`[data-answer-index="${index}"]`);
-            if (answerItem && answer.farsi_text && answer.farsi_text.trim()) {
+            if (answerItem && ((answer.farsi_text && answer.farsi_text.trim()) || isAdmin)) {
                 const answerContainer = answerItem.querySelector('.flex-grow-1');
                 if (answerContainer) {
                     // Remove existing translation if any
@@ -1636,7 +1804,9 @@ function showTranslationContent() {
                     const additionalClass = explanationActive ? 'with-explanation' : '';
                     const translationDiv = document.createElement('div');
                     translationDiv.className = `answer-translation mt-2 ${additionalClass}`;
-                    translationDiv.innerHTML = `<strong>ترجمه:</strong> ${answer.farsi_text}`;
+                    
+                    const content = makeEditableHTML(answer.farsi_text, 'answer', 'farsi_text', answer.id);
+                    translationDiv.innerHTML = `<strong>ترجمه:</strong> ${content}`;
                     
                     // اگر توضیح فعال است، ترجمه را قبل از توضیح قرار بده
                     const existingExpl = answerContainer.querySelector('.answer-explanation');
@@ -1659,27 +1829,24 @@ function showExplanationContent() {
     
     // Show question explanation
     const questionExplainContainer = document.getElementById('question-explanation-container');
-    if (question.info && question.info.trim()) {
-        const additionalClass = 'with-translation'; // چون همیشه با ترجمه نمایش داده می‌شود
+    if ((question.info && question.info.trim()) || isAdmin) {
+        const additionalClass = translationActive ? 'with-translation' : ''; 
+        const content = makeEditableHTML(question.info, 'question', 'info', question.id);
         questionExplainContainer.innerHTML = `
             <div class="explanation-box ${additionalClass}">
                 <h6><i class="fas fa-info-circle"></i> توضیح سوال</h6>
-                <p>${question.info}</p>
+                <p>${content}</p>
             </div>
         `;
     } else {
-        questionExplainContainer.innerHTML = `
-            <div class="no-explanation">
-                <i class="fas fa-info-circle"></i> توضیحی برای این سوال موجود نیست
-            </div>
-        `;
+        questionExplainContainer.innerHTML = '';
     }
     
     // Show answer explanations - زیر متن پاسخ
     if (answers && answers.length > 0) {
         answers.forEach((answer, index) => {
             const answerItem = document.querySelector(`[data-answer-index="${index}"]`);
-            if (answerItem && answer.info && answer.info.trim()) {
+            if (answerItem && ((answer.info && answer.info.trim()) || isAdmin)) {
                 const answerContainer = answerItem.querySelector('.flex-grow-1');
                 if (answerContainer) {
                     // Remove existing explanation if any
@@ -1687,16 +1854,19 @@ function showExplanationContent() {
                     if (existingExpl) existingExpl.remove();
                     
                     const explanationDiv = document.createElement('div');
-                    explanationDiv.className = 'answer-explanation mt-2 with-translation';
-                    explanationDiv.innerHTML = `<strong>توضیح:</strong> ${answer.info}`;
+                    explanationDiv.className = translationActive ? 'answer-explanation mt-2 with-translation' : 'answer-explanation mt-2';
+                    
+                    const content = makeEditableHTML(answer.info, 'answer', 'info', answer.id);
+                    explanationDiv.innerHTML = `<strong>توضیح:</strong> ${content}`;
                     answerContainer.appendChild(explanationDiv);
                 }
             }
         });
     }
-            document.body.style.minHeight = (document.documentElement.scrollHeight + 300) + 'px';
+    
 
 }
+
 function hideTranslationContent() {
     // فقط اگر explanationActive فعال نباشد، ترجمه را مخفی کن
     if (!explanationActive) {
@@ -1707,51 +1877,7 @@ function hideTranslationContent() {
         document.querySelectorAll('.answer-translation').forEach(el => el.remove());
     }
 }
-function showExplanationContent() {
-    if (!currentQuestionData) return;
-    
-    const question = currentQuestionData.question;
-    const answers = currentQuestionData.answers;
-    
-    // Show question explanation
-    const questionExplainContainer = document.getElementById('question-explanation-container');
-    if (question.info && question.info.trim()) {
-        questionExplainContainer.innerHTML = `
-            <div class="explanation-box">
-                <h6><i class="fas fa-info-circle"></i> توضیح سوال</h6>
-                <p>${question.info}</p>
-            </div>
-        `;
-    } else {
-        questionExplainContainer.innerHTML = `
-            <div class="no-explanation">
-                <i class="fas fa-info-circle"></i> توضیحی برای این سوال موجود نیست
-            </div>
-        `;
-    }
-    
-    // Show answer explanations - زیر متن پاسخ
-    if (answers && answers.length > 0) {
-        answers.forEach((answer, index) => {
-            const answerItem = document.querySelector(`[data-answer-index="${index}"]`);
-            if (answerItem && answer.info && answer.info.trim()) {
-                const answerContainer = answerItem.querySelector('.flex-grow-1');
-                if (answerContainer) {
-                    // Remove existing explanation if any
-                    const existingExpl = answerContainer.querySelector('.answer-explanation');
-                    if (existingExpl) existingExpl.remove();
-                    
-                    const explanationDiv = document.createElement('div');
-                    explanationDiv.className = 'answer-explanation mt-2';
-                    explanationDiv.innerHTML = `<strong>توضیح:</strong> ${answer.info}`;
-                    answerContainer.appendChild(explanationDiv);
-                }
-            }
-        });
-    }
-            document.body.style.minHeight = (document.documentElement.scrollHeight + 300) + 'px';
 
-}
         function hideExplanationContent() {
             document.getElementById('question-explanation-container').innerHTML = '';
             document.getElementById('pretext-explanation-container').innerHTML = '';
@@ -1792,9 +1918,15 @@ function showExplanationContent() {
             })
                 .then(data => {
                     if (data && data.success === false) {
+                        if (data.requires_reload) {
+                            window.location.reload();
+                            return;
+                        }
                         console.error('Backend error:', data.message);
-                        showErrorMessage(data.message || 'خطا در دریافت اطلاعات سوال');
-                        markQuestionAsProblematic(questionId);
+                        showErrorMessage(data.message || 'خطا در دریافت اطلاعات سوال', data.requires_upgrade);
+                        if (!data.requires_upgrade) {
+                            markQuestionAsProblematic(questionId);
+                        }
                         return;
                     }
 
@@ -1834,7 +1966,7 @@ function showExplanationContent() {
             updateNavigationButtons();
         }
 
-        function showErrorMessage(message) {
+        function showErrorMessage(message, requiresUpgrade = false) {
             const mediaElement = document.getElementById("media");
             const textElement = document.getElementById("text");
             const answersElement = document.getElementById("answers");
@@ -1845,12 +1977,28 @@ function showExplanationContent() {
                 mediaElement.innerHTML = '<div class="alert alert-danger"><i class="fas fa-exclamation-triangle"></i> ' + message + '</div>';
             }
 
-            if (textElement) {
-                textElement.innerText = 'سوال دارای مشکل است - پاسخ‌ها یافت نشد';
-            }
-
-            if (answersElement) {
-                answersElement.innerHTML = '<div class="alert alert-warning">این سوال فاقد پاسخ است. لطفاً به سوال بعدی بروید.</div>';
+            if (requiresUpgrade) {
+                if (textElement) {
+                    textElement.innerText = 'محدودیت دسترسی (پلن رایگان)';
+                }
+                if (answersElement) {
+                    answersElement.innerHTML = `
+                        <div class="alert alert-info text-center p-4">
+                            <i class="fas fa-lock fa-3x mb-3 text-warning"></i>
+                            <p class="mb-4">${message}</p>
+                            <a href="../admin/subscription.php" class="btn btn-warning btn-lg">
+                                <i class="fas fa-crown me-2"></i> تهیه اشتراک VIP و دسترسی نامحدود
+                            </a>
+                        </div>
+                    `;
+                }
+            } else {
+                if (textElement) {
+                    textElement.innerText = 'سوال دارای مشکل است - پاسخ‌ها یافت نشد';
+                }
+                if (answersElement) {
+                    answersElement.innerHTML = '<div class="alert alert-warning">این سوال فاقد پاسخ است. لطفاً به سوال بعدی بروید.</div>';
+                }
             }
 
             if (codeElement) {
@@ -1980,7 +2128,7 @@ function showExplanationContent() {
     questionSolved = false;
     hasUserAnswer = false;
     userAnswers = {};
-    hideVocabIcons();
+    closeVocabSheet();
     
     // ریست کردن ترجمه و توضیح
     translationActive = false;
@@ -2242,20 +2390,51 @@ function solveQuestion() {
         
         function showVideoQuestion(data, fileNameWithoutExt) {
             document.getElementById("text").innerText = "Bitte starten Sie den Film, um sich mit der Situation vertraut zu machen.";
+            document.getElementById("asw_pretext").innerHTML = '';
+            document.getElementById("asw_pretext").style.display = "none";
+            document.getElementById("pretext-translation-container").style.display = "none";
+            document.getElementById("pretext-explanation-container").style.display = "none";
 
             document.getElementById("video-controls").style.display = "block";
             document.getElementById("answers").style.display = "none";
 
             updateVideoPlaceholder(fileNameWithoutExt);
             updateVideoControls();
+
+            if (isAdmin) {
+                translationActive = true;
+                explanationActive = true;
+                document.getElementById('translateBtn').style.display = 'none';
+                document.getElementById('explainBtn').style.display = 'none';
+                showTranslationContent();
+                showExplanationContent();
+            } else {
+                if (translationActive) showTranslationContent();
+                if (explanationActive) showExplanationContent();
+            }
         }
 
         function showRegularQuestion(data) {
             document.getElementById("text").innerText = data['question']['text'];
             document.getElementById("asw_pretext").innerHTML = data['question']['asw_pretext'] || '';
+            document.getElementById("asw_pretext").style.display = "block";
+            document.getElementById("pretext-translation-container").style.display = "block";
+            document.getElementById("pretext-explanation-container").style.display = "block";
             document.getElementById("video-controls").style.display = "none";
             document.getElementById("answers").style.display = "block";
             answerBuilder(data['answers']);
+            
+            if (isAdmin) {
+                translationActive = true;
+                explanationActive = true;
+                document.getElementById('translateBtn').style.display = 'none';
+                document.getElementById('explainBtn').style.display = 'none';
+                showTranslationContent();
+                showExplanationContent();
+            } else {
+                if (translationActive) showTranslationContent();
+                if (explanationActive) showExplanationContent();
+            }
         }
 
         function updateVideoPlaceholder(fileNameWithoutExt) {
@@ -2269,12 +2448,12 @@ function solveQuestion() {
             const imageUrl = 'https://t24.theorie24.de/2025-01-v400/data/img/images/' + imageName;
 
             let playButtonHtml = '';
-            if (videoViewCount < maxVideoViews && !showingAnswers) {
+            if (mode !== 'practice' || (videoViewCount < maxVideoViews && !showingAnswers)) {
                 playButtonHtml = '<button class="play-button" onclick="playVideo()"><i class="fas fa-play"></i></button>';
             }
 
             document.getElementById("media").innerHTML =
-                '<div class="video-placeholder" onclick="' + (videoViewCount < maxVideoViews && !showingAnswers ? 'playVideo()' : '') + '">' +
+                '<div class="video-placeholder" onclick="' + ((mode !== 'practice' || (videoViewCount < maxVideoViews && !showingAnswers)) ? 'playVideo()' : '') + '">' +
                 '<img src="' + imageUrl + '" alt="Video Preview" class="w-100">' +
                 playButtonHtml +
                 '</div>';
@@ -2287,25 +2466,32 @@ function solveQuestion() {
             const startBtn = document.getElementById("video-start-btn");
             const zurAufgabeBtn = document.getElementById("zur-aufgabe-btn");
 
-            if (videoViewCount >= maxVideoViews) {
-                startBtn.style.display = "none";
-                zurAufgabeBtn.style.display = "block";
-            } else if (hasWatchedVideo) {
+            if (mode !== 'practice') {
                 startBtn.style.display = "inline-block";
                 zurAufgabeBtn.style.display = "inline-block";
             } else {
-                startBtn.style.display = "inline-block";
-                zurAufgabeBtn.style.display = "none";
+                if (videoViewCount >= maxVideoViews) {
+                    startBtn.style.display = "none";
+                    zurAufgabeBtn.style.display = "block";
+                } else if (hasWatchedVideo) {
+                    startBtn.style.display = "inline-block";
+                    zurAufgabeBtn.style.display = "inline-block";
+                } else {
+                    startBtn.style.display = "inline-block";
+                    zurAufgabeBtn.style.display = "none";
+                }
             }
 
             if (showingAnswers) {
-                startBtn.style.display = "none";
+                if (mode === 'practice') {
+                    startBtn.style.display = "none";
+                }
                 zurAufgabeBtn.style.display = "none";
             }
         }
 
         function playVideo() {
-            if (videoViewCount >= maxVideoViews || showingAnswers) {
+            if (mode === 'practice' && (videoViewCount >= maxVideoViews || showingAnswers)) {
                 return;
             }
 
@@ -2318,7 +2504,8 @@ function solveQuestion() {
                 updateVideoPlaceholder(fileNameWithoutExt);
             }
 
-            const modal = new bootstrap.Modal(document.getElementById('videoModal'));
+            const modalEl = document.getElementById('videoModal');
+            const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
             const modalVideo = document.getElementById('modal-video');
             modalVideo.src = videoUrl;
 
@@ -2329,11 +2516,6 @@ function solveQuestion() {
             modalVideo.onended = function () {
                 modal.hide();
             };
-
-            document.getElementById('videoModal').addEventListener('hidden.bs.modal', function () {
-                modalVideo.pause();
-                modalVideo.src = '';
-            });
         }
 
         function showAnswers() {
@@ -2346,18 +2528,38 @@ function solveQuestion() {
             document.getElementById("answers").style.display = "block";
 
             document.getElementById("text").innerText = currentQuestionData['question']['text'];
+            document.getElementById("asw_pretext").innerHTML = currentQuestionData['question']['asw_pretext'] || '';
+            document.getElementById("asw_pretext").style.display = "block";
+            document.getElementById("pretext-translation-container").style.display = "block";
+            document.getElementById("pretext-explanation-container").style.display = "block";
 
             answerBuilder(currentQuestionData['answers']);
+
+            if (isAdmin) {
+                translationActive = true;
+                explanationActive = true;
+                document.getElementById('translateBtn').style.display = 'none';
+                document.getElementById('explainBtn').style.display = 'none';
+                showTranslationContent();
+                showExplanationContent();
+            } else {
+                if (translationActive) showTranslationContent();
+                if (explanationActive) showExplanationContent();
+            }
 
             if (currentQuestionData) {
                 const fileName = currentQuestionData['question']['picture'] || '';
                 const fileNameWithoutExt = fileName.replace(/\.[^/.]+$/, "");
-                const imageUrl = 'https://t24.theorie24.de/2025-01-v400/data/img/images/' + fileNameWithoutExt + '_anfang.jpg';
-
-                document.getElementById("media").innerHTML =
-                    '<div class="video-placeholder">' +
-                    '<img src="' + imageUrl + '" alt="Video Preview" class="w-100">' +
-                    '</div>';
+                
+                if (isVideoQuestion) {
+                    updateVideoPlaceholder(fileNameWithoutExt);
+                } else {
+                    const imageUrl = 'https://t24.theorie24.de/2025-01-v400/data/img/images/' + fileNameWithoutExt + '_anfang.jpg';
+                    document.getElementById("media").innerHTML =
+                        '<div class="video-placeholder">' +
+                        '<img src="' + imageUrl + '" alt="Video Preview" class="w-100">' +
+                        '</div>';
+                }
             }
         }
 
@@ -2587,6 +2789,10 @@ function answerBuilder(answers = null) {
 
 
         function nextQuestion() {
+            if (mode === 'practice' && !questionSolved) {
+                solveQuestion();
+                return;
+            }
             if (currentQuestionIndex < selectedQuestions.length - 1) {
                 currentQuestionIndex++;
                 loadCurrentQuestion();
@@ -2595,11 +2801,10 @@ function answerBuilder(answers = null) {
 
             }
             window.scrollTo({
-  top: 0,
-  left: 0,
-  behavior: 'smooth'
-});
-
+        top: 0,
+        left: 0,
+        behavior: 'smooth'
+        });
         }
 
         function previousQuestion() {
@@ -2664,6 +2869,17 @@ function answerBuilder(answers = null) {
                     backwardBtn.classList.remove('disabled-button');
                 }
             }
+            
+            const firstBtn = document.querySelector('button[onclick="goToFirstQuestion()"]');
+            const lastBtn = document.querySelector('button[onclick="goToLastQuestion()"]');
+            if (firstBtn) {
+                firstBtn.disabled = currentQuestionIndex <= 0;
+                if(firstBtn.disabled) firstBtn.classList.add('disabled-button'); else firstBtn.classList.remove('disabled-button');
+            }
+            if (lastBtn) {
+                lastBtn.disabled = currentQuestionIndex >= selectedQuestions.length - 1;
+                if(lastBtn.disabled) lastBtn.classList.add('disabled-button'); else lastBtn.classList.remove('disabled-button');
+            }
         }
 
 
@@ -2671,12 +2887,29 @@ function answerBuilder(answers = null) {
             currentQuestionIndex = index;
             loadCurrentQuestion();
             renderPageButtons();
+            updateNavigationButtons();
             window.scrollTo({
   top: 0,
   left: 0,
   behavior: 'smooth'
 });
 
+        }
+        
+        function goToFirstQuestion() {
+            if (currentQuestionIndex > 0) {
+                if (confirm('آیا مایل هستید به اولین سوال بروید؟')) {
+                    goToQuestion(0);
+                }
+            }
+        }
+        
+        function goToLastQuestion() {
+            if (currentQuestionIndex < selectedQuestions.length - 1) {
+                if (confirm('آیا مایل هستید به آخرین سوال بروید؟')) {
+                    goToQuestion(selectedQuestions.length - 1);
+                }
+            }
         }
 
         function renderPageButtons() {
@@ -2702,8 +2935,14 @@ function answerBuilder(answers = null) {
 
             for (let i = startIndex; i <= endIndex; i++) {
                 const questionNumber = i + 1;
-                const questionId = selectedQuestions[i];
+                const questionId = parseInt(selectedQuestions[i]);
                 let buttonClass = 'btn-success';
+                let isDisabled = false;
+
+                if (!isVip && questionId > maxAccessibleId) {
+                    buttonClass = 'btn-secondary disabled-button';
+                    isDisabled = true;
+                }
 
                 if (i === currentQuestionIndex) {
                     buttonClass = 'btn-dark';
@@ -2716,7 +2955,12 @@ function answerBuilder(answers = null) {
                 btn.id = `btn${questionNumber}`;
                 btn.className = `btn ${buttonClass}`;
                 btn.textContent = questionNumber;
-                btn.onclick = () => goToQuestion(i);
+                
+                if (isDisabled) {
+                    btn.onclick = () => showErrorMessage(`دسترسی به این سوال محدود شده است. در پلن رایگان فقط به ${questionLimit} سوال اول دسترسی دارید. لطفاً برای دسترسی به تمام سوالات، اشتراک VIP تهیه کنید.`, true);
+                } else {
+                    btn.onclick = () => goToQuestion(i);
+                }
 
                 const statusIndicator = document.createElement('div');
                 statusIndicator.className = 'question-status-indicator';
@@ -2742,8 +2986,357 @@ function answerBuilder(answers = null) {
                 });
             }
         }
-        document.body.style.minHeight = (document.documentElement.scrollHeight + 300) + 'px';
-    </script>
+
+    
+        // Report Issue JS
+        function openReportModal() {
+            if (!currentQuestionData) return;
+            const modal = new bootstrap.Modal(document.getElementById('reportModal'));
+            modal.show();
+            document.getElementById('report-message').value = '';
+        }
+
+        function submitReport() {
+            const message = document.getElementById('report-message').value.trim();
+            if (!message) return showVocabToast('لطفاً توضیح مختصری درباره مشکل بنویسید', 'error');
+
+            const btn = document.querySelector('#reportModal .btn-danger');
+            const originalText = btn.innerText;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> در حال ارسال...';
+            btn.disabled = true;
+
+            const formData = createFormDataWithCSRF({
+                question_id: currentQuestionData.question.id,
+                message: message
+            });
+
+            fetch('../incloud/submit_report.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: formData
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    showVocabToast(data.message, 'success');
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('reportModal'));
+                    modal.hide();
+                } else {
+                    showVocabToast('خطا: ' + data.message, 'error');
+                }
+            })
+            .catch(err => {
+                showVocabToast('خطا در ارتباط با سرور', 'error');
+            })
+            .finally(() => {
+                btn.innerText = originalText;
+                btn.disabled = false;
+            });
+        }
+
+        // Tags management JS
+        let allTags = [];
+        let questionTags = [];
+        
+        function openTagsModal() {
+            if (!isAdmin || !currentQuestionData) return;
+            const modal = new bootstrap.Modal(document.getElementById('tagsModal'));
+            modal.show();
+            
+            document.getElementById('tags-loading').style.display = 'block';
+            document.getElementById('tags-container').style.display = 'none';
+            document.getElementById('new-tag-name').value = '';
+            
+            const formData = createFormDataWithCSRF({
+                action: 'fetch',
+                question_id: currentQuestionData.question.id
+            });
+            
+            fetch('../incloud/manage_question_tags.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: formData
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    allTags = data.all_tags;
+                    questionTags = data.question_tags;
+                    renderTagsUI();
+                    
+                    document.getElementById('tags-loading').style.display = 'none';
+                    document.getElementById('tags-container').style.display = 'block';
+                } else {
+                    showVocabToast('خطا در دریافت تگ‌ها: ' + data.message, 'error');
+                }
+            })
+            .catch(err => {
+                showVocabToast('خطا در ارتباط با سرور', 'error');
+            });
+        }
+        
+        function renderTagsUI() {
+            const attachedDiv = document.getElementById('attached-tags');
+            const availableDiv = document.getElementById('available-tags');
+            
+            attachedDiv.innerHTML = '';
+            availableDiv.innerHTML = '';
+            
+            if (questionTags.length === 0) {
+                attachedDiv.innerHTML = '<span class="text-muted">تگی اختصاص داده نشده است</span>';
+            }
+            
+            const attachedIds = questionTags.map(t => t.id);
+            
+            // Render attached
+            questionTags.forEach(tag => {
+                const badge = document.createElement('span');
+                badge.className = 'badge p-2 d-flex align-items-center gap-2';
+                badge.style.backgroundColor = tag.color || '#0d6efd';
+                badge.innerHTML = `
+                    ${tag.name}
+                    <i class="fas fa-times cursor-pointer" style="cursor: pointer;" onclick="toggleTag(${tag.id}, this)"></i>
+                `;
+                attachedDiv.appendChild(badge);
+            });
+            
+            // Render available (unattached)
+            let hasAvailable = false;
+            allTags.forEach(tag => {
+                if (!attachedIds.includes(tag.id)) {
+                    hasAvailable = true;
+                    const badge = document.createElement('span');
+                    badge.className = 'badge p-2 cursor-pointer';
+                    badge.style.backgroundColor = tag.color || '#6c757d';
+                    badge.style.cursor = 'pointer';
+                    badge.style.opacity = '0.7';
+                    badge.innerHTML = `+ ${tag.name}`;
+                    badge.onclick = () => toggleTag(tag.id, badge);
+                    availableDiv.appendChild(badge);
+                }
+            });
+            
+            if (!hasAvailable) {
+                availableDiv.innerHTML = '<span class="text-muted">همه تگ‌های موجود اختصاص داده شده‌اند</span>';
+            }
+        }
+        
+        function toggleTag(tagId, element) {
+            const formData = createFormDataWithCSRF({
+                action: 'toggle',
+                question_id: currentQuestionData.question.id,
+                tag_id: tagId
+            });
+            
+            if (element) element.style.opacity = '0.5';
+            
+            fetch('../incloud/manage_question_tags.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: formData
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    // Refetch internally to keep it clean
+                    openTagsModal();
+                } else {
+                    showVocabToast('خطا: ' + data.message, 'error');
+                }
+            })
+            .catch(err => {
+                showVocabToast('خطا در ارتباط با سرور', 'error');
+            });
+        }
+        
+        function createNewTag() {
+            const name = document.getElementById('new-tag-name').value.trim();
+            const color = document.getElementById('new-tag-color').value;
+            
+            if (!name) return showVocabToast('لطفاً نام دسته را وارد کنید', 'error');
+            
+            const formData = createFormDataWithCSRF({
+                action: 'create_and_attach',
+                question_id: currentQuestionData.question.id,
+                tag_name: name,
+                color: color
+            });
+            
+            fetch('../incloud/manage_question_tags.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: formData
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('new-tag-name').value = '';
+                    openTagsModal();
+                } else {
+                    showVocabToast('خطا: ' + data.message, 'error');
+                }
+            })
+            .catch(err => {
+                showVocabToast('خطا در ارتباط با سرور', 'error');
+            });
+        }
+
+        let currentEditorContext = null;
+
+        function openEditorModal(type, field, id) {
+            currentEditorContext = { type, field, id };
+            let content = '';
+            
+            if (type === 'question') {
+                content = currentQuestionData.question[field] || '';
+            } else if (type === 'answer') {
+                const answer = currentQuestionData.answers.find(a => a.id == id);
+                if (answer) content = answer[field] || '';
+            }
+
+            $('#summernote').summernote({
+                height: 250,
+                dialogsInBody: true,
+                toolbar: [
+                    ['style', ['style']],
+                    ['font', ['bold', 'underline', 'clear']],
+                    ['color', ['color']],
+                    ['para', ['ul', 'ol', 'paragraph']],
+                    ['insert', ['link', 'picture', 'video']],
+                    ['view', ['fullscreen', 'codeview', 'help']]
+                ],
+                callbacks: {
+                    onImageUpload: function(files) {
+                        for(let i=0; i < files.length; i++) {
+                            uploadEditorImage(files[i]);
+                        }
+                    }
+                }
+            });
+
+            $('#summernote').summernote('code', processHtmlContent(content));
+            
+            const editorModal = new bootstrap.Modal(document.getElementById('editorModal'));
+            editorModal.show();
+        }
+
+        function uploadEditorImage(file) {
+            const data = new FormData();
+            data.append("image", file);
+            data.append("csrf_token", csrfToken);
+
+            fetch('../incloud/upload_image.php', {
+                method: 'POST',
+                body: data
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    $('#summernote').summernote('insertImage', data.url);
+                } else {
+                    showVocabToast('خطا در آپلود: ' + data.message, 'error');
+                }
+            })
+            .catch(err => {
+                showVocabToast('خطا در ارتباط با سرور آپلود', 'error');
+            });
+        }
+
+        function generateAiImage() {
+            const promptStr = prompt("لطفاً موضوع تصویری که می‌خواهید ساخته شود را وارد کنید (می‌توانید فارسی بنویسید):");
+            if (!promptStr || promptStr.trim() === "") return;
+
+            const btn = document.getElementById('ai-image-btn');
+            const originalHtml = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> در حال تولید (ممکن است زمان‌بر باشد)...';
+            btn.disabled = true;
+
+            const formData = createFormDataWithCSRF({ prompt: promptStr.trim() });
+
+            fetch('../incloud/generate_ai_image.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: formData
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    $('#summernote').summernote('insertImage', data.url);
+                    showVocabToast(data.message || 'تصویر با موفقیت تولید و اضافه شد', 'success');
+                } else {
+                    showVocabToast('خطا در تولید تصویر: ' + data.message, 'error');
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                showVocabToast('خطا در ارتباط با سرور تولید تصویر', 'error');
+            })
+            .finally(() => {
+                btn.innerHTML = originalHtml;
+                btn.disabled = false;
+            });
+        }
+
+        document.addEventListener("DOMContentLoaded", function () {
+            const saveEditorBtn = document.getElementById('save-editor-btn');
+            if (saveEditorBtn) {
+                saveEditorBtn.addEventListener('click', function() {
+                    if (!currentEditorContext) return;
+                    
+                    const newContent = $('#summernote').summernote('code');
+                    const { type, field, id } = currentEditorContext;
+                    
+                    const formData = createFormDataWithCSRF({
+                        type: type,
+                        field: field,
+                        id: id,
+                        content: newContent
+                    });
+                    
+                    saveEditorBtn.disabled = true;
+                    saveEditorBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+                    fetch('../incloud/update_qa_content.php', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: formData
+                    })
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data.success) {
+                            showVocabToast('تغییرات با موفقیت ذخیره شد', 'success');
+                            if (type === 'question') {
+                                currentQuestionData.question[field] = newContent;
+                            } else if (type === 'answer') {
+                                const answer = currentQuestionData.answers.find(a => a.id == id);
+                                if (answer) answer[field] = newContent;
+                            }
+                            
+                            const editorModal = bootstrap.Modal.getInstance(document.getElementById('editorModal'));
+                            editorModal.hide();
+                            
+                            // Render again
+                            if (type === 'question' && field === 'info') {
+                                showExplanationContent();
+                            } else if (type === 'answer' && field === 'info') {
+                                showExplanationContent();
+                            } else {
+                                showTranslationContent();
+                            }
+                            
+                        } else {
+                            showVocabToast('خطا: ' + data.message, 'error');
+                        }
+                    })
+                    .finally(() => {
+                        saveEditorBtn.disabled = false;
+                        saveEditorBtn.innerHTML = 'ذخیره';
+                    });
+                });
+            }
+        });
+</script>
+
 </body>
 
 </html>

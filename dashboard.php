@@ -22,6 +22,18 @@ $stmt = $pdo->prepare("
 ");
 $stmt->execute([$_SESSION['user_id']]);
 $recent_logins = $stmt->fetchAll();
+
+// دریافت گزارش‌های اخیر کاربر
+$stmtReports = $pdo->prepare("
+    SELECT qr.*, q.number as q_number 
+    FROM question_reports qr
+    JOIN questions q ON qr.question_id = q.id
+    WHERE qr.user_id = ? 
+    ORDER BY qr.created_at DESC 
+    LIMIT 10
+");
+$stmtReports->execute([$_SESSION['user_id']]);
+$user_reports = $stmtReports->fetchAll();
 ?>
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
@@ -90,7 +102,7 @@ $recent_logins = $stmt->fetchAll();
                 </div>
 
                 <!-- Recent Logins -->
-                <div class="card">
+                <div class="card mb-4">
                     <div class="card-header">
                         <h5 class="mb-0">
                             <i class="bi bi-clock-history"></i> آخرین ورودهای شما
@@ -131,6 +143,68 @@ $recent_logins = $stmt->fetchAll();
                             </div>
                         <?php else: ?>
                             <p class="text-muted text-center">هیچ سابقه ورودی یافت نشد.</p>
+                        <?php endif; ?>
+                    </div>
+                </div>
+
+                <!-- Question Reports Tracking -->
+                <div class="card mb-4">
+                    <div class="card-header bg-danger text-white">
+                        <h5 class="mb-0">
+                            <i class="bi bi-bug"></i> پیگیری گزارش‌های خطای سوالات
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <?php if (count($user_reports) > 0): ?>
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>شماره سوال</th>
+                                            <th>تاریخ ثبت</th>
+                                            <th>وضعیت</th>
+                                            <th>توضیحات / علت رد</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <?php foreach ($user_reports as $report): ?>
+                                            <tr>
+                                                <td><strong><?php echo htmlspecialchars($report['q_number']); ?></strong></td>
+                                                <td>
+                                                    <?php 
+                                                    $date = new DateTime($report['created_at']);
+                                                    echo $date->format('Y/m/d');
+                                                    ?>
+                                                </td>
+                                                <td>
+                                                    <?php if ($report['status'] === 'pending'): ?>
+                                                        <span class="badge bg-warning text-dark">در انتظار بررسی</span>
+                                                    <?php elseif ($report['status'] === 'approved'): ?>
+                                                        <span class="badge bg-success">تایید شده <i class="bi bi-gift-fill"></i></span>
+                                                    <?php else: ?>
+                                                        <span class="badge bg-danger">رد شده</span>
+                                                    <?php endif; ?>
+                                                </td>
+                                                <td>
+                                                    <?php if ($report['status'] === 'approved'): ?>
+                                                        <span class="text-success small">
+                                                            هدیه (اشتراک VIP) به حساب شما اضافه شد.
+                                                        </span>
+                                                    <?php elseif ($report['status'] === 'rejected' && $report['rejection_reason']): ?>
+                                                        <span class="text-danger small">
+                                                            <strong>علت رد:</strong> <?php echo htmlspecialchars($report['rejection_reason']); ?>
+                                                        </span>
+                                                    <?php else: ?>
+                                                        <span class="text-muted small"><?php echo htmlspecialchars(mb_strimwidth($report['message'], 0, 40, "...")); ?></span>
+                                                    <?php endif; ?>
+                                                </td>
+                                            </tr>
+                                        <?php endforeach; ?>
+                                    </tbody>
+                                </table>
+                            </div>
+                        <?php else: ?>
+                            <p class="text-muted text-center">شما هنوز هیچ گزارشی ثبت نکرده‌اید.</p>
                         <?php endif; ?>
                     </div>
                 </div>

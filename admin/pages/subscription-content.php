@@ -174,7 +174,7 @@ if ($user_sub !== false && $user_sub !== null) {
             </div>
             <div class="col-12 mt-3 text-center text-md-start">
               <?php if ($user_plan_status !== 'free'): ?>
-                <button class="btn btn-label-secondary cancel-subscription">لغو اشتراک</button>
+                <!-- دکمه لغو اشتراک حذف شد طبق درخواست -->
               <?php endif ?>
             </div>
           </div>
@@ -295,8 +295,8 @@ if ($user_sub !== false && $user_sub !== null) {
                       </div>
                       
                       <?php if ($is_active_dur): ?>
-                        <button type="button" class="btn btn-sm btn-danger py-1 cancel-subscription">
-                           <span>لغو اشتراک</span>
+                        <button type="button" class="btn btn-sm btn-success py-1" disabled>
+                           <span>فعال است</span>
                         </button>
                       <?php elseif ($is_pending_dur): ?>
                         <div class="d-flex gap-1">
@@ -309,6 +309,10 @@ if ($user_sub !== false && $user_sub !== null) {
                             </button>
                           </form>
                         </div>
+                      <?php elseif ($user_plan_status === 'active'): ?>
+                        <button type="button" class="btn btn-sm btn-secondary py-1" disabled title="شما یک اشتراک فعال دارید">
+                           <span>غیرقابل خرید</span>
+                        </button>
                       <?php else: ?>
                         <button type="button" 
                            data-plan-id="<?= $plan['id'] ?>" 
