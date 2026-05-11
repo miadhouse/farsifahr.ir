@@ -741,6 +741,9 @@ if (is_logged_in()) {
 
     /* LTR Special Styles */
     <?php if (get_lang_dir() === 'ltr'): ?>
+    body, * {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+    }
     body {
         text-align: left !important;
         direction: ltr !important;
@@ -1724,25 +1727,25 @@ if (is_logged_in()) {
                     </div>
                     <div class="col-lg-2 col-md-4 col-sm-6">
                         <div class="quick-link-wrap">
-                            <h5 class="ft-title">لینک سریع</h5>
+                            <h5 class="ft-title"><?= __('quick_links', 'لینک سریع') ?></h5>
                             <ul
                                 class="ft-link tmp-scroll-trigger animation-order-1 tmp-link-animation tmp-scroll-trigger--offscreen">
-                                <li><a href="about.html">درباره ما</a></li>
-                                <li><a href="team.html">خدمت</a></li>
-                                <li><a href="contact.html">قیمت گذاری</a></li>
+                                <li><a href="#about"><?= __('about_us', 'درباره ما') ?></a></li>
+                                <li><a href="#pricing"><?= __('subscription', 'اشتراک') ?></a></li>
+                                <li><a href="#contact"><?= __('contact_us', 'تماس با ما') ?></a></li>
                             </ul>
                         </div>
                     </div>
                     <div class="col-lg-3 col-md-4 col-sm-6">
                         <div class="single-footer-wrapper contact-wrap">
-                            <h5 class="ft-title">تماس</h5>
+                            <h5 class="ft-title"><?= __('contact', 'تماس') ?></h5>
                             <ul
                                 class="ft-link tmp-scroll-trigger animation-order-1 tmp-link-animation tmp-scroll-trigger--offscreen">
                                 <li><span class="ft-icon"><i class="fa-brands fa-whatsapp"></i></span><a
-                                        href="<?= WHATSAPP_URL ?>" target="_blank"><?= CONTACT_PHONE ?> (واتس‌اپ)</a>
+                                        href="<?= WHATSAPP_URL ?>" target="_blank"><?= CONTACT_PHONE ?> (<?= __('whatsapp', 'واتس‌اپ') ?>)</a>
                                 </li>
                                 <li><span class="ft-icon"><i class="fa-brands fa-telegram"></i></span><a
-                                        href="<?= TELEGRAM_SUPPORT_URL ?>" target="_blank">پشتیبانی تلگرام</a>
+                                        href="<?= TELEGRAM_SUPPORT_URL ?>" target="_blank"><?= __('telegram_support', 'پشتیبانی تلگرام') ?></a>
                                 </li>
                                 <li><span class="ft-icon"><i class="fa-solid fa-envelope"></i></span><a
                                         href="mailto:<?= CONTACT_EMAIL ?>"><?= CONTACT_EMAIL ?></a>
@@ -1752,9 +1755,9 @@ if (is_logged_in()) {
                     </div>
                     <div class="col-lg-4 col-md-6 col-sm-6">
                         <div class="newslatter tmp-scroll-trigger animation-order-1 tmp-scroll-trigger--offscreen">
-                            <h3 class="title">خبرنامه</h3>
-                            <p class="para">از آخرین تغییرات ما در لحظه با خبر باشید</p>
-                            <form action="#" class="newsletter-form-1"><input placeholder="ایمیل شما" type="email">
+                            <h3 class="title"><?= __('newsletter', 'خبرنامه') ?></h3>
+                            <p class="para"><?= __('newsletter_desc', 'از آخرین تغییرات ما در لحظه با خبر باشید') ?></p>
+                            <form action="#" class="newsletter-form-1"><input placeholder="<?= __('your_email', 'ایمیل شما') ?>" type="email">
                                 <span> <a class="form-icon" href="#"><i class="fa-solid fa-arrow-left"></i></a> </span>
                             </form>
                         </div>
