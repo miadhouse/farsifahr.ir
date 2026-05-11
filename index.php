@@ -587,10 +587,10 @@ if (is_logged_in()) {
     }
 
     .header-right-group .btn-sm {
-        padding: 6px 18px !important;
-        font-size: 13px !important;
+        padding: 4px 14px !important;
+        font-size: 12px !important;
         border-radius: 50px !important; /* Force pill shape */
-        height: 38px !important;
+        height: 32px !important;
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
@@ -600,8 +600,8 @@ if (is_logged_in()) {
     .header-right-group .dropdown button.btn-sm,
     .header-right-group .tmp-menu-bars,
     .mobile-hamburger-wrap .tmp-menu-bars {
-        width: 38px !important;
-        height: 38px !important;
+        width: 32px !important;
+        height: 32px !important;
         padding: 0 !important;
         border-radius: 50% !important;
         display: flex !important;
@@ -612,8 +612,8 @@ if (is_logged_in()) {
     /* Center the flag icon specifically */
     .header-right-group .dropdown button.btn-sm .fi {
         margin: 0 !important;
-        width: 18px;
-        height: 13px;
+        width: 16px;
+        height: 11px;
     }
 
     .header-right-group .tmp-menu-bars,
@@ -660,18 +660,18 @@ if (is_logged_in()) {
 
     @media (max-width: 576px) {
         .header-right-group .btn-sm {
-            padding: 5px 12px !important;
-            height: 34px !important;
-            font-size: 12px !important;
+            padding: 3px 10px !important;
+            height: 30px !important;
+            font-size: 11px !important;
         }
         .header-right-group .dropdown button.btn-sm,
         .header-right-group .tmp-menu-bars {
-            width: 34px !important;
-            height: 34px !important;
+            width: 30px !important;
+            height: 30px !important;
         }
         .header-right-group .dropdown button.btn-sm .fi {
-            width: 16px;
-            height: 11px;
+            width: 14px;
+            height: 10px;
         }
     }
 
