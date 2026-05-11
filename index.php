@@ -635,10 +635,6 @@ if (is_logged_in()) {
         /* RTL Handling: In Persian, Right is start, Left is end */
         [dir="rtl"] .mobile-hamburger-wrap { order: 1; }
         [dir="rtl"] .header-right-group { order: 3; }
-
-        /* LTR Handling: In English, Right is end, Left is start */
-        [dir="ltr"] .mobile-hamburger-wrap { order: 3; }
-        [dir="ltr"] .header-right-group { order: 1; }
     }
 
     /* Remove dropdown arrow for language switcher to keep it circular */
@@ -713,6 +709,20 @@ if (is_logged_in()) {
         display: flex !important;
         justify-content: space-between !important;
         flex-direction: row !important;
+    }
+    .header-content .logo {
+        order: 1 !important;
+    }
+    .header-content .tmp-mainmenu-nav {
+        order: 2 !important;
+    }
+    .header-content .header-right-group {
+        order: 3 !important;
+        margin-left: auto !important;
+        margin-right: 0 !important;
+    }
+    .header-content .mobile-hamburger-wrap {
+        order: 4 !important;
     }
     
     /* Navigation fix */
