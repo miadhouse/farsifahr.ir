@@ -2432,13 +2432,20 @@ if (is_logged_in()) {
         }
 
         (function() {
-            if (localStorage.getItem('adminDesktopMode') === 'true') {
-                const viewport = document.querySelector('meta[name="viewport"]');
+            const isDesktop = localStorage.getItem('adminDesktopMode') === 'true';
+            const viewport = document.querySelector('meta[name="viewport"]');
+            const icon = document.querySelector('.admin-desktop-toggle i');
+            
+            if (isDesktop) {
                 if (viewport) {
                     viewport.setAttribute('content', 'width=1200, initial-scale=0.3, maximum-scale=5.0, user-scalable=yes');
                 }
-                const btn = document.querySelector('.admin-desktop-toggle i');
-                if (btn) btn.className = 'fas fa-mobile-alt';
+                if (icon) icon.className = 'fas fa-mobile-alt';
+            } else {
+                if (viewport) {
+                    viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
+                }
+                if (icon) icon.className = 'fas fa-desktop';
             }
         })();
     </script>
