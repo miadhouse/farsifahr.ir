@@ -636,10 +636,6 @@ if (is_logged_in()) {
         /* RTL Handling: Hamburger Right (1), Buttons Left (3) */
         [dir="rtl"] .mobile-hamburger-wrap { order: 1; }
         [dir="rtl"] .header-right-group { order: 3; }
-
-        /* LTR Handling: Buttons Left (1), Hamburger Right (3) */
-        [dir="ltr"] .header-right-group { order: 1; }
-        [dir="ltr"] .mobile-hamburger-wrap { order: 3; }
     }
 
     /* Remove dropdown arrow for language switcher to keep it circular */
@@ -690,41 +686,38 @@ if (is_logged_in()) {
         text-align: left !important;
     }
     
-    /* Header components order fix for LTR */
+    /* Header components overhaul for LTR */
     .header-content {
         display: flex !important;
+        flex-direction: row-reverse !important; /* Mirroring for LTR */
         justify-content: space-between !important;
-        flex-direction: row !important;
+        align-items: center !important;
         position: relative !important;
     }
     
-    /* On Desktop (xl and up), we keep a more standard LTR layout or mirror as requested */
-    @media (min-width: 1200px) {
-        .header-content .header-right-group {
-            order: 1 !important;
-            margin-right: auto !important;
-            margin-left: 0 !important;
-        }
-        .header-content .logo {
-            order: 2 !important;
-            position: absolute !important;
-            left: 50% !important;
-            transform: translateX(-50%) !important;
-        }
-        .header-content .tmp-mainmenu-nav {
-            display: none !important; /* Hide centered nav to allow logo centering */
-        }
+    .header-content .logo {
+        position: absolute !important;
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+        margin: 0 !important;
+        z-index: 10;
     }
     
-    /* Ensure flex containers don't stay reversed */
-    .d-flex {
-        flex-direction: row !important;
+    /* Ensure the groups are visible and aligned correctly */
+    .header-content .header-right-group {
+        display: flex !important;
+        margin: 0 !important;
+        order: 1 !important; /* First in row-reverse = Left */
     }
     
-    /* Fix for some theme specific classes that might be hardcoded to RTL */
-    .tmp-header-area-start .header-content .header-right-group {
-        margin-right: 0 !important;
-        margin-left: auto !important;
+    .header-content .mobile-hamburger-wrap {
+        display: flex !important;
+        margin: 0 !important;
+        order: 4 !important; /* Last in row-reverse = Right */
+    }
+
+    .header-content .tmp-mainmenu-nav {
+        display: none !important; /* Hide centered nav to allow logo centering */
     }
     
     /* Navigation fix */
