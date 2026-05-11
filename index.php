@@ -741,8 +741,12 @@ if (is_logged_in()) {
 
     /* LTR Special Styles */
     <?php if (get_lang_dir() === 'ltr'): ?>
-    body, * {
+    body, h1, h2, h3, h4, h5, h6, .title, .btn, .nav-link, span, p, div:not([class*="fa-"]):not([class*="bi-"]), a:not([class*="fa-"]):not([class*="bi-"]) {
         font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+    }
+    /* Explicitly restore icon fonts */
+    [class^="fa-"], [class*=" fa-"], [class^="bi-"], [class*=" bi-"], .fas, .far, .fab, .fa-regular, .fa-solid, .fa-brands, .fa {
+        font-family: "Font Awesome 6 Pro", "bootstrap-icons" !important;
     }
     body {
         text-align: left !important;
@@ -2458,6 +2462,29 @@ if (is_logged_in()) {
             window.location.reload();
         }
     });
+
+    // تبدیل اعداد فارسی به لاتین برای زبان‌های غیرفارسی
+    <?php if (get_lang_dir() === 'ltr'): ?>
+    (function() {
+        const persianDigits = [/۰/g, /۱/g, /۲/g, /۳/g, /۴/g, /۵/g, /۶/g, /۷/g, /۸/g, /۹/g];
+        const latinDigits = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+        
+        function convertDigits(node) {
+            if (node.nodeType === 3) {
+                let text = node.nodeValue;
+                for (let i = 0; i < 10; i++) {
+                    text = text.replace(persianDigits[i], latinDigits[i]);
+                }
+                node.nodeValue = text;
+            } else if (node.nodeType === 1 && node.nodeName !== 'SCRIPT' && node.nodeName !== 'STYLE') {
+                for (let i = 0; i < node.childNodes.length; i++) {
+                    convertDigits(node.childNodes[i]);
+                }
+            }
+        }
+        document.addEventListener('DOMContentLoaded', () => convertDigits(document.body));
+    })();
+    <?php endif; ?>
 </script>
     <?php if (is_admin()): ?>
     <!-- Admin Desktop Toggle -->
