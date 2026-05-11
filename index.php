@@ -720,6 +720,102 @@ if (is_logged_in()) {
         }
     }
 
+    /* Multi-step Form Styles */
+    .step-form-container {
+        max-width: 900px;
+        margin: 0 auto;
+        background: rgba(15, 23, 42, 0.6);
+        backdrop-filter: blur(15px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 30px;
+        padding: 40px;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    }
+    .form-step {
+        display: none;
+    }
+    .form-step.active {
+        display: block;
+        animation: fadeIn 0.5s ease;
+    }
+    .progress-wrapper {
+        margin-bottom: 40px;
+    }
+    .step-progress {
+        height: 6px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+        overflow: hidden;
+    }
+    .progress-bar-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #5a8dee, #4868f8);
+        width: 33.33%;
+        transition: width 0.4s ease;
+    }
+    .live-result-container {
+        margin-top: 50px;
+        padding: 30px;
+        background: rgba(90, 141, 238, 0.05);
+        border-radius: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    .big-days-label {
+        font-size: 4.5rem;
+        font-weight: 800;
+        color: #fff;
+        text-shadow: 0 0 30px rgba(90, 141, 238, 0.4);
+        line-height: 1;
+        margin: 15px 0;
+        animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.02); }
+        100% { transform: scale(1); }
+    }
+    .days-text {
+        font-size: 1.3rem;
+        color: #8295ba;
+        font-weight: 500;
+    }
+    .level-select-item {
+        background: rgba(255, 255, 255, 0.03);
+        border: 2px solid rgba(255, 255, 255, 0.1);
+        border-radius: 15px;
+        padding: 20px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-align: center;
+    }
+    .level-select-item:hover {
+        background: rgba(90, 141, 238, 0.1);
+        border-color: #5a8dee;
+        transform: translateY(-5px);
+    }
+    .level-select-item.active {
+        background: #5a8dee;
+        border-color: #5a8dee;
+        color: white;
+        box-shadow: 0 10px 20px rgba(90, 141, 238, 0.3);
+    }
+    .summary-item {
+        background: rgba(255, 255, 255, 0.05);
+        padding: 15px 20px;
+        border-radius: 12px;
+        margin-bottom: 10px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .summary-label { color: #8295ba; }
+    .summary-value { font-weight: bold; color: #fff; }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
     /* PWA Install Banner */
     #pwa-install-banner {
         display: none;
@@ -951,51 +1047,39 @@ if (is_logged_in()) {
         flex-wrap: wrap;
         gap: 10px;
         justify-content: center;
+        margin-top: 20px;
     }
     .day-checkbox-item {
-        flex: 1;
-        min-width: 80px;
+        position: relative;
     }
     .day-checkbox-item input {
-        display: none;
+        position: absolute;
+        opacity: 0;
+        cursor: pointer;
+        height: 0;
+        width: 0;
     }
     .day-checkbox-item label {
         display: block;
-        padding: 10px;
-        background: #283144;
-        border: 2px solid #36445d;
-        border-radius: 10px;
-        text-align: center;
+        padding: 12px 25px;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
         cursor: pointer;
         transition: all 0.3s ease;
-        font-size: 0.9rem;
+        font-weight: 500;
+        color: #8295ba;
+        text-align: center;
     }
     .day-checkbox-item input:checked + label {
-        background: rgba(90, 141, 238, 0.2);
+        background: rgba(90, 141, 238, 0.15);
         border-color: #5a8dee;
-        color: #5a8dee;
+        color: #fff;
+        box-shadow: 0 5px 15px rgba(90, 141, 238, 0.2);
     }
-    .level-select-item {
-        cursor: pointer;
-        padding: 15px;
-        background: #283144;
-        border: 2px solid #36445d;
-        border-radius: 12px;
-        transition: all 0.3s ease;
-        text-align: center;
+    .day-checkbox-item:hover label {
+        border-color: rgba(255, 255, 255, 0.3);
     }
-    .level-select-item:hover, .level-select-item.active {
-        border-color: #5a8dee;
-        background: rgba(90, 141, 238, 0.1);
-    }
-    .result-box {
-        background: rgba(90, 141, 238, 0.1);
-        border: 2px dashed #5a8dee;
-        border-radius: 15px;
-        padding: 25px;
-        margin-top: 30px;
-    }
-
     /* Glass Button Style */
     .glass-btn {
         background: rgba(255, 255, 255, 0.1) !important;
@@ -1427,38 +1511,174 @@ if (is_logged_in()) {
     <!-- Study Plan Section Start -->
     <section class="study-plan-area tmp-section-gapTop" id="study-plan">
         <div class="container">
-            <div class="estimator-section text-center">
-                <div class="section-head mb--30">
-                    <span class="subtitle" style="color: #5a8dee; font-weight: bold; margin-bottom: 15px; display: block;"><?= __('study_plan_subtitle') ?></span>
-                    <h2 class="title" style="color: #fff; font-size: 2.5rem; margin-bottom: 20px;"><?= __('study_plan_title') ?></h2>
-                    <p style="color: #a1b0cb; font-size: 1.2rem; max-width: 800px; margin: 0 auto 30px;">
-                        <?php if ($has_study_plan): ?>
-                            <?= __('study_plan_active_desc') ?>
-                        <?php else: ?>
-                            <?= __('study_plan_guest_desc') ?>
+            <div class="section-head text-center mb--50">
+                <span class="subtitle" style="color: #5a8dee; font-weight: bold; margin-bottom: 15px; display: block;"><?= __('study_plan_subtitle') ?></span>
+                <h2 class="title" style="color: #fff; font-size: 2.2rem; margin-bottom: 20px;">
+                    <?= __('study_plan_new_title', 'دوست داری بدونی حدودا چند روزه امتحان میشی، فرم زیر رو رایگان پر کن تا بهت بگم.') ?>
+                </h2>
+            </div>
+
+            <div class="step-form-container">
+                <div class="progress-wrapper">
+                    <div class="step-progress">
+                        <div class="progress-bar-fill" id="stepProgressBar"></div>
+                    </div>
+                </div>
+
+                <form id="studyPlanForm">
+                    <!-- Step 1: German Level -->
+                    <div class="form-step active" data-step="1">
+                        <label class="form-label d-block text-center mb-4 fs-4"><?= __('german_level_question', 'سطح زبان آلمانی فعلی شما چقدر است؟') ?></label>
+                        <div class="row g-3 justify-content-center" id="levelSelector">
+                            <div class="col-6 col-md-4 col-lg-2">
+                                <div class="level-select-item" data-level="none">
+                                    <div class="fs-2 mb-1">❌</div>
+                                    <div class="small"><?= __('no_knowledge', 'بدون دانش') ?></div>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-4 col-lg-2">
+                                <div class="level-select-item" data-level="a1">
+                                    <div class="fs-2 mb-1">🇩🇪</div>
+                                    <div>A1</div>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-4 col-lg-2">
+                                <div class="level-select-item" data-level="a2">
+                                    <div class="fs-2 mb-1">🇩🇪</div>
+                                    <div>A2</div>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-4 col-lg-2">
+                                <div class="level-select-item active" data-level="b1">
+                                    <div class="fs-2 mb-1">🇩🇪</div>
+                                    <div>B1</div>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-4 col-lg-2">
+                                <div class="level-select-item" data-level="b2">
+                                    <div class="fs-2 mb-1">🇩🇪</div>
+                                    <div>B2</div>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-4 col-lg-2">
+                                <div class="level-select-item" data-level="c1">
+                                    <div class="fs-2 mb-1">🇩🇪</div>
+                                    <div>C1</div>
+                                </div>
+                            </div>
+                        </div>
+                        <input type="hidden" name="german_level" id="input_level" value="b1">
+                    </div>
+
+                    <!-- Step 2: Previous Study -->
+                    <div class="form-step" data-step="2">
+                        <div class="row g-5">
+                            <div class="col-md-6">
+                                <label class="form-label fs-5 mb-4 d-block"><?= __('study_history_label', 'سابقه مطالعه سوالات (چند درصد؟)') ?></label>
+                                <div class="d-flex align-items-center gap-3">
+                                    <input type="range" class="range-slider flex-grow-1" name="previous_study_percent" id="input_percent" min="0" max="100" value="0">
+                                    <span class="fs-4 fw-bold text-primary" id="percent_label">0%</span>
+                                </div>
+                                <small class="text-muted mt-2 d-block"><?= __('study_history_desc', 'چند درصد از کل سوالات را تا به حال مطالعه کرده‌اید؟') ?></small>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fs-5 mb-4 d-block"><?= __('daily_study_hours_question', 'روزانه چند ساعت مطالعه می‌کنید؟') ?></label>
+                                <div class="d-flex align-items-center gap-3">
+                                    <input type="range" class="range-slider flex-grow-1" name="daily_hours" id="input_hours" min="1" max="8" value="2">
+                                    <span class="fs-4 fw-bold text-primary" id="hours_label">2 <?= __('hours', 'ساعت') ?></span>
+                                </div>
+                                <small class="text-muted mt-2 d-block"><?= __('daily_study_hours_desc', 'زمان مفیدی که در هر روز برای یادگیری اختصاص می‌دهید.') ?></small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 3: Study Days -->
+                    <div class="form-step" data-step="3">
+                        <label class="form-label d-block text-center mb-4 fs-4"><?= __('study_days_question', 'چه روزهایی در هفته مطالعه می‌کنید؟') ?></label>
+                        <div class="day-checkbox-group justify-content-center">
+                            <div class="day-checkbox-item">
+                                <input type="checkbox" name="study_days[]" value="Sat" id="day_sat" checked>
+                                <label for="day_sat"><?= __('sat', 'شنبه') ?></label>
+                            </div>
+                            <div class="day-checkbox-item">
+                                <input type="checkbox" name="study_days[]" value="Sun" id="day_sun" checked>
+                                <label for="day_sun"><?= __('sun', 'یکشنبه') ?></label>
+                            </div>
+                            <div class="day-checkbox-item">
+                                <input type="checkbox" name="study_days[]" value="Mon" id="day_mon" checked>
+                                <label for="day_mon"><?= __('mon', 'دوشنبه') ?></label>
+                            </div>
+                            <div class="day-checkbox-item">
+                                <input type="checkbox" name="study_days[]" value="Tue" id="day_tue" checked>
+                                <label for="day_tue"><?= __('tue', 'سه‌شنبه') ?></label>
+                            </div>
+                            <div class="day-checkbox-item">
+                                <input type="checkbox" name="study_days[]" value="Wed" id="day_wed" checked>
+                                <label for="day_wed"><?= __('wed', 'چهارشنبه') ?></label>
+                            </div>
+                            <div class="day-checkbox-item">
+                                <input type="checkbox" name="study_days[]" value="Thu" id="day_thu" checked>
+                                <label for="day_thu"><?= __('thu', 'پنجشنبه') ?></label>
+                            </div>
+                            <div class="day-checkbox-item">
+                                <input type="checkbox" name="study_days[]" value="Fri" id="day_fri" checked>
+                                <label for="day_fri"><?= __('fri', 'جمعه') ?></label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 4: Summary -->
+                    <div class="form-step" data-step="4">
+                        <h4 class="text-center mb-4"><?= __('final_confirmation', 'تایید نهایی اطلاعات') ?></h4>
+                        <div class="summary-container mb-4">
+                            <div class="summary-item">
+                                <span class="summary-label"><?= __('german_level_label', 'سطح زبان آلمانی:') ?></span>
+                                <span class="summary-value" id="sum_level">-</span>
+                            </div>
+                            <div class="summary-item">
+                                <span class="summary-label"><?= __('current_progress_label', 'پیشرفت فعلی:') ?></span>
+                                <span class="summary-value" id="sum_percent">-</span>
+                            </div>
+                            <div class="summary-item">
+                                <span class="summary-label"><?= __('daily_study_hours_label', 'ساعت مطالعه روزانه:') ?></span>
+                                <span class="summary-value" id="sum_hours">-</span>
+                            </div>
+                            <div class="summary-item">
+                                <span class="summary-label"><?= __('study_days_label', 'روزهای مطالعه:') ?></span>
+                                <span class="summary-value" id="sum_days">-</span>
+                            </div>
+                        </div>
+
+                        <?php if (!is_logged_in()): ?>
+                        <!-- Registration Fields for Guest -->
+                        <div class="row g-3 mt-4 border-top border-secondary pt-4">
+                            <div class="col-12"><p class="text-warning small text-center"><?= __('guest_save_notice', 'برای ذخیره برنامه و دریافت آن در ایمیل، لطفا اطلاعات زیر را تکمیل کنید:') ?></p></div>
+                            <div class="col-md-6">
+                                <input type="text" class="form-control" name="name" placeholder="<?= __('your_name', 'نام شما') ?>" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff;">
+                            </div>
+                            <div class="col-md-6">
+                                <input type="email" class="form-control" name="email" placeholder="<?= __('your_email', 'ایمیل شما') ?>" required style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff;">
+                            </div>
+                            <div class="col-12">
+                                <input type="password" class="form-control" name="password" placeholder="<?= __('choose_password', 'یک رمز عبور انتخاب کنید') ?>" required style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff;">
+                            </div>
+                        </div>
                         <?php endif; ?>
-                    </p>
-                </div>
+                    </div>
 
-                <div class="d-flex flex-wrap justify-content-center gap-3">
-                    <button class="tmp-btn glass-btn radius-round" data-bs-toggle="modal" data-bs-target="#studyPlanModal">
-                        <span class="icon-reverse-wrapper">
-                            <span class="btn-text"><?= $has_study_plan ? __('edit_study_plan_btn') : __('get_study_plan_btn') ?></span>
-                            <span class="btn-icon"><i class="fa-sharp fa-regular fa-arrow-left"></i></span>
-                            <span class="btn-icon"><i class="fa-sharp fa-regular fa-arrow-left"></i></span>
-                        </span>
-                    </button>
+                    <!-- Live Result Display -->
+                    <div class="live-result-container text-center">
+                        <div class="days-text"><?= __('estimated_time_label', 'زمان تخمینی تا امتحان:') ?></div>
+                        <div class="big-days-label"><span id="result_days">--</span> <small class="fs-3" style="-webkit-text-fill-color: #8295ba;"><?= __('days', 'روز') ?></small></div>
+                    </div>
 
-                    <?php if ($has_study_plan): ?>
-                        <button class="tmp-btn radius-round btn-danger btn-lg" id="btnDeleteStudyPlan" style="background-color: #ff3e1d; border: none; padding: 15px 40px; font-size: 1.2rem;">
-                            <span class="icon-reverse-wrapper">
-                                <span class="btn-text"><?= __('delete_plan_btn') ?></span>
-                                <span class="btn-icon"><i class="fa-sharp fa-regular fa-trash"></i></span>
-                                <span class="btn-icon"><i class="fa-sharp fa-regular fa-trash"></i></span>
-                            </span>
-                        </button>
-                    <?php endif; ?>
-                </div>
+                    <!-- Navigation Buttons -->
+                    <div class="d-flex justify-content-between mt-5">
+                        <button type="button" class="btn btn-outline-secondary px-5" id="prevStep" style="display: none; border-radius: 50px; height: 50px;"><?= __('previous', 'قبلی') ?></button>
+                        <button type="button" class="btn btn-primary px-5 ms-auto" id="nextStep" style="border-radius: 50px; height: 50px;"><?= __('next', 'بعدی') ?></button>
+                        <button type="button" class="btn btn-success px-5 ms-auto" id="btnSaveStudyPlan" style="display: none; border-radius: 50px; height: 50px;"><?= __('save_and_get_plan', 'ذخیره و دریافت برنامه') ?></button>
+                    </div>
+                </form>
             </div>
         </div>
     </section>
@@ -1856,151 +2076,6 @@ if (is_logged_in()) {
         </div>
     </div>
 
-    <!-- Study Plan Modal -->
-    <div class="modal fade slidedown estimator-modal" id="studyPlanModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header border-bottom border-secondary">
-                    <h5 class="modal-title">برنامه مطالعه هوشمند</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body p-4">
-                    <form id="studyPlanForm">
-                        <div class="row g-4">
-                            <!-- Level -->
-                            <div class="col-12">
-                                <label class="form-label d-block text-center mb-4">سطح زبان آلمانی فعلی شما چقدر است؟</label>
-                                <div class="row g-2 justify-content-center" id="levelSelector">
-                                    <div class="col-6 col-md-3">
-                                        <div class="level-select-item" data-level="none">
-                                            <div class="fs-3 mb-1">❌</div>
-                                            <div class="small">بدون دانش</div>
-                                        </div>
-                                    </div>
-                                    <div class="col-6 col-md-3">
-                                        <div class="level-select-item" data-level="a1">
-                                            <div class="fs-3 mb-1">🇩🇪</div>
-                                            <div>A1</div>
-                                        </div>
-                                    </div>
-                                    <div class="col-6 col-md-3">
-                                        <div class="level-select-item" data-level="a2">
-                                            <div class="fs-3 mb-1">🇩🇪</div>
-                                            <div>A2</div>
-                                        </div>
-                                    </div>
-                                    <div class="col-6 col-md-3">
-                                        <div class="level-select-item active" data-level="b1">
-                                            <div class="fs-3 mb-1">🇩🇪</div>
-                                            <div>B1</div>
-                                        </div>
-                                    </div>
-                                    <div class="col-6 col-md-3">
-                                        <div class="level-select-item" data-level="b2">
-                                            <div class="fs-3 mb-1">🇩🇪</div>
-                                            <div>B2</div>
-                                        </div>
-                                    </div>
-                                    <div class="col-6 col-md-3">
-                                        <div class="level-select-item" data-level="c1">
-                                            <div class="fs-3 mb-1">🇩🇪</div>
-                                            <div>C1</div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <input type="hidden" name="german_level" id="input_level" value="b1">
-                            </div>
-
-                            <!-- Previous Study -->
-                            <div class="col-md-6">
-                                <label class="form-label">سابقه مطالعه سوالات (چند درصد؟)</label>
-                                <div class="d-flex align-items-center gap-3">
-                                    <input type="range" class="range-slider flex-grow-1" name="previous_study_percent" id="input_percent" min="0" max="100" value="0">
-                                    <span class="fs-5 fw-bold text-primary" id="percent_label">0%</span>
-                                </div>
-                            </div>
-
-                            <!-- Daily Hours -->
-                            <div class="col-md-6">
-                                <label class="form-label">روزانه چند ساعت مطالعه می‌کنید؟</label>
-                                <div class="d-flex align-items-center gap-3">
-                                    <input type="range" class="range-slider flex-grow-1" name="daily_hours" id="input_hours" min="1" max="8" value="2">
-                                    <span class="fs-5 fw-bold text-primary" id="hours_label">2 ساعت</span>
-                                </div>
-                            </div>
-
-                            <!-- Study Days -->
-                            <div class="col-12">
-                                <label class="form-label d-block text-center">چه روزهایی در هفته مطالعه می‌کنید؟</label>
-                                <div class="day-checkbox-group">
-                                    <div class="day-checkbox-item">
-                                        <input type="checkbox" name="study_days[]" value="Sat" id="day_sat" checked>
-                                        <label for="day_sat">شنبه</label>
-                                    </div>
-                                    <div class="day-checkbox-item">
-                                        <input type="checkbox" name="study_days[]" value="Sun" id="day_sun" checked>
-                                        <label for="day_sun">یکشنبه</label>
-                                    </div>
-                                    <div class="day-checkbox-item">
-                                        <input type="checkbox" name="study_days[]" value="Mon" id="day_mon" checked>
-                                        <label for="day_mon">دوشنبه</label>
-                                    </div>
-                                    <div class="day-checkbox-item">
-                                        <input type="checkbox" name="study_days[]" value="Tue" id="day_tue" checked>
-                                        <label for="day_tue">سه‌شنبه</label>
-                                    </div>
-                                    <div class="day-checkbox-item">
-                                        <input type="checkbox" name="study_days[]" value="Wed" id="day_wed" checked>
-                                        <label for="day_wed">چهارشنبه</label>
-                                    </div>
-                                    <div class="day-checkbox-item">
-                                        <input type="checkbox" name="study_days[]" value="Thu" id="day_thu" checked>
-                                        <label for="day_thu">پنجشنبه</label>
-                                    </div>
-                                    <div class="day-checkbox-item">
-                                        <input type="checkbox" name="study_days[]" value="Fri" id="day_fri" checked>
-                                        <label for="day_fri">جمعه</label>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Live Result -->
-                        <div class="result-box text-center">
-                            <h4 class="mb-2" style="color: #fff;">تخمین زمان مورد نیاز:</h4>
-                            <div class="d-flex justify-content-center align-items-baseline gap-2">
-                                <span class="display-4 fw-bold text-primary" id="result_days">--</span>
-                                <span class="fs-4 text-muted">روز تقویمی</span>
-                            </div>
-                            <p class="text-light small mt-2 mb-0">روزهای مطالعه: <span id="selected_days_list" class="text-primary">--</span></p>
-                            <p class="mt-3 text-muted small">این برنامه بر اساس میانگین سرعت یادگیری محاسبه شده و در آینده قابل ویرایش است.</p>
-                        </div>
-
-                        <?php if (!is_logged_in()): ?>
-                        <!-- Registration Fields for Guest -->
-                        <div class="row g-3 mt-4 border-top border-secondary pt-4">
-                            <div class="col-12"><p class="text-warning small text-center">برای ذخیره برنامه و دریافت آن در ایمیل، لطفا اطلاعات زیر را تکمیل کنید:</p></div>
-                            <div class="col-md-6">
-                                <input type="text" class="form-control" name="name" placeholder="نام شما">
-                            </div>
-                            <div class="col-md-6">
-                                <input type="email" class="form-control" name="email" placeholder="ایمیل شما" required>
-                            </div>
-                            <div class="col-12">
-                                <input type="password" class="form-control" name="password" placeholder="یک رمز عبور انتخاب کنید" required>
-                            </div>
-                        </div>
-                        <?php endif; ?>
-
-                        <div class="d-grid mt-4">
-                            <button type="button" class="btn btn-primary btn-lg py-3 fw-bold" id="btnSaveStudyPlan" style="background: linear-gradient(135deg, #5a8dee 0%, #3a7bd5 100%);">تایید و دریافت برنامه مطالعه</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <!-- Login Modal -->
     <div class="modal fade slidedown" aria-hidden="true" id="loginModal" tabindex="-1">
         <div class="modal-dialog">
@@ -2189,6 +2264,15 @@ if (is_logged_in()) {
         const studyPlanForm = document.getElementById('studyPlanForm');
         if (!studyPlanForm) return;
 
+        let currentStep = 1;
+        const totalSteps = 4;
+        
+        const formSteps = document.querySelectorAll('.form-step');
+        const progressBar = document.getElementById('stepProgressBar');
+        const btnPrev = document.getElementById('prevStep');
+        const btnNext = document.getElementById('nextStep');
+        const btnSave = document.getElementById('btnSaveStudyPlan');
+        
         const levelItems = document.querySelectorAll('.level-select-item');
         const inputLevel = document.getElementById('input_level');
         const inputPercent = document.getElementById('input_percent');
@@ -2197,27 +2281,71 @@ if (is_logged_in()) {
         const hoursLabel = document.getElementById('hours_label');
         const dayCheckboxes = document.querySelectorAll('input[name="study_days[]"]');
         const resultDays = document.getElementById('result_days');
-        const selectedDaysList = document.getElementById('selected_days_list');
-        const btnSave = document.getElementById('btnSaveStudyPlan');
+        
+        // Summary elements
+        const sumLevel = document.getElementById('sum_level');
+        const sumPercent = document.getElementById('sum_percent');
+        const sumHours = document.getElementById('sum_hours');
+        const sumDays = document.getElementById('sum_days');
 
         const dayMap = {
             'Sat': 'شنبه', 'Sun': 'یکشنبه', 'Mon': 'دوشنبه',
             'Tue': 'سه‌شنبه', 'Wed': 'چهارشنبه', 'Thu': 'پنجشنبه', 'Fri': 'جمعه'
         };
 
+        const levelMap = {
+            'none': 'بدون دانش', 'a1': 'A1', 'a2': 'A2',
+            'b1': 'B1', 'b2': 'B2', 'c1': 'C1'
+        };
+
+        function updateUI() {
+            // Update steps visibility
+            formSteps.forEach(step => {
+                step.classList.toggle('active', parseInt(step.dataset.step) === currentStep);
+            });
+
+            // Update Progress Bar
+            const progress = (currentStep / totalSteps) * 100;
+            progressBar.style.width = progress + '%';
+
+            // Navigation buttons
+            btnPrev.style.display = currentStep > 1 ? 'block' : 'none';
+            
+            if (currentStep === totalSteps) {
+                btnNext.style.display = 'none';
+                btnSave.style.display = 'block';
+                updateSummary();
+            } else {
+                btnNext.style.display = 'block';
+                btnSave.style.display = 'none';
+            }
+        }
+
+        function updateSummary() {
+            sumLevel.textContent = levelMap[inputLevel.value] || '-';
+            sumPercent.textContent = inputPercent.value + '%';
+            sumHours.textContent = inputHours.value + ' ساعت';
+            
+            const selectedDays = Array.from(dayCheckboxes)
+                .filter(cb => cb.checked)
+                .map(cb => dayMap[cb.value])
+                .join('، ');
+            sumDays.textContent = selectedDays || 'هیچ روزی انتخاب نشده';
+        }
+
         function updateEstimation() {
             const level = inputLevel.value;
             const percent = parseInt(inputPercent.value);
             const hours = parseInt(inputHours.value);
-            
-            const selectedCheckboxes = Array.from(dayCheckboxes).filter(cb => cb.checked);
-            const studyDaysCount = selectedCheckboxes.length;
-            const persianDays = selectedCheckboxes.map(cb => dayMap[cb.value]).join('، ');
-            
-            if (selectedDaysList) selectedDaysList.textContent = persianDays || 'هیچ روزی انتخاب نشده';
+            const studyDaysCount = Array.from(dayCheckboxes).filter(cb => cb.checked).length;
 
             percentLabel.textContent = percent + '%';
             hoursLabel.textContent = (hours >= 8 ? 'بالای 8' : hours) + ' ساعت';
+
+            if (studyDaysCount === 0) {
+                resultDays.textContent = '--';
+                return;
+            }
 
             $.ajax({
                 url: 'incloud/study_plan_handler.php',
@@ -2231,11 +2359,42 @@ if (is_logged_in()) {
                 },
                 success: function(response) {
                     if (response.success) {
-                        resultDays.textContent = response.calendar_days;
+                        // Animate number change
+                        const start = parseInt(resultDays.textContent) || 0;
+                        const end = parseInt(response.calendar_days);
+                        animateValue(resultDays, start, end, 500);
                     }
                 }
             });
         }
+
+        function animateValue(obj, start, end, duration) {
+            let startTimestamp = null;
+            const step = (timestamp) => {
+                if (!startTimestamp) startTimestamp = timestamp;
+                const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+                obj.innerHTML = Math.floor(progress * (end - start) + start);
+                if (progress < 1) {
+                    window.requestAnimationFrame(step);
+                }
+            };
+            window.requestAnimationFrame(step);
+        }
+
+        // Navigation Events
+        btnNext.addEventListener('click', () => {
+            if (currentStep < totalSteps) {
+                currentStep++;
+                updateUI();
+            }
+        });
+
+        btnPrev.addEventListener('click', () => {
+            if (currentStep > 1) {
+                currentStep--;
+                updateUI();
+            }
+        });
 
         levelItems.forEach(item => {
             item.addEventListener('click', function() {
@@ -2243,6 +2402,8 @@ if (is_logged_in()) {
                 this.classList.add('active');
                 inputLevel.value = this.getAttribute('data-level');
                 updateEstimation();
+                // Auto advance to next step after selection for better UX
+                setTimeout(() => { if(currentStep === 1) { currentStep++; updateUI(); } }, 300);
             });
         });
 
@@ -2250,13 +2411,8 @@ if (is_logged_in()) {
         inputHours.addEventListener('input', updateEstimation);
         dayCheckboxes.forEach(cb => cb.addEventListener('change', updateEstimation));
 
-        // Initial calculation
-        updateEstimation();
-
-        const studyPlanModalEl = document.getElementById('studyPlanModal');
-
         // Load existing plan if exists
-        studyPlanModalEl.addEventListener('show.bs.modal', function() {
+        function loadExistingPlan() {
             $.ajax({
                 url: 'incloud/study_plan_handler.php',
                 type: 'POST',
@@ -2266,8 +2422,7 @@ if (is_logged_in()) {
                         const plan = response.plan;
                         inputLevel.value = plan.german_level;
                         levelItems.forEach(i => {
-                            if (i.getAttribute('data-level') === plan.german_level) i.classList.add('active');
-                            else i.classList.remove('active');
+                            i.classList.toggle('active', i.getAttribute('data-level') === plan.german_level);
                         });
                         inputPercent.value = plan.previous_study_percent;
                         inputHours.value = plan.daily_hours;
@@ -2281,21 +2436,16 @@ if (is_logged_in()) {
                     }
                 }
             });
-        });
-
-        // Auto-open modal if hash is #open-study-plan
-        if (window.location.hash === '#open-study-plan') {
-            const myModal = new bootstrap.Modal(studyPlanModalEl);
-            myModal.show();
-            window.location.hash = '#study-plan';
         }
+
+        loadExistingPlan();
+        updateUI();
 
         // Save Logic
         btnSave.addEventListener('click', function() {
             const formData = new FormData(studyPlanForm);
             formData.append('action', 'save');
             
-            // Get study days as string
             const selectedDays = Array.from(dayCheckboxes)
                 .filter(cb => cb.checked)
                 .map(cb => cb.value)
@@ -2334,6 +2484,8 @@ if (is_logged_in()) {
                 }
             });
         });
+    });
+    </script>
         // Delete Logic
         const btnDelete = document.getElementById('btnDeleteStudyPlan');
         if (btnDelete) {
