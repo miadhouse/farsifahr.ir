@@ -570,8 +570,13 @@ if (is_logged_in()) {
             gap: 10px !important;
         }
         .header-one .logo img {
-            max-width: 110px !important;
+            max-width: 90px !important;
         }
+    }
+
+    .header-one .logo img {
+        max-width: 140px;
+        height: auto;
     }
 
     /* Rounded Buttons Styling */
