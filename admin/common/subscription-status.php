@@ -15,7 +15,21 @@ if ($navbar_active_sub && $navbar_active_sub['plan_slug'] !== 'free') {
         elseif ($navbar_active_sub['duration_days'] == 365) $dur_label = ' (۱ سال)';
         else $dur_label = ' (' . $navbar_active_sub['duration_days'] . ' روز)';
     }
-    $status_label = $navbar_active_sub['plan_name'] . $dur_label;
+
+    // محاسبه روزهای باقی‌مانده
+    $days_remaining = '';
+    if ($navbar_active_sub['expires_at']) {
+        $now = new DateTime();
+        $expires = new DateTime($navbar_active_sub['expires_at']);
+        $diff = $now->diff($expires);
+        if ($expires > $now) {
+            $days_remaining = ' - ' . $diff->days . ' روز مانده';
+        } else {
+            $days_remaining = ' - منقضی شده';
+        }
+    }
+
+    $status_label = $navbar_active_sub['plan_name'] . $dur_label . $days_remaining;
     $status_class = 'bg-label-success';
 } elseif ($navbar_pending_sub) {
     $dur_label = '';

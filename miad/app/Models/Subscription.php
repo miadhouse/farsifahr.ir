@@ -19,6 +19,8 @@ class Subscription extends Model
         'amount_paid',
         'payment_method',
         'transaction_id',
+        'referral_bonus_applied',
+        'referred_by_id',
     ];
 
     public function user()

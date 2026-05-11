@@ -174,24 +174,32 @@ function handle_register($pdo, $ip)
     try {
         $hashed_password = hash_password($password);
         $verification_token = generate_token();
+        $referral_code = generate_referral_code($pdo);
 
         $stmt = $pdo->prepare("
-            INSERT INTO users (name, email, password, verification_token) 
-            VALUES (?, ?, ?, ?)
+            INSERT INTO users (name, email, password, verification_token, referral_code, email_verified) 
+            VALUES (?, ?, ?, ?, ?, 1)
         ");
-        $stmt->execute([$name, $email, $hashed_password, $verification_token]);
+        $stmt->execute([$name, $email, $hashed_password, $verification_token, $referral_code]);
 
         $user_id = $pdo->lastInsertId();
-        // ارسال ایمیل تایید
-        require_once __DIR__ . '/../incloud/mail-functions.php';
-        $result = send_verification_email($email, $name, $verification_token);
+        // ارسال ایمیل تایید (غیرفعال شد)
+        // require_once __DIR__ . '/../incloud/mail-functions.php';
+        // $result = send_verification_email($email, $name, $verification_token);
+
+        // ارسال پیام به مدیر در تلگرام
+        $telegram_message = "🆕 <b>ثبت نام جدید در سایت</b>\n\n";
+        $telegram_message .= "👤 نام: {$name}\n";
+        $telegram_message .= "📧 ایمیل: {$email}\n";
+        $telegram_message .= "🕒 زمان: " . date('Y-m-d H:i:s');
+        send_telegram_admin_message($telegram_message);
 
         // ثبت لاگ
         log_user_action($user_id, $email, 'register', 'success', $pdo);
 
         echo json_encode([
             'success' => true,
-            'message' => 'ثبت نام با موفقیت انجام شد. لطفا ایمیل خود را بررسی کنید'
+            'message' => 'ثبت نام با موفقیت انجام شد.'
         ]);
 
     } catch (PDOException $e) {

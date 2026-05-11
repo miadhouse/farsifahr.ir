@@ -7,34 +7,64 @@
 require_once __DIR__ . '/incloud/functions.php';
 require_once __DIR__ . '/incloud/subscription-functions.php';
 
-if (is_logged_in()) {
-    // header("Location: dashboard.php");
-    // exit();
-}
+// جلوگیری از کش شدن صفحه در حالت‌های مختلف لاگین
+header('Vary: Cookie');
+header('Cache-Control: no-cache, no-store, must-revalidate'); // HTTP 1.1
+header('Pragma: no-cache'); // HTTP 1.0
+header('Expires: 0'); // Proxies
+header('X-LiteSpeed-Cache-Control: no-cache'); // LiteSpeed Server
 
+// بررسی وجود برنامه مطالعه
+$has_study_plan = false;
+$study_plan_data = null;
+$days_remaining = 0;
+if (is_logged_in()) {
+    $stmtPlan = $pdo->prepare("SELECT * FROM study_plans WHERE user_id = ?");
+    $stmtPlan->execute([$_SESSION['user_id']]);
+    $study_plan_data = $stmtPlan->fetch();
+    if ($study_plan_data) {
+        $has_study_plan = true;
+        $days_passed = floor((time() - strtotime($study_plan_data['created_at'])) / (60 * 60 * 24));
+        $days_remaining = max(0, $study_plan_data['estimated_total_days'] - $days_passed);
+    }
+}
 ?>
-<html lang="fa">
+<html lang="<?= get_current_lang() ?>" dir="<?= get_lang_dir() ?>">
 
 <head>
     <meta charset="utf-8">
     <meta content="IE=edge" http-equiv="X-UA-Compatible">
-    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport">
     <meta content="Farsi Fahr | آموزش و آمادگی آزمون تئوری گواهینامه آلمانی" name="description">
     <link href="assets/images/favicon.svg" rel="shortcut icon" type="image/x-icon">
     <title>Farsi Fahr | آموزش و آمادگی آزمون تئوری گواهینامه آلمانی</title>
     <link href="assets/css/vendor/fontawesome.css" rel="stylesheet">
+    <link href="assets/css/vendor/animate.min.css" rel="stylesheet">
+    <?php if (get_lang_dir() === 'rtl'): ?>
     <link href="assets/css/plugins/swiper.rtl.css" rel="stylesheet">
     <link href="assets/css/plugins/odometer.rtl.css" rel="stylesheet">
-    <link href="assets/css/vendor/animate.min.css" rel="stylesheet">
     <link href="assets/css/vendor/bootstrap.min.rtl.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
-
+    <?php else: ?>
+    <link href="assets/css/plugins/swiper.rtl.css" rel="stylesheet">
+    <link href="assets/css/plugins/odometer.rtl.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <?php endif; ?>
     <link href="assets/css/style.rtl.css" rel="stylesheet">
-    <script src="https://www.google.com/recaptcha/api.js?hl=fa" async defer></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/lipis/flag-icons@7.2.3/css/flag-icons.min.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
-</head>
-<style>
-    .modal-content {
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#667eea">
+    <script src="https://www.google.com/recaptcha/api.js?hl=<?= get_current_lang() ?>" async defer></script>
+
+    <style>
+        <?php if (get_lang_dir() === 'ltr'): ?>
+        body, h1, h2, h3, h4, h5, h6, .title, .btn, .nav-link, span, p {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+        }
+        <?php endif; ?>
+        .modal-content {
         background-color: #2f506b00 !important;
         border-radius: 1rem !important;
         padding: 2rem !important;
@@ -86,7 +116,7 @@ if (is_logged_in()) {
     .modal.slidedown .modal-title {
         color: #ffffff;
         font-weight: 600;
-        font-size: 1.3rem;
+        font-size: 1.5rem;
     }
 
     .modal.slidedown .btn-close {
@@ -112,7 +142,7 @@ if (is_logged_in()) {
         color: #cbd5e0;
         font-weight: 500;
         margin-bottom: 8px;
-        font-size: 0.95rem;
+        font-size: 1.2rem;
     }
 
     .modal.slidedown .form-control {
@@ -120,8 +150,8 @@ if (is_logged_in()) {
         border: 2px solid #4a5568;
         border-radius: 12px;
         color: #e2e8f0;
-        padding: 12px 16px;
-        /* font-size: 1rem; */
+        padding: 14px 18px;
+        font-size: max(16px, 1.25rem);
         transition: all 0.3s ease;
     }
 
@@ -171,29 +201,33 @@ if (is_logged_in()) {
         border-radius: 12px;
         padding: 12px 20px;
         font-weight: 600;
-        font-size: 1rem;
+        font-size: 1.15rem;
         transition: all 0.3s ease;
-        border: none;
+        border: 2px solid transparent;
     }
 
     .modal.slidedown .btn-primary {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        background: rgba(102, 126, 234, 0.15) !important;
+        border: 2px solid #667eea !important;
+        color: #fff !important;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.2);
     }
 
     .modal.slidedown .btn-primary:hover {
-        background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
+        background: rgba(102, 126, 234, 0.3) !important;
         transform: translateY(-2px);
         box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
     }
 
     .modal.slidedown .btn-success {
-        background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
-        box-shadow: 0 4px 15px rgba(72, 187, 120, 0.3);
+        background: rgba(72, 187, 120, 0.15) !important;
+        border: 2px solid #48bb78 !important;
+        color: #fff !important;
+        box-shadow: 0 4px 15px rgba(72, 187, 120, 0.2);
     }
 
     .modal.slidedown .btn-success:hover {
-        background: linear-gradient(135deg, #38a169 0%, #2f855a 100%);
+        background: rgba(72, 187, 120, 0.3) !important;
         transform: translateY(-2px);
         box-shadow: 0 6px 20px rgba(72, 187, 120, 0.4);
     }
@@ -227,6 +261,7 @@ if (is_logged_in()) {
         color: #81c3f7;
         text-decoration: none;
         transition: color 0.3s ease;
+        font-size: 1.05rem;
     }
 
     .modal.slidedown a:hover {
@@ -237,7 +272,7 @@ if (is_logged_in()) {
     /* متن کمکی */
     .modal.slidedown .text-muted {
         color: #a0aec0 !important;
-        font-size: 0.85rem;
+        font-size: 0.95rem;
     }
 
     /* بک گراند modal */
@@ -514,18 +549,308 @@ if (is_logged_in()) {
         .comparison-table {
             display: none;
         }
+
+        .banner-two-main-wrapper .banner-right-content .main-img img {
+            max-width: 60%;
+            margin: 0 auto;
+        }
+        .banner-two-main-wrapper .banner-right-content .main-img::after {
+            height: 300px;
+        }
+        .banner-two-main-wrapper .banner-right-content .main-img .benner-two-bg-red-img img {
+            max-width: 60%;
+        }
+
+        /* Header Mobile Fixes */
+        .header-one .header-content {
+            gap: 10px;
+        }
+        .header-one .tmp-header-right {
+            gap: 10px !important;
+        }
+        .header-one .logo img {
+            max-width: 110px !important;
+        }
+    }
+
+    /* Rounded Buttons Styling */
+    .header-right-group .btn, 
+    .header-right-group .tmp-menu-bars,
+    .mobile-hamburger-wrap .tmp-menu-bars {
+        border-radius: 50px !important; /* Capsule shape */
+        font-weight: 600 !important;
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s ease;
+    }
+
+    .header-right-group .btn-sm {
+        padding: 10px 20px !important; /* Slightly larger */
+        font-size: 14px !important;
+    }
+
+    /* Perfect circle for icon-only buttons */
+    .header-right-group .dropdown button.btn-sm,
+    .header-right-group .tmp-menu-bars,
+    .mobile-hamburger-wrap .tmp-menu-bars {
+        width: 45px !important;
+        height: 45px !important;
+        padding: 0 !important;
+        border-radius: 50% !important;
+    }
+
+    .header-right-group .tmp-menu-bars,
+    .mobile-hamburger-wrap .tmp-menu-bars {
+        background: transparent !important;
+        border: none !important;
+        color: #fff;
+    }
+    
+    .header-right-group .tmp-menu-bars:hover,
+    .mobile-hamburger-wrap .tmp-menu-bars:hover {
+        background: rgba(255,255,255,0.1) !important;
+        color: #fff !important;
+    }
+
+    /* Centered Logo and Mobile Ordering */
+    @media (max-width: 1199px) {
+        .header-content {
+            display: flex !important;
+            flex-direction: row !important;
+            justify-content: space-between !important;
+            align-items: center !important;
+            position: relative;
+        }
+
+        .header-content .logo {
+            position: absolute !important;
+            left: 50% !important;
+            transform: translateX(-50%) !important;
+            z-index: 10;
+            margin: 0 !important;
+        }
+
+        /* RTL Handling: In Persian, Right is start, Left is end */
+        [dir="rtl"] .mobile-hamburger-wrap { order: 1; }
+        [dir="rtl"] .header-right-group { order: 3; }
+
+        /* LTR Handling: In English, Right is end, Left is start */
+        [dir="ltr"] .mobile-hamburger-wrap { order: 3; }
+        [dir="ltr"] .header-right-group { order: 1; }
+    }
+
+    /* Remove dropdown arrow for language switcher to keep it circular */
+    .header-right-group .dropdown-toggle::after {
+        display: none !important;
+    }
+
+    @media (max-width: 576px) {
+        .header-right-group .btn-sm {
+            padding: 8px 12px !important;
+        }
+        .header-right-group .dropdown button.btn-sm,
+        .header-right-group .tmp-menu-bars {
+            width: 40px !important;
+            height: 40px !important;
+        }
+    }
+
+    /* PWA Install Banner */
+    #pwa-install-banner {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        background: #5a8dee;
+        color: white;
+        padding: 10px 15px;
+        z-index: 10000;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        justify-content: space-between;
+        align-items: center;
+        font-size: 14px;
+        animation: pwaSlideDown 0.5s ease;
+        direction: rtl;
+    }
+    @keyframes pwaSlideDown {
+        from { transform: translateY(-100%); }
+        to { transform: translateY(0); }
+    }
+    #pwa-install-banner .banner-content {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-grow: 1;
+    }
+    #pwa-install-banner .banner-actions {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+    }
+    #pwa-install-banner .btn-install {
+        background: white !important;
+        color: #5a8dee !important;
+        border: none !important;
+        padding: 5px 15px !important;
+        border-radius: 5px !important;
+        font-weight: bold !important;
+        font-size: 13px !important;
+        cursor: pointer !important;
+        margin: 0 !important;
+    }
+    #pwa-install-banner .btn-close-banner {
+        background: transparent !important;
+        color: white !important;
+        border: none !important;
+        font-size: 24px !important;
+        cursor: pointer !important;
+        padding: 0 5px !important;
+        line-height: 1 !important;
+        margin: 0 !important;
     }
 
 
 
+    /* Study Plan Estimator Styles */
+    .estimator-section {
+        background: linear-gradient(135deg, #1c222f 0%, #283144 100%);
+        border-radius: 20px;
+        padding: 60px 40px;
+        margin-bottom: 80px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        border: 1px solid #36445d;
+    }
+    .estimator-modal .modal-content {
+        background-color: #1c222f;
+        color: #e2e8f0;
+        border: 1px solid #36445d;
+    }
+    .estimator-modal .form-label {
+        color: #cbd5e0;
+        font-size: 1.1rem;
+        margin-bottom: 12px;
+    }
+    .range-slider {
+        -webkit-appearance: none;
+        width: 100%;
+        height: 8px;
+        border-radius: 5px;
+        background: #36445d;
+        outline: none;
+        margin: 20px 0;
+    }
+    .range-slider::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 25px;
+        height: 25px;
+        border-radius: 50%;
+        background: #5a8dee;
+        cursor: pointer;
+        box-shadow: 0 0 10px rgba(90, 141, 238, 0.5);
+    }
+    .day-checkbox-group {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        justify-content: center;
+    }
+    .day-checkbox-item {
+        flex: 1;
+        min-width: 80px;
+    }
+    .day-checkbox-item input {
+        display: none;
+    }
+    .day-checkbox-item label {
+        display: block;
+        padding: 10px;
+        background: #283144;
+        border: 2px solid #36445d;
+        border-radius: 10px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-size: 0.9rem;
+    }
+    .day-checkbox-item input:checked + label {
+        background: rgba(90, 141, 238, 0.2);
+        border-color: #5a8dee;
+        color: #5a8dee;
+    }
+    .level-select-item {
+        cursor: pointer;
+        padding: 15px;
+        background: #283144;
+        border: 2px solid #36445d;
+        border-radius: 12px;
+        transition: all 0.3s ease;
+        text-align: center;
+    }
+    .level-select-item:hover, .level-select-item.active {
+        border-color: #5a8dee;
+        background: rgba(90, 141, 238, 0.1);
+    }
+    .result-box {
+        background: rgba(90, 141, 238, 0.1);
+        border: 2px dashed #5a8dee;
+        border-radius: 15px;
+        padding: 25px;
+        margin-top: 30px;
+    }
+
+    /* Glass Button Style */
+    .glass-btn {
+        background: rgba(255, 255, 255, 0.1) !important;
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2) !important;
+        color: #fff !important;
+        padding: 20px 50px !important;
+        font-size: 1.5rem !important;
+        font-weight: 600 !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        transition: all 0.3s ease !important;
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+    }
+    .glass-btn:hover {
+        background: rgba(255, 255, 255, 0.2) !important;
+        border-color: rgba(255, 255, 255, 0.4) !important;
+        transform: translateY(-3px);
+        box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.4);
+    }
+    .glass-btn .btn-text {
+        line-height: 1;
+    }
 </style>
 
 <body>
+    <!-- PWA Install Banner -->
+    <div id="pwa-install-banner">
+        <div class="banner-content">
+            <i class="fas fa-mobile-alt"></i>
+            <span>نصب اپلیکیشن فارسی‌فهر برای دسترسی سریع‌تر</span>
+        </div>
+        <div class="banner-actions">
+            <button class="btn-install" id="btn-pwa-install">نصب</button>
+            <button class="btn-close-banner" id="btn-pwa-close">&times;</button>
+        </div>
+    </div>
     <header class="tmp-header-area-start header-one header--sticky header--transparent sticky">
         <div class="container">
             <div class="row">
                 <div class="col-lg-12">
                     <div class="header-content">
+                        <!-- Mobile Hamburger Wrap -->
+                        <div class="mobile-hamburger-wrap d-block d-xl-none">
+                            <button class="tmp-menu-bars humberger_menu_active"><i
+                                    class="fa-regular fa-bars-staggered"></i></button>
+                        </div>
+
                         <div class="logo">
                             <a href="<?= SITE_URL ?>/index.php">
                                 <img alt="Farsi Fahr" class="logo-dark" src="assets/images/logo/logoAsset%201.svg">
@@ -535,62 +860,42 @@ if (is_logged_in()) {
                         <nav class="tmp-mainmenu-nav d-none d-xl-block">
                             <ul class="tmp-mainmenu">
                                 <li class="nav-item">
-                                    <a class="nav-link <?= basename($_SERVER['PHP_SELF']) === 'index.php' ? 'active' : '' ?>"
-                                        href="index.php">
-                                        <i class="bi bi-house me-1"></i>خانه
+                                    <a class="nav-link" href="#">
+                                        <i class="bi bi-house me-1"></i><?= __('home_title') ?>
                                     </a>
                                 </li>
-                                <?php if (is_logged_in()): ?>
-                                    <!-- Logged in user navigation -->
-                                    <li class="nav-item">
-                                        <a class="nav-link <?= strpos($_SERVER['REQUEST_URI'], '/user/') !== false ? 'active' : '' ?>"
-                                            href="admin">
-                                            <i class="bi bi-speedometer2 me-1"></i>داشبورد
-                                        </a>
-                                    </li>
-
-
-                                <?php else: ?>
-                                    <!-- Guest navigation -->
-                                    <li class="nav-item">
-                                        <a class="nav-link" href="#pricing">
-                                            <i class="bi bi-tags me-1"></i>تعرفه ها
-                                        </a>
-                                    </li>
-
-                                <?php endif; ?>
+                                <li class="nav-item">
+                                    <a class="nav-link" href="#pricing">
+                                        <i class="bi bi-crown me-1"></i><?= __('subscription') ?>
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" href="#study-plan">
+                                        <i class="bi bi-calendar-check me-1"></i><?= __('study_plan') ?>
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" href="#contact">
+                                        <i class="bi bi-chat-dots me-1"></i><?= __('contact_us') ?>
+                                    </a>
+                                </li>
                             </ul>
                         </nav>
-                        <div class="tmp-header-right">
-                            <div class="social-share-wrapper d-none d-md-block">
-                                <div class="social-link"><a href="#"><i class="fa-brands fa-instagram"></i></a> <a
-                                        href="#"><i class="fa-brands fa-linkedin-in"></i></a> <a href="#"><i
-                                            class="fa-brands fa-twitter"></i></a> <a href="#"><i
-                                            class="fa-brands fa-facebook-f"></i></a></div>
+                        <div class="header-right-group d-flex align-items-center gap-2 gap-sm-3">
+                            <div class="social-share-wrapper d-none d-xl-block">
+                                <div class="social-link"><a target="_blank" href="<?= INSTAGRAM_URL ?>"><i class="fa-brands fa-instagram"></i></a> <a target="_blank" href="<?= TELEGRAM_CHANNEL_URL ?>"><i class="fa-brands fa-telegram"></i></a></div>
                             </div>
-                            <div class="actions-area">
-                                <div class="tmp-side-collups-area d-none d-xl-block">
-                                    <button class="tmp-menu-bars tmp_button_active"><i
-                                            class="fa-regular fa-bars-staggered"></i></button>
-                                </div>
-                                <div class="tmp-side-collups-area d-block d-xl-none">
-                                    <button class="tmp-menu-bars humberger_menu_active"><i
-                                            class="fa-regular fa-bars-staggered"></i></button>
-                                </div>
-                            </div>
-                        </div>
-
-                      <div class="d-flex align-items-center">
+                            
                             <?php if (is_logged_in()): ?>
                                 <!-- User Dropdown Menu -->
                                 <div class="dropdown">
-                                    <button class="btn btn-dark btn-lg text-white fs-4 dropdown-toggle d-flex align-items-center gap-2" 
+                                    <button class="btn btn-dark btn-md text-white dropdown-toggle d-flex align-items-center gap-2" 
                                             type="button" 
                                             id="userDropdown" 
                                             data-bs-toggle="dropdown" 
                                             aria-expanded="false">
                                         <i class="fa-regular fa-user-circle"></i>
-                                        <span><?= $_SESSION['name'] ?></span>
+                                        <span class="d-none d-sm-inline"><?= $_SESSION['name'] ?></span>
                                     </button>
                                     <ul style="background-color: #212529 !important;" class="dropdown-menu bg-black text-light w-100  dropdown-menu-end" aria-labelledby="userDropdown">
                                         <li>
@@ -599,12 +904,6 @@ if (is_logged_in()) {
                                                 داشبورد
                                             </a>
                                         </li>
-                                        <!-- <li>
-                                            <a class="dropdown-item" href="user/profile.php">
-                                                <i class="fa-regular fa-user me-2"></i>
-                                                پروفایل
-                                            </a>
-                                        </li> -->
                                         <li>
                                             <a class="dropdown-item bg-black text-light" href="admin/subscription.php">
                                                 <i class="fa-regular fa-crown me-2"></i>
@@ -622,16 +921,35 @@ if (is_logged_in()) {
                                 </div>
                             <?php else: ?>
                                 <!-- Guest User Buttons -->
-
-                                <a class="nav-link btn btn-dark btn-lg text-white fs-4 mx-2" data-bs-toggle="modal"
-                                    data-bs-target="#loginModal">
-                                    ورود
-                                </a>
-                                <a class="nav-link btn btn-dark btn-lg text-white fs-4" data-bs-toggle="modal"
-                                    data-bs-target="#registerModal">
-                                    ثبت نام
-                                </a>
+                                <div class="d-flex align-items-center gap-1 gap-sm-2">
+                                    <a href="javascript:void(0)" class="btn btn-outline-light btn-sm px-2 px-sm-3 d-flex align-items-center gap-1 rounded-pill" style="font-weight: 500;" data-bs-toggle="modal"
+                                        data-bs-target="#loginModal">
+                                        <i class="fa-regular fa-arrow-right-to-bracket"></i>
+                                        <span class="d-none d-sm-inline"><?= __('login') ?></span>
+                                    </a>
+                                    <a href="javascript:void(0)" class="btn btn-outline-primary btn-sm px-2 px-sm-3 text-white d-flex align-items-center gap-1 rounded-pill" style="font-weight: 500; border-color: #5a8dee; background-color: transparent;" data-bs-toggle="modal"
+                                        data-bs-target="#registerModal">
+                                        <i class="fa-regular fa-user-plus"></i>
+                                        <span class="d-none d-sm-inline"><?= __('register') ?></span>
+                                    </a>
+                                </div>
                             <?php endif; ?>
+
+                            <!-- Language Switcher -->
+                            <div class="dropdown">
+                                <?php 
+                                $curr = get_current_lang();
+                                $flag = $curr == 'fa' ? 'ir' : ($curr == 'en' ? 'us' : 'de');
+                                ?>
+                                <button class="btn btn-dark btn-sm dropdown-toggle d-flex align-items-center gap-1 p-2" type="button" data-bs-toggle="dropdown">
+                                    <span class="fi fi-<?= $flag ?>"></span>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end bg-dark">
+                                    <li><a class="dropdown-item text-white" href="?lang=fa"><span class="fi fi-ir me-2"></span> فارسی</a></li>
+                                    <li><a class="dropdown-item text-white" href="?lang=de"><span class="fi fi-de me-2"></span> Deutsch</a></li>
+                                    <li><a class="dropdown-item text-white" href="?lang=en"><span class="fi fi-us me-2"></span> English</a></li>
+                                </ul>
+                            </div>
                         </div>
                     </div>
 
@@ -658,31 +976,24 @@ if (is_logged_in()) {
                                 src="assets/images/logo/Designer.jpeg"> </a>
                     </div>
                     <h5 class="title mt--30">
-                        با افتخار آموزگار ، مترجم ، پشتیبان و پارتنر شما در پروسه اخذ گواهینامه آلمانی هستیم
+                        <?= __('sidebar_title') ?>
                     </h5>
                     <p class="disc">
 
                     </p>
                     <div class="short-contact-area">
                         <div class="single-contact"><i class="fa-solid fa-phone"></i>
-                            <div class="information tmp-link-animation"><span>تماس واتس اپپ</span> <a class="number"
+                            <div class="information tmp-link-animation"><span><?= __('whatsapp_contact') ?></span> <a class="number"
                                     href="#">004917661812772</a>
                             </div>
                         </div>
                         <div class="single-contact"><i class="fa-solid fa-envelope"></i>
-                            <div class="information tmp-link-animation"><span>با ما توسط ایمیل ارتباط بگیرید</span> <a
+                            <div class="information tmp-link-animation"><span><?= __('email_contact') ?></span> <a
                                     class="number" href="#">admin@farsiapp.de</a></div>
                         </div>
-                        <!--       <div class="single-contact"><i class="fa-solid fa-location-crosshairs"></i>
-                               <div class="information tmp-link-animation"><span>آدرس من</span> <span class="number">66 بروکلین ، نیویورک 3269</span>
-                               </div>
-                           </div>-->
                     </div>
-                    <div class="social-wrapper mt--20"><span class="subtitle">یا در فضای مجازی دنبال کنید</span>
-                        <div class="social-link"><a href="#"><i class="fa-brands fa-instagram"></i></a> <a href="#"><i
-                                    class="fa-brands fa-linkedin-in"></i></a> <a href="#"><i
-                                    class="fa-brands fa-twitter"></i></a> <a href="#"><i
-                                    class="fa-brands fa-facebook-f"></i></a></div>
+                    <div class="social-wrapper mt--20"><span class="subtitle"><?= __('follow_us') ?></span>
+                        <div class="social-link"><a target="_blank" href="<?= INSTAGRAM_URL ?>"><i class="fa-brands fa-instagram"></i></a> <a target="_blank" href="<?= TELEGRAM_CHANNEL_URL ?>"><i class="fa-brands fa-telegram"></i></a></div>
                     </div>
                 </div>
             </div>
@@ -702,9 +1013,20 @@ if (is_logged_in()) {
                     </div>
                 </div>
                 <ul class="tmp-mainmenu">
-                    <li><a href="#">خانه</a></li>
-                    <li><a href="about.html">در مورد</a></li>
-                    <li><a href="contact.html">تماس</a></li>
+                    <li><a href="#"><?= __('home_title') ?></a></li>
+                    <li><a href="#pricing"><?= __('subscription') ?></a></li>
+                    <li><a href="#study-plan"><?= __('study_plan') ?></a></li>
+                    <li><a href="#contact"><?= __('contact_us') ?></a></li>
+                    <li class="mt-4">
+                        <?php if (is_logged_in()): ?>
+                            <a href="admin" class="btn btn-primary w-100 text-white"><?= __('dashboard') ?></a>
+                        <?php else: ?>
+                            <div class="d-grid gap-2">
+                                <a href="javascript:void(0)" class="btn btn-outline-light" data-bs-toggle="modal" data-bs-target="#loginModal"><?= __('login') ?></a>
+                                <a href="javascript:void(0)" class="btn btn-primary text-white" style="background-color: #5a8dee;" data-bs-toggle="modal" data-bs-target="#registerModal"><?= __('register') ?></a>
+                            </div>
+                        <?php endif; ?>
+                    </li>
                 </ul>
             </div>
         </div>
@@ -732,44 +1054,36 @@ if (is_logged_in()) {
                         </div>
                     </div>
                     <div class="col-lg-6 order-lg-1 mt--100">
-                        <div class="inner"><span class="sub-title tmp-scroll-trigger tmp-fade-in animation-order-1">سلام
-                                دوست من !</span>
-                            <h1 class="title tmp-scroll-trigger tmp-fade-in animation-order-2">گواهینامه آلمانی سخت
-                                نیست،
-                                چون اینجا <br>
+                        <div class="inner"><span class="sub-title tmp-scroll-trigger tmp-fade-in animation-order-1"><?= __('banner_greeting') ?></span>
+                            <h1 class="title tmp-scroll-trigger tmp-fade-in animation-order-2"><?= __('banner_title_part1') ?><br>
                                 <span class="header-caption">
                                     <span class="cd-headline clip is-full-width">
                                         <span class="cd-words-wrapper" style="width: 107.73px; overflow: hidden;">
-                                            <b class="theme-gradient is-visible">ترجمه اختصاصی</b>
-                                            <b class="theme-gradient is-hidden">آموزش فارسی</b>
-                                            <b class="theme-gradient is-hidden">برنامه ریزی</b>
-                                            <b class="theme-gradient is-hidden">تمرین واژه ها</b>
-                                            <b class="theme-gradient is-hidden">مدل امتحان</b>
-                                            <b class="theme-gradient is-hidden">پشتیبانی 24 ساعته</b>
+                                            <b class="theme-gradient is-visible"><?= __('feature_1') ?></b>
+                                            <b class="theme-gradient is-hidden"><?= __('feature_2') ?></b>
+                                            <b class="theme-gradient is-hidden"><?= __('feature_3') ?></b>
+                                            <b class="theme-gradient is-hidden"><?= __('feature_4') ?></b>
+                                            <b class="theme-gradient is-hidden"><?= __('feature_5') ?></b>
+                                            <b class="theme-gradient is-hidden"><?= __('feature_6') ?></b>
                                         </span>
                                     </span>
-                                </span> داریم
+                                </span> <?= __('banner_title_part2') ?>
                             </h1>
                             <p class="disc tmp-scroll-trigger tmp-title-split tmp-fade-in animation-order-3">
-                                <span>کنار شما هستیم</span>
-                                تا حتی با داشتن سطح زبان آلمانی پایین بتونید در مدت کوتاه برای
-                                <span>آزمون تئوری گواهینامه رانندگی آلمانی </span>
-                                آماده بشید!
+                                <span><?= __('banner_desc_part1') ?></span>
+                                <?= __('banner_desc_part2') ?>
+                                <span><?= __('banner_desc_part3') ?></span>
+                                <?= __('banner_desc_part4') ?>
                             </p>
                             <div class="button-area-banner-two tmp-scroll-trigger tmp-fade-in animation-order-4"><a
-                                    class="tmp-btn hover-icon-reverse radius-round" href="#"> <span
-                                        class="icon-reverse-wrapper"> <span class="btn-text">اطلاعات بیشتر در مورد
-                                            ما</span> <span class="btn-icon"><i
+                                    class="tmp-btn hover-icon-reverse radius-round" href="#pricing"> <span
+                                        class="icon-reverse-wrapper"> <span class="btn-text"><?= __('start_now') ?></span> <span class="btn-icon"><i
                                                 class="fa-sharp fa-regular fa-arrow-left"></i></span> <span
                                             class="btn-icon"><i class="fa-sharp fa-regular fa-arrow-left"></i></span>
                                     </span> </a></div>
                             <div class="find-me-on tmp-scroll-trigger tmp-fade-in animation-order-5">
-                                <h2 class="find-me-on-title">ما رو دنبال کن</h2>
-                                <div class="social-link banner"><a href="#"><i class="fa-brands fa-instagram"></i></a>
-                                    <a href="#"><i class="fa-brands fa-linkedin-in"></i></a> <a href="#"><i
-                                            class="fa-brands fa-twitter"></i></a> <a href="#"><i
-                                            class="fa-brands fa-facebook-f"></i></a>
-                                </div>
+                                <h2 class="find-me-on-title"><?= __('follow_us_title') ?></h2>
+                                <div class="social-link banner"><a target="_blank" href="<?= INSTAGRAM_URL ?>"><i class="fa-brands fa-instagram"></i></a> <a target="_blank" href="<?= TELEGRAM_CHANNEL_URL ?>"><i class="fa-brands fa-telegram"></i></a></div>
                             </div>
                         </div>
                     </div>
@@ -782,20 +1096,16 @@ if (is_logged_in()) {
         <div class="container tmp-section-gap">
             <div class="text-para-doc-wrap">
                 <h2 class="text-para-documents tmp-scroll-trigger tmp-fade-in tmp-title-split-2 animation-order-1">
-                    پروسه
+                    <?= __('about_content_part1') ?>
                     <span>
-                        یادگیری و آمادگی
+                        <?= __('about_content_span1') ?>
                     </span>
-                    برای آزمون گواهینامه آلمانی
-                    برای فارسی زبانان همیشه سخت، هزینه بر و طاقت فرسا بوده است.
-                    ترجمه و مشاهده ویدیو های آموزشی همچنین زمان بر
-                    و دسترسی به آن ها آسان نیست، با در نظر گرفتن تمام
-                    این مشکلات امروز می توانید با
+                    <?= __('about_content_part2') ?>
 
                     <span>
-                        متد جدید این سامانه
+                        <?= __('about_content_span2') ?>
                     </span>
-                    با حداقل مشکلات سابق این مسیر را پشت سر بگذارید.
+                    <?= __('about_content_part3') ?>
                 </h2>
                 <div class="left-bg-text-para"><img alt="" src="assets/images/banner/right-bg-text-para-doc.png"></div>
                 <div class="right-bg-text-para"><img alt="" src="assets/images/banner/left-bg-text-para-doc.png"></div>
@@ -809,17 +1119,17 @@ if (is_logged_in()) {
                     <div class="about-us-left-content-wrap bg-vactor-one">
                         <div class="years-of-experience-card tmp-scroll-trigger tmp-fade-in animation-order-1">
                             <h2 class="counter card-title ">
-                                <span class="odometer ltr" data-count="3500">00</span>+
+                                <span class="odometer ltr" data-count="4500">4500</span>+
                             </h2>
-                            <p class="card-para">توضیح فارسی برای پاسخ های صحیح و غلط</p>
+                            <p class="card-para"><?= __('correct_wrong_explanation') ?></p>
                         </div>
                         <div class="design-card tmp-scroll-trigger tmp-fade-in animation-order-2">
                             <div class="design-card-img">
                                 <div class="icon"><i class="fa-sharp fa-thin fa-lock"></i></div>
                             </div>
                             <div class="card-info">
-                                <h3 class="card-title">آموزش های اساسی</h3>
-                                <p class="card-para">241 آموزش</p>
+                                <h3 class="card-title"><?= __('basic_training_title') ?></h3>
+                                <p class="card-para"><?= __('training_count') ?></p>
                             </div>
                         </div>
                     </div>
@@ -828,10 +1138,8 @@ if (is_logged_in()) {
                     <div class="about-us-right-content-wrap">
                         <div class="section-head text-align-left mb--50">
                             <div class="section-sub-title tmp-scroll-trigger tmp-fade-in animation-order-1"><span
-                                    class="subtitle">استراتژی ما</span></div>
-                            <h2 class="title split-collab tmp-scroll-trigger tmp-fade-in animation-order-2">زمان کوتاه
-                                با
-                                حداقل سطح زبان</h2>
+                                    class="subtitle"><?= __('strategy_subtitle') ?></span></div>
+                            <h2 class="title split-collab tmp-scroll-trigger tmp-fade-in animation-order-2"><?= __('strategy_title') ?></h2>
                             <p class="description tmp-scroll-trigger tmp-fade-in animation-order-3"></p>
                         </div>
                         <div class="about-us-section-card row g-5">
@@ -841,12 +1149,9 @@ if (is_logged_in()) {
                                     <div class="card-head">
                                         <div class="logo-img"><img alt="logo" src="assets/images/about/logo-1.svg">
                                         </div>
-                                        <h3 class="card-title"> کوتاه ترین زمان</h3>
+                                        <h3 class="card-title"><?= __('fastest_time_title') ?></h3>
                                     </div>
-                                    <p class="card-para">با تحقیق از بین صدها متقاضی گواهینامه در ساله های گذشته، طبق یک
-                                        فرومول بسیار جذاب، میتوانیم قبل از شروع زمان مورد نیاز برای آمادگی را با توجه به
-                                        سطح
-                                        زبان و اطلاعات شما تخمین بزنیم.</p>
+                                    <p class="card-para"><?= __('fastest_time_desc') ?></p>
                                 </div>
                             </div>
                             <div class="col-lg-6 col-md-6 col-sm-6 col-12">
@@ -854,20 +1159,16 @@ if (is_logged_in()) {
                                     <div class="card-head">
                                         <div class="logo-img"><img alt="logo" src="assets/images/about/logo-2.svg">
                                         </div>
-                                        <h3 class="card-title">مشکل سطح زبان </h3>
+                                        <h3 class="card-title"><?= __('language_problem_title') ?></h3>
                                     </div>
-                                    <p class="card-para">با پروسه تمرین و تکرار، یادگیری کلمات و یک تمرین ثابت طبق
-                                        برنامه،
-                                        مشکل پایین بودن سطح زبان آلمانی شما برای یادگیری سوالات را به حداقل می رسانیم.
-                                    </p>
+                                    <p class="card-para"><?= __('language_problem_desc') ?></p>
                                 </div>
                             </div>
                         </div>
                         <div
                             class="about-btn mt--40 tmp-scroll-trigger tmp-fade-in animation-order-6 tmp-scroll-trigger--offscreen">
-                            <a class="tmp-btn hover-icon-reverse radius-round" href="about.html"> <span
-                                    class="icon-reverse-wrapper"> <span class="btn-text">همین حالا رایگان تست
-                                        کنید</span> <span class="btn-icon"><i
+                            <a class="tmp-btn hover-icon-reverse radius-round" href="#pricing"> <span
+                                    class="icon-reverse-wrapper"> <span class="btn-text"><?= __('start_now') ?></span> <span class="btn-icon"><i
                                             class="fa-sharp fa-regular fa-arrow-left"></i></span> <span
                                         class="btn-icon"><i class="fa-sharp fa-regular fa-arrow-left"></i></span>
                                 </span> </a>
@@ -877,6 +1178,46 @@ if (is_logged_in()) {
             </div>
         </div>
     </section>
+    <!-- Study Plan Section Start -->
+    <section class="study-plan-area tmp-section-gapTop" id="study-plan">
+        <div class="container">
+            <div class="estimator-section text-center">
+                <div class="section-head mb--30">
+                    <span class="subtitle" style="color: #5a8dee; font-weight: bold; margin-bottom: 15px; display: block;"><?= __('study_plan_subtitle') ?></span>
+                    <h2 class="title" style="color: #fff; font-size: 2.5rem; margin-bottom: 20px;"><?= __('study_plan_title') ?></h2>
+                    <p style="color: #a1b0cb; font-size: 1.2rem; max-width: 800px; margin: 0 auto 30px;">
+                        <?php if ($has_study_plan): ?>
+                            <?= __('study_plan_active_desc') ?>
+                        <?php else: ?>
+                            <?= __('study_plan_guest_desc') ?>
+                        <?php endif; ?>
+                    </p>
+                </div>
+
+                <div class="d-flex flex-wrap justify-content-center gap-3">
+                    <button class="tmp-btn glass-btn radius-round" data-bs-toggle="modal" data-bs-target="#studyPlanModal">
+                        <span class="icon-reverse-wrapper">
+                            <span class="btn-text"><?= $has_study_plan ? __('edit_study_plan_btn') : __('get_study_plan_btn') ?></span>
+                            <span class="btn-icon"><i class="fa-sharp fa-regular fa-arrow-left"></i></span>
+                            <span class="btn-icon"><i class="fa-sharp fa-regular fa-arrow-left"></i></span>
+                        </span>
+                    </button>
+
+                    <?php if ($has_study_plan): ?>
+                        <button class="tmp-btn radius-round btn-danger btn-lg" id="btnDeleteStudyPlan" style="background-color: #ff3e1d; border: none; padding: 15px 40px; font-size: 1.2rem;">
+                            <span class="icon-reverse-wrapper">
+                                <span class="btn-text"><?= __('delete_plan_btn') ?></span>
+                                <span class="btn-icon"><i class="fa-sharp fa-regular fa-trash"></i></span>
+                                <span class="btn-icon"><i class="fa-sharp fa-regular fa-trash"></i></span>
+                            </span>
+                        </button>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- Study Plan Section End -->
+
     <!-- Tpm My Price plan Start -->
 <section class="our-price-plan-area tmp-section-gapTop" id="pricing">
     <div class="container">
@@ -884,137 +1225,169 @@ if (is_logged_in()) {
             <div class="section-sub-title center-title tmp-scroll-trigger tmp-fade-in animation-order-1">
                 <span class="subtitle">جدول اشتراک‌ها</span>
             </div>
-            <h2 class="title split-collab tmp-scroll-trigger tmp-fade-in animation-order-2">قیمت‌گذاری ساده و شفاف</h2>
+            <h2 class="title split-collab tmp-scroll-trigger tmp-fade-in animation-order-2">انتخاب اشتراک جدید</h2>
             <p>طرحی را انتخاب کنید که به بهترین وجه با نیازهای شما مطابقت داشته باشد.</p>
         </div>
         
-        <div class="row justify-content-center">
-            <ul class="pricing_table">
-                <?php
-                
-                // دریافت پلن‌ها
-                $plans = get_all_subscription_plans($pdo);
-                $vip_durations = get_vip_duration_options();
-                
-                foreach ($plans as $plan):
-                    $is_free = ($plan['slug'] === 'free');
-                    $is_vip = ($plan['slug'] === 'vip');
+        <div class="row justify-content-center mt-5">
+            <?php
+            // در صفحه اصلی، کاربر لزوما لاگین نیست
+            $is_user_logged_in = is_logged_in();
+            $user_sub = false;
+            $pending_sub = false;
+            $user_plan_status = 'free';
+
+            if ($is_user_logged_in) {
+                $user_sub = get_user_active_subscription($_SESSION['user_id'], $pdo);
+                $pending_sub = get_user_pending_subscription($_SESSION['user_id'], $pdo);
+                if ($user_sub !== false && $user_sub !== null) {
+                    if ($user_sub['plan_slug'] !== 'free') {
+                        $user_plan_status = 'active';
+                    }
+                }
+            }
+
+            $stmt = $pdo->prepare("SELECT * FROM subscription_plans WHERE is_active = 1 ORDER BY sort_order ASC");
+            $stmt->execute();
+            $plans = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            foreach ($plans as $plan):
+              $plan_class = ($plan['slug'] == 'vip') ? 'text-primary' : '';
+              $card_class = ($plan['slug'] == 'vip') ? 'border-primary' : '';
+              ?>
+              <div class="col-lg-6 col-12 mb-4">
+                <div class="card <?= $card_class ?> h-100 shadow-sm" style="border-radius: 15px; border: 1px solid #36445d; background-color: #283144; box-shadow: 0 4px 24px 0 rgba(0, 0, 0, 0.2);">
+                  <div class="card-header bg-label-primary py-3" style="background-color: rgba(90, 141, 238, 0.1); border-radius: 15px 15px 0 0; padding: 1.5rem;">
+                    <h4 class="<?= $plan_class ?> mb-0 fw-bold" style="color: #5a8dee !important; margin: 0; text-align: center; font-size: 1.8rem;"><?= htmlspecialchars($plan['name']) ?></h4>
+                  </div>
+                  <div class="card-body pt-4" style="padding: 2rem;">
+                    <p class="mb-4 text-center" style="font-size: 1.2rem; color: #a1b0cb;"><?= htmlspecialchars($plan['description']) ?></p>
                     
-                    // تعیین کلاس رنگ
-                    $plan_class = $is_vip ? 'text-gold plan-vip' : 'plan-free';
-                ?>
-                
-                <li class="price_block <?= $plan_class ?>">
-                    <div class="plan-header">
-                        <h3><?= htmlspecialchars($plan['name']) ?></h3>
-                        <?php if ($is_vip): ?>
-                            <span class="badge badge-vip">پیشنهاد ویژه</span>
+                    <ul class="list-unstyled mb-4" style="line-height: 2.2; margin-bottom: 2rem; padding-right: 0; font-size: 1.15rem; color: #d8deea;">
+                      <?php 
+                      $plan_features = get_plan_features($plan['slug']);
+                      foreach ($plan_features as $feature):
+                          $is_negative = (str_contains($feature, 'عدم') || str_contains($feature, 'بدون') || str_contains($feature, 'محدودیت') || str_contains($feature, 'بالاتر از ۲۰۰'));
+                          // Note: We'll keep the check icon for all unless it's a known negative feature, 
+                          // but the database features are usually positive.
+                      ?>
+                              <li class="mb-2"><i class="fa fa-check-circle text-success me-2 fs-4" style="color: #71dd37;"></i> <?= htmlspecialchars($feature) ?></li>
+                      <?php 
+                      endforeach;
+                      ?>
+                    </ul>
+
+                    <?php if ($plan['slug'] == 'free'): ?>
+                      <div class="text-center py-4 rounded" style="background-color: #1c222f; padding: 2rem; border-radius: 10px; border: 1px solid #36445d;">
+                        <h2 class="fw-bold mb-1" style="font-size: 2.5rem; color: #d8deea;">رایگان</h2>
+                        <p class="small mb-4" style="color: #8295ba; font-size: 1.1rem;">مناسب برای آشنایی اولیه</p>
+                        <?php if ($is_user_logged_in): ?>
+                            <?php if ($user_plan_status === 'active'): ?>
+                                <button class="btn w-100 fs-5" style="background-color: #36445d; color: #8295ba; padding: 12px; border-radius: 8px; font-weight: bold; border: none;" disabled>غیرقابل استفاده</button>
+                            <?php else: ?>
+                                <a href="admin/subscription.php" class="btn w-100 fs-5" style="background-color: #8592a3; color: white; padding: 12px; border-radius: 8px; font-weight: bold; text-decoration: none; display: block;">پلن فعلی شما</a>
+                            <?php endif; ?>
+                        <?php else: ?>
+                            <button class="btn w-100 fs-5" data-bs-toggle="modal" data-bs-target="#loginModal" style="background-color: #5a8dee; color: white; padding: 12px; border-radius: 8px; font-weight: bold; border: none; cursor: pointer;">شروع رایگان</button>
                         <?php endif; ?>
-                    </div>
-                    
-                    <?php if ($is_free): ?>
-                        <!-- پلن رایگان -->
-                        <div class="price">
-                            <div class="price_figure">
-                                <span class="price_number">رایگان</span>
+                      </div>
+                    <?php else: ?>
+                      <div class="vip-durations">
+                        <?php 
+                        $durations = [
+                          ['key' => 'price_2_weeks', 'label' => '۲ هفته (۱۴ روز)', 'duration' => '2_weeks', 'color' => 'primary'],
+                          ['key' => 'price_1_month', 'label' => '۱ ماه (۳۰ روز)', 'duration' => '1_month', 'color' => 'primary'],
+                          ['key' => 'price_3_months', 'label' => '۳ ماه (۹۰ روز)', 'duration' => '3_months', 'color' => 'success', 'special' => true],
+                          ['key' => 'price_6_months', 'label' => '۶ ماه (۱۸۰ روز)', 'duration' => '6_months', 'color' => 'info'],
+                          ['key' => 'price_1_year', 'label' => '۱ سال (۳۶۵ روز)', 'duration' => '1_year', 'color' => 'warning', 'star' => true]
+                        ];
+
+                        foreach ($durations as $dur):
+                          if (!isset($plan[$dur['key']]) || $plan[$dur['key']] <= 0) continue;
+                          
+                          $duration_days = get_duration_days($dur['duration']);
+                          $is_active_dur = ($user_sub && $user_sub['plan_id'] == $plan['id'] && $user_sub['duration_days'] == $duration_days);
+                          $is_pending_dur = ($pending_sub && $pending_sub['plan_id'] == $plan['id'] && $pending_sub['duration_days'] == $duration_days);
+
+                          $discount = 0;
+                          if ($dur['key'] != 'price_1_month' && $plan['price_1_month'] > 0) {
+                            $days = $duration_days;
+                            $saving = ($plan['price_1_month'] / 30 * $days) - $plan[$dur['key']];
+                            if ($saving > 0) {
+                              $discount = round(($saving / ($plan['price_1_month'] / 30 * $days)) * 100);
+                            }
+                          }
+
+                          $row_style = 'transition: all 0.2s ease; border-left: 4px solid transparent; background-color: #1c222f; cursor: pointer; display: flex; justify-content: space-between; align-items: center;';
+                          $badge_style = 'font-size: 12px; padding: 5px 10px; border-radius: 4px; background-color: #ff3e1d; color: white; margin-right: 10px;';
+                          
+                          if ($is_active_dur) {
+                              $row_style .= ' border-color: #71dd37; background-color: rgba(113, 221, 55, 0.1);';
+                          } elseif ($is_pending_dur) {
+                              $row_style .= ' border-color: #ffab00; background-color: rgba(255, 171, 0, 0.1);';
+                          } elseif (isset($dur['special']) || isset($dur['star'])) {
+                              $row_style .= ' background-color: rgba(90, 141, 238, 0.08); border-color: #5a8dee;';
+                          } else {
+                              $row_style .= ' border-color: #36445d;';
+                          }
+                        ?>
+                        <div class="pricing-option-row p-3 mb-3 border rounded shadow-sm" style="<?= $row_style ?>" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 5px 15px rgba(0,0,0,0.2)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 5px rgba(0,0,0,0.1)';">
+                          <div class="d-flex justify-content-between align-items-center w-100" style="flex-wrap: wrap;">
+                            <div class="flex-grow-1" style="flex: 1; min-width: 150px;">
+                              <h6 class="mb-1 fw-bold fs-5" style="color: #d8deea; display: inline-block; margin: 0;"><?= $dur['label'] ?></h6>
+                              <?php if ($discount > 0): ?>
+                                <span class="badge" style="<?= $badge_style ?>"><?= $discount ?>% تخفیف</span>
+                              <?php endif; ?>
                             </div>
-                        </div>
-                        
-                        <ul class="features">
-                            <li class="enabled-icon text-start">
-                                <i class="fa fa-check-circle text-success fs-4"></i>
-                                دسترسی به 200 سوال اول
-                            </li>
-                            <li class="enabled-icon text-start">
-                                <i class="fa fa-check-circle text-success fs-4"></i>
-                                بدون محدودیت زمانی
-                            </li>
-                            <li class="enabled-icon text-start">
-                                <i class="fa fa-check-circle text-success fs-4"></i>
-                                دسترسی به آزمون‌های ساده
-                            </li>
-                            <li class="disabled-icon text-start">
-                                <i class="fa fa-times-circle text-muted fs-4"></i>
-                                دسترسی به تمام سوالات
-                            </li>
-                            <li class="disabled-icon text-start">
-                                <i class="fa fa-times-circle text-muted fs-4"></i>
-                                آزمون‌های تخصصی
-                            </li>
-                        </ul>
-                        
-                        <div class="footer w-100">
-                            <a href="#" class="action_button btn btn-outline-primary p-3 fs-4 w-100">
-                                استفاده رایگان
-                            </a>
-                        </div>
-                        
-                    <?php elseif ($is_vip): ?>
-                        <!-- پلن VIP -->
-                        <div class="vip-pricing-options">
-                            <p class="mb-4 text-center">
-                                <i class="fa fa-infinity text-gold fs-3"></i>
-                                <strong>دسترسی نامحدود به تمام سوالات</strong>
-                            </p>
+                            <div class="text-end me-3" style="margin-right: 15px;">
+                              <div class="fw-bold text-primary fs-4" style="color: #5a8dee !important; line-height: 1;"><?= number_format($plan[$dur['key']]) ?> <small style="font-size: 0.7em; color: #8295ba;">یورو</small></div>
+                              <?php 
+                              $euro_rate = defined('EURO_TO_TOMAN_RATE') ? EURO_TO_TOMAN_RATE : 75000;
+                              $toman_price = $plan[$dur['key']] * $euro_rate;
+                              ?>
+                              <div style="font-size: 0.85rem; color: #8295ba; margin-top: 4px;">معادل <?= number_format($toman_price) ?> <small>تومان</small></div>
+                            </div>
                             
-                            <div class="duration-options">
-                                <?php foreach ($vip_durations as $duration): 
-                                    $price = get_vip_price($duration['days'], $pdo);
-                                    if ($price === null) continue;
-                                ?>
-                                    <div class="duration-option" data-duration="<?= $duration['days'] ?>" data-price="<?= $price ?>">
-                                        <div class="duration-header">
-                                            <span class="duration-label"><?= $duration['label'] ?></span>
-                                            <span class="duration-price"><?= format_price($price) ?></span>
-                                        </div>
-                                        <?php if ($duration['days'] >= 90): ?>
-                                            <span class="badge badge-discount">
-                                                صرفه‌جویی بیشتر
-                                            </span>
-                                        <?php endif; ?>
-                                    </div>
-                                <?php endforeach; ?>
+                            <div style="margin-top: 10px; text-align: left; min-width: 100px;">
+                              <?php if ($is_active_dur): ?>
+                                <button type="button" class="btn fs-5 py-2 px-4" style="background-color: #71dd37; color: white; border: none; border-radius: 5px; font-weight: bold;" disabled>
+                                   فعال است
+                                </button>
+                              <?php elseif ($is_pending_dur): ?>
+                                <button type="button" class="btn fs-5 py-2 px-4" style="background-color: #ffab00; color: white; border: none; border-radius: 5px; font-weight: bold;" disabled>
+                                   در حال بررسی
+                                </button>
+                              <?php elseif ($is_user_logged_in && $user_plan_status === 'active'): ?>
+                                <button type="button" class="btn fs-5 py-2 px-4" style="background-color: #8592a3; color: white; border: none; border-radius: 5px; font-weight: bold;" disabled title="شما یک اشتراک فعال دارید">
+                                   خرید
+                                </button>
+                              <?php else: ?>
+                                <?php if ($is_user_logged_in): ?>
+                                  <a href="admin/subscription.php" class="btn fs-5 py-2 px-5" style="background-color: #5a8dee; color: white; border: none; border-radius: 5px; font-weight: bold; text-decoration: none;">
+                                     خرید
+                                  </a>
+                                <?php else: ?>
+                                  <button type="button" data-bs-toggle="modal" data-bs-target="#loginModal" class="btn fs-5 py-2 px-5" style="background-color: #5a8dee; color: white; border: none; border-radius: 5px; font-weight: bold; cursor: pointer;">
+                                     خرید
+                                  </button>
+                                <?php endif; ?>
+                              <?php endif; ?>
                             </div>
+                          </div>
                         </div>
-                        
-                        <ul class="features mt-4">
-                            <li class="enabled-icon text-start">
-                                <i class="fa fa-check-circle text-success fs-4"></i>
-                                دسترسی نامحدود به تمام سوالات
-                            </li>
-                            <li class="enabled-icon text-start">
-                                <i class="fa fa-check-circle text-success fs-4"></i>
-                                آزمون‌های تخصصی و پیشرفته
-                            </li>
-                            <li class="enabled-icon text-start">
-                                <i class="fa fa-check-circle text-success fs-4"></i>
-                                گزارش‌های تحلیلی دقیق
-                            </li>
-                            <li class="enabled-icon text-start">
-                                <i class="fa fa-check-circle text-success fs-4"></i>
-                                پشتیبانی اختصاصی
-                            </li>
-                            <li class="enabled-icon text-start">
-                                <i class="fa fa-check-circle text-success fs-4"></i>
-                                بروزرسانی‌های مداوم محتوا
-                            </li>
-                        </ul>
-                        
-                        <div class="footer w-100">
-                            <button class="action_button btn btn-primary p-3 fs-4 w-100" id="vip-purchase-btn">
-                                خرید اشتراک VIP
-                            </button>
-                        </div>
+                        <?php endforeach; ?>
+                      </div>
                     <?php endif; ?>
-                </li>
-                
-                <?php endforeach; ?>
-            </ul>
+                  </div>
+                </div>
+              </div>
+            <?php endforeach; ?>
         </div>
     </div>
 </section>
     <!-- Tpm My Price plan End -->
 
+    <!-- Blog Section Temporarily Hidden 
     <section class="blog-and-news-are tmp-section-gap">
         <div class="container">
             <div class="section-head mb--50">
@@ -1119,25 +1492,17 @@ if (is_logged_in()) {
             </div>
         </div>
     </section>
-    <footer class="footer-area footer-style-two-wrapper bg-color-footer bg_images tmp-section-gap">
+    -->
+    <footer id="contact" class="footer-area footer-style-two-wrapper bg-color-footer bg_images tmp-section-gap">
         <div class="container">
             <div class="footer-main footer-style-two">
                 <div class="row g-5">
                     <div class="col-lg-3 col-md-4 col-sm-6">
                         <div class="single-footer-wrapper border-right mr--20">
-                            <div class="logo"><a href="index.html"> <img alt="Farsi - Fahr"
+                            <div class="logo"><a href="<?= SITE_URL ?>"> <img alt="Farsi - Fahr"
                                         src="assets/images/logo/logoAsset%201.svg"> </a></div>
-                            <p class="description">در راستای حمایت از فارسی زبانان عزیز در کشور آلمان جهت تسهیل فرایند
-                                قبولی
-                                در آزمون تئوری گواهینامه، برآن شدیم سامانه ای جامع و کامل آماده کنیم که به آخرین بانک
-                                سوالات
-                                به روز باشد و پس از ترجمه اختصاصی سوالات بدون سیستم های مترجم آنلاین در بحث آموزش به
-                                زبان
-                                فارسی در تک تک پاسخ ها نیز مجهز باشد تا این مسیر برای همه هموار شود.</p>
-                            <div class="social-link footer"><a href="#"><i class="fa-brands fa-instagram"></i></a> <a
-                                    href="#"><i class="fa-brands fa-linkedin-in"></i></a> <a href="#"><i
-                                        class="fa-brands fa-twitter"></i></a> <a href="#"><i
-                                        class="fa-brands fa-facebook-f"></i></a></div>
+                            <p class="description"><?= FOOTER_DESCRIPTION ?></p>
+                            <div class="social-link footer"><a target="_blank" href="<?= INSTAGRAM_URL ?>"><i class="fa-brands fa-instagram"></i></a> <a target="_blank" href="<?= TELEGRAM_CHANNEL_URL ?>"><i class="fa-brands fa-telegram"></i></a></div>
                         </div>
                     </div>
                     <div class="col-lg-2 col-md-4 col-sm-6">
@@ -1156,11 +1521,14 @@ if (is_logged_in()) {
                             <h5 class="ft-title">تماس</h5>
                             <ul
                                 class="ft-link tmp-scroll-trigger animation-order-1 tmp-link-animation tmp-scroll-trigger--offscreen">
-                                <li><span class="ft-icon"><i class="fa-solid fa-phone"></i></span><a
-                                        href="#">004917661812772</a>
+                                <li><span class="ft-icon"><i class="fa-brands fa-whatsapp"></i></span><a
+                                        href="<?= WHATSAPP_URL ?>" target="_blank"><?= CONTACT_PHONE ?> (واتس‌اپ)</a>
+                                </li>
+                                <li><span class="ft-icon"><i class="fa-brands fa-telegram"></i></span><a
+                                        href="<?= TELEGRAM_SUPPORT_URL ?>" target="_blank">پشتیبانی تلگرام</a>
                                 </li>
                                 <li><span class="ft-icon"><i class="fa-solid fa-envelope"></i></span><a
-                                        href="#">admin@farsi-app.de</a>
+                                        href="mailto:<?= CONTACT_EMAIL ?>"><?= CONTACT_EMAIL ?></a>
                                 </li>
                             </ul>
                         </div>
@@ -1183,11 +1551,7 @@ if (is_logged_in()) {
             <div class="row">
                 <div class="col-lg-12">
                     <div class="main-wrapper tmp-scroll-trigger animation-order-1 tmp-scroll-trigger--offscreen">
-                        <p class="copy-right-para">© FARSI-APP
-                            <script>
-                                document.write(new Date().getFullYear())
-                            </script>
-                            2025 | کلیه حقوق محفوظ است
+                        <p class="copy-right-para"><?= COPYRIGHT_TEXT ?>
                         </p>
                     </div>
                 </div>
@@ -1246,6 +1610,151 @@ if (is_logged_in()) {
         </div>
     </div>
 
+    <!-- Study Plan Modal -->
+    <div class="modal fade slidedown estimator-modal" id="studyPlanModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header border-bottom border-secondary">
+                    <h5 class="modal-title">برنامه مطالعه هوشمند</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <form id="studyPlanForm">
+                        <div class="row g-4">
+                            <!-- Level -->
+                            <div class="col-12">
+                                <label class="form-label d-block text-center mb-4">سطح زبان آلمانی فعلی شما چقدر است؟</label>
+                                <div class="row g-2 justify-content-center" id="levelSelector">
+                                    <div class="col-6 col-md-3">
+                                        <div class="level-select-item" data-level="none">
+                                            <div class="fs-3 mb-1">❌</div>
+                                            <div class="small">بدون دانش</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-6 col-md-3">
+                                        <div class="level-select-item" data-level="a1">
+                                            <div class="fs-3 mb-1">🇩🇪</div>
+                                            <div>A1</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-6 col-md-3">
+                                        <div class="level-select-item" data-level="a2">
+                                            <div class="fs-3 mb-1">🇩🇪</div>
+                                            <div>A2</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-6 col-md-3">
+                                        <div class="level-select-item active" data-level="b1">
+                                            <div class="fs-3 mb-1">🇩🇪</div>
+                                            <div>B1</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-6 col-md-3">
+                                        <div class="level-select-item" data-level="b2">
+                                            <div class="fs-3 mb-1">🇩🇪</div>
+                                            <div>B2</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-6 col-md-3">
+                                        <div class="level-select-item" data-level="c1">
+                                            <div class="fs-3 mb-1">🇩🇪</div>
+                                            <div>C1</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <input type="hidden" name="german_level" id="input_level" value="b1">
+                            </div>
+
+                            <!-- Previous Study -->
+                            <div class="col-md-6">
+                                <label class="form-label">سابقه مطالعه سوالات (چند درصد؟)</label>
+                                <div class="d-flex align-items-center gap-3">
+                                    <input type="range" class="range-slider flex-grow-1" name="previous_study_percent" id="input_percent" min="0" max="100" value="0">
+                                    <span class="fs-5 fw-bold text-primary" id="percent_label">0%</span>
+                                </div>
+                            </div>
+
+                            <!-- Daily Hours -->
+                            <div class="col-md-6">
+                                <label class="form-label">روزانه چند ساعت مطالعه می‌کنید؟</label>
+                                <div class="d-flex align-items-center gap-3">
+                                    <input type="range" class="range-slider flex-grow-1" name="daily_hours" id="input_hours" min="1" max="8" value="2">
+                                    <span class="fs-5 fw-bold text-primary" id="hours_label">2 ساعت</span>
+                                </div>
+                            </div>
+
+                            <!-- Study Days -->
+                            <div class="col-12">
+                                <label class="form-label d-block text-center">چه روزهایی در هفته مطالعه می‌کنید؟</label>
+                                <div class="day-checkbox-group">
+                                    <div class="day-checkbox-item">
+                                        <input type="checkbox" name="study_days[]" value="Sat" id="day_sat" checked>
+                                        <label for="day_sat">شنبه</label>
+                                    </div>
+                                    <div class="day-checkbox-item">
+                                        <input type="checkbox" name="study_days[]" value="Sun" id="day_sun" checked>
+                                        <label for="day_sun">یکشنبه</label>
+                                    </div>
+                                    <div class="day-checkbox-item">
+                                        <input type="checkbox" name="study_days[]" value="Mon" id="day_mon" checked>
+                                        <label for="day_mon">دوشنبه</label>
+                                    </div>
+                                    <div class="day-checkbox-item">
+                                        <input type="checkbox" name="study_days[]" value="Tue" id="day_tue" checked>
+                                        <label for="day_tue">سه‌شنبه</label>
+                                    </div>
+                                    <div class="day-checkbox-item">
+                                        <input type="checkbox" name="study_days[]" value="Wed" id="day_wed" checked>
+                                        <label for="day_wed">چهارشنبه</label>
+                                    </div>
+                                    <div class="day-checkbox-item">
+                                        <input type="checkbox" name="study_days[]" value="Thu" id="day_thu" checked>
+                                        <label for="day_thu">پنجشنبه</label>
+                                    </div>
+                                    <div class="day-checkbox-item">
+                                        <input type="checkbox" name="study_days[]" value="Fri" id="day_fri" checked>
+                                        <label for="day_fri">جمعه</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Live Result -->
+                        <div class="result-box text-center">
+                            <h4 class="mb-2" style="color: #fff;">تخمین زمان مورد نیاز:</h4>
+                            <div class="d-flex justify-content-center align-items-baseline gap-2">
+                                <span class="display-4 fw-bold text-primary" id="result_days">--</span>
+                                <span class="fs-4 text-muted">روز تقویمی</span>
+                            </div>
+                            <p class="text-light small mt-2 mb-0">روزهای مطالعه: <span id="selected_days_list" class="text-primary">--</span></p>
+                            <p class="mt-3 text-muted small">این برنامه بر اساس میانگین سرعت یادگیری محاسبه شده و در آینده قابل ویرایش است.</p>
+                        </div>
+
+                        <?php if (!is_logged_in()): ?>
+                        <!-- Registration Fields for Guest -->
+                        <div class="row g-3 mt-4 border-top border-secondary pt-4">
+                            <div class="col-12"><p class="text-warning small text-center">برای ذخیره برنامه و دریافت آن در ایمیل، لطفا اطلاعات زیر را تکمیل کنید:</p></div>
+                            <div class="col-md-6">
+                                <input type="text" class="form-control" name="name" placeholder="نام شما">
+                            </div>
+                            <div class="col-md-6">
+                                <input type="email" class="form-control" name="email" placeholder="ایمیل شما" required>
+                            </div>
+                            <div class="col-12">
+                                <input type="password" class="form-control" name="password" placeholder="یک رمز عبور انتخاب کنید" required>
+                            </div>
+                        </div>
+                        <?php endif; ?>
+
+                        <div class="d-grid mt-4">
+                            <button type="button" class="btn btn-primary btn-lg py-3 fw-bold" id="btnSaveStudyPlan" style="background: linear-gradient(135deg, #5a8dee 0%, #3a7bd5 100%);">تایید و دریافت برنامه مطالعه</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Login Modal -->
     <div class="modal fade slidedown" aria-hidden="true" id="loginModal" tabindex="-1">
         <div class="modal-dialog">
@@ -1282,6 +1791,7 @@ if (is_logged_in()) {
                             <button type="submit" class="btn btn-primary">
                                 <i class="bi bi-box-arrow-in-left"></i> ورود
                             </button>
+                            <div class="text-center text-muted small mt-2">ورود سریع با گوگل یا ثبت نام سریع با گوگل</div>
                             <button type="button" class="btn btn-outline-danger d-flex align-items-center justify-content-center gap-2" onclick="googleLogin()" style="border: 2px solid #f56565; color: #fff; background: rgba(245, 101, 101, 0.1);">
                                 <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20">
                                 ورود سریع با گوگل
@@ -1340,6 +1850,7 @@ if (is_logged_in()) {
                                 <i class="bi bi-person-plus"></i> ثبت نام
                             </button>
 
+                            <div class="text-center text-muted small mt-2">ورود سریع با گوگل یا ثبت نام سریع با گوگل</div>
                             <button type="button" class="btn btn-outline-danger d-flex align-items-center justify-content-center gap-2" onclick="googleLogin()" style="border: 2px solid #f56565; color: #fff; background: rgba(245, 101, 101, 0.1);">
                                 <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20">
                                 ثبت نام سریع با گوگل
@@ -1426,6 +1937,308 @@ if (is_logged_in()) {
 </script>
 <script src="//code.tidio.co/nowavmidkbaonz1hejosf6omswpklxsv.js" async></script>
 
-</body >
+    <!-- Study Plan Script -->
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const studyPlanForm = document.getElementById('studyPlanForm');
+        if (!studyPlanForm) return;
+
+        const levelItems = document.querySelectorAll('.level-select-item');
+        const inputLevel = document.getElementById('input_level');
+        const inputPercent = document.getElementById('input_percent');
+        const percentLabel = document.getElementById('percent_label');
+        const inputHours = document.getElementById('input_hours');
+        const hoursLabel = document.getElementById('hours_label');
+        const dayCheckboxes = document.querySelectorAll('input[name="study_days[]"]');
+        const resultDays = document.getElementById('result_days');
+        const selectedDaysList = document.getElementById('selected_days_list');
+        const btnSave = document.getElementById('btnSaveStudyPlan');
+
+        const dayMap = {
+            'Sat': 'شنبه', 'Sun': 'یکشنبه', 'Mon': 'دوشنبه',
+            'Tue': 'سه‌شنبه', 'Wed': 'چهارشنبه', 'Thu': 'پنجشنبه', 'Fri': 'جمعه'
+        };
+
+        function updateEstimation() {
+            const level = inputLevel.value;
+            const percent = parseInt(inputPercent.value);
+            const hours = parseInt(inputHours.value);
+            
+            const selectedCheckboxes = Array.from(dayCheckboxes).filter(cb => cb.checked);
+            const studyDaysCount = selectedCheckboxes.length;
+            const persianDays = selectedCheckboxes.map(cb => dayMap[cb.value]).join('، ');
+            
+            if (selectedDaysList) selectedDaysList.textContent = persianDays || 'هیچ روزی انتخاب نشده';
+
+            percentLabel.textContent = percent + '%';
+            hoursLabel.textContent = (hours >= 8 ? 'بالای 8' : hours) + ' ساعت';
+
+            $.ajax({
+                url: 'incloud/study_plan_handler.php',
+                type: 'POST',
+                data: {
+                    action: 'calculate',
+                    german_level: level,
+                    previous_study_percent: percent,
+                    daily_hours: hours,
+                    study_days_count: studyDaysCount
+                },
+                success: function(response) {
+                    if (response.success) {
+                        resultDays.textContent = response.calendar_days;
+                    }
+                }
+            });
+        }
+
+        levelItems.forEach(item => {
+            item.addEventListener('click', function() {
+                levelItems.forEach(i => i.classList.remove('active'));
+                this.classList.add('active');
+                inputLevel.value = this.getAttribute('data-level');
+                updateEstimation();
+            });
+        });
+
+        inputPercent.addEventListener('input', updateEstimation);
+        inputHours.addEventListener('input', updateEstimation);
+        dayCheckboxes.forEach(cb => cb.addEventListener('change', updateEstimation));
+
+        // Initial calculation
+        updateEstimation();
+
+        const studyPlanModalEl = document.getElementById('studyPlanModal');
+
+        // Load existing plan if exists
+        studyPlanModalEl.addEventListener('show.bs.modal', function() {
+            $.ajax({
+                url: 'incloud/study_plan_handler.php',
+                type: 'POST',
+                data: { action: 'get_user_plan' },
+                success: function(response) {
+                    if (response.success && response.plan) {
+                        const plan = response.plan;
+                        inputLevel.value = plan.german_level;
+                        levelItems.forEach(i => {
+                            if (i.getAttribute('data-level') === plan.german_level) i.classList.add('active');
+                            else i.classList.remove('active');
+                        });
+                        inputPercent.value = plan.previous_study_percent;
+                        inputHours.value = plan.daily_hours;
+                        
+                        const days = plan.study_days.split(',');
+                        dayCheckboxes.forEach(cb => {
+                            cb.checked = days.includes(cb.value);
+                        });
+                        
+                        updateEstimation();
+                    }
+                }
+            });
+        });
+
+        // Auto-open modal if hash is #open-study-plan
+        if (window.location.hash === '#open-study-plan') {
+            const myModal = new bootstrap.Modal(studyPlanModalEl);
+            myModal.show();
+            window.location.hash = '#study-plan';
+        }
+
+        // Save Logic
+        btnSave.addEventListener('click', function() {
+            const formData = new FormData(studyPlanForm);
+            formData.append('action', 'save');
+            
+            // Get study days as string
+            const selectedDays = Array.from(dayCheckboxes)
+                .filter(cb => cb.checked)
+                .map(cb => cb.value)
+                .join(',');
+            formData.append('study_days', selectedDays);
+
+            if (selectedDays.length === 0) {
+                Swal.fire({ icon: 'warning', title: 'توجه', text: 'لطفا حداقل یک روز در هفته را انتخاب کنید' });
+                return;
+            }
+
+            Swal.fire({ title: 'در حال پردازش...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+
+            $.ajax({
+                url: 'incloud/study_plan_handler.php',
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function(response) {
+                    if (response.success) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'موفقیت‌آمیز',
+                            text: response.message,
+                            confirmButtonText: 'ورود به پنل کاربری'
+                        }).then(() => {
+                            window.location.href = response.redirect;
+                        });
+                    } else {
+                        Swal.fire({ icon: 'error', title: 'خطا', text: response.message });
+                    }
+                },
+                error: function() {
+                    Swal.fire({ icon: 'error', title: 'خطا', text: 'خطا در ارتباط با سرور' });
+                }
+            });
+        });
+        // Delete Logic
+        const btnDelete = document.getElementById('btnDeleteStudyPlan');
+        if (btnDelete) {
+            btnDelete.addEventListener('click', function() {
+                Swal.fire({
+                    title: 'حذف برنامه مطالعه',
+                    text: 'آیا از حذف برنامه مطالعه خود اطمینان دارید؟ این عمل غیرقابل بازگشت است.',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'بله، حذف شود',
+                    cancelButtonText: 'انصراف',
+                    customClass: { confirmButton: 'btn btn-danger me-3', cancelButton: 'btn btn-label-secondary' },
+                    buttonsStyling: false
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $.ajax({
+                            url: 'incloud/study_plan_handler.php',
+                            type: 'POST',
+                            data: { action: 'delete' },
+                            success: function(response) {
+                                if (response.success) {
+                                    Swal.fire({ icon: 'success', title: 'حذف شد', text: response.message }).then(() => {
+                                        location.reload();
+                                    });
+                                } else {
+                                    Swal.fire({ icon: 'error', title: 'خطا', text: response.message });
+                                }
+                            }
+                        });
+                    }
+                });
+            });
+        }
+    });
+    </script>
+
+    <?php if (isset($_COOKIE['concurrent_login']) && $_COOKIE['concurrent_login'] === '1'): ?>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            Swal.fire({
+                icon: 'warning',
+                title: 'خروج از حساب',
+                text: 'شما در دستگاه یا مرورگر دیگری وارد حساب خود شدید. بنابراین از این نشست خارج شدید.',
+                confirmButtonText: 'متوجه شدم'
+            });
+            document.cookie = 'concurrent_login=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+        });
+    </script>
+    <?php endif; ?>
+    <script>
+        // Service Worker Registration
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js?v=4')
+                    .then(reg => console.log('Service Worker registered'))
+                    .catch(err => console.log('Service Worker registration failed: ', err));
+            });
+        }
+
+        // PWA Install Prompt Logic
+        let deferredPrompt;
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+        const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            
+            if (!sessionStorage.getItem('pwaPromptShown')) {
+                showInstallPrompt('android');
+                sessionStorage.setItem('pwaPromptShown', 'true');
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            if (isIOS && !isStandalone && !sessionStorage.getItem('pwaPromptShown')) {
+                showInstallPrompt('ios');
+                sessionStorage.setItem('pwaPromptShown', 'true');
+            }
+        });
+
+        function showInstallPrompt(platform) {
+            const banner = document.getElementById('pwa-install-banner');
+            if (!banner) return;
+
+            banner.style.display = 'flex';
+
+            document.getElementById('btn-pwa-close').addEventListener('click', () => {
+                banner.style.display = 'none';
+            });
+
+            document.getElementById('btn-pwa-install').addEventListener('click', () => {
+                banner.style.display = 'none';
+                if (platform === 'android' && deferredPrompt) {
+                    deferredPrompt.prompt();
+                    deferredPrompt.userChoice.then((choiceResult) => {
+                        deferredPrompt = null;
+                    });
+                } else if (platform === 'ios') {
+                    Swal.fire({
+                        title: 'نصب در آیفون',
+                        html: `
+                            <div class="text-end" style="direction: rtl;">
+                                <p>برای نصب اپلیکیشن در آیفون، مراحل زیر را دنبال کنید:</p>
+                                <ol class="pr-3">
+                                    <li>در نوار پایین مرورگر دکمه <b>Share</b> <i class="fas fa-share-square"></i> را بزنید.</li>
+                                    <li>در منوی باز شده، گزینه <b>Add to Home Screen</b> را انتخاب کنید.</li>
+                                    <li>در بالا سمت راست، دکمه <b>Add</b> را بزنید.</li>
+                                </ol>
+                            </div>
+                        `,
+                        icon: 'info',
+                        confirmButtonText: 'متوجه شدم',
+                        customClass: {
+                            confirmButton: 'btn btn-primary'
+                        },
+                        buttonsStyling: false
+                    });
+                }
+            });
+        }
+    </script>
+<script>
+    $(document).ready(function() {
+        // Odometer initialization
+        function triggerOdometer() {
+            $('.odometer').each(function() {
+                const element = this;
+                const count = $(element).attr('data-count');
+                const rect = element.getBoundingClientRect();
+                const isVisible = rect.top >= 0 && rect.bottom <= (window.innerHeight || document.documentElement.clientHeight);
+
+                if (isVisible && !$(element).hasClass('odometer-triggered')) {
+                    $(element).html(count);
+                    $(element).addClass('odometer-triggered');
+                }
+            });
+        }
+
+        // Run on load and scroll
+        triggerOdometer();
+        $(window).on('scroll', triggerOdometer);
+    });
+
+    // جلوگیری از مشکل کش شدن مرورگر هنگام استفاده از دکمه Back
+    window.addEventListener('pageshow', function(event) {
+        if (event.persisted) {
+            window.location.reload();
+        }
+    });
+</script>
+</body>
 
 </html >

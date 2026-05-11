@@ -116,7 +116,7 @@ $onlyInQ2 = $pdo->query("
         <?php endforeach; ?>
     </ul>
 
-    <form method="post" onsubmit="return confirm('آیا از انجام عملیات همگام‌سازی مطمئن هستید؟');">
+    <form method="post" onsubmit="event.preventDefault(); Swal.fire({title: 'توجه', text: 'آیا از انجام عملیات همگام‌سازی مطمئن هستید؟', icon: 'warning', showCancelButton: true, confirmButtonText: 'بله', cancelButtonText: 'خیر'}).then((result) => { if(result.isConfirmed) { this.submit(); } })">
         <button type="submit" name="run_sync">
             🚀 اجرای همگام‌سازی
         </button>

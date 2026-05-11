@@ -152,3 +152,52 @@ function getUserAccessibleQuestions($pdo, $user_id = null)
     
     return min($total, $limit); // Free - حداکثر 200
 }
+
+/**
+ * دریافت سوالات دسته‌های خاص با اعمال محدودیت پلن
+ */
+function getSpecialQuestions($pdo, $special_type, $user_id = null, $tag_id = null)
+{
+    // دریافت exam_date_type کاربر
+    $examDateType = getUserExamDateType($pdo, $user_id);
+
+    // ساخت شرط فیلتر available
+    $availableCondition = "";
+    if ($examDateType === 'before') {
+        $availableCondition = " AND (q.available = 0 OR q.available = 1)";
+    } elseif ($examDateType === 'after') {
+        $availableCondition = " AND (q.available = 0 OR q.available = 2)";
+    }
+
+    $query = "";
+    $params = [];
+
+    if ($special_type === 'bookmarks') {
+        $query = "SELECT q.* FROM questions q JOIN question_bookmarks b ON q.id = b.question_id WHERE b.user_id = ?" . $availableCondition;
+        $params[] = $user_id;
+    } elseif ($special_type === '5points') {
+        $query = "SELECT q.* FROM questions q WHERE q.points = 5" . $availableCondition;
+    } elseif ($special_type === 'video') {
+        $query = "SELECT q.* FROM questions q WHERE q.picture LIKE '%.m4v'" . $availableCondition;
+    } elseif ($special_type === 'picture') {
+        $query = "SELECT q.* FROM questions q WHERE q.picture IS NOT NULL AND q.picture != '' AND q.picture NOT LIKE '%.m4v'" . $availableCondition;
+    } elseif ($special_type === 'tag' && $tag_id !== null) {
+        $query = "SELECT q.* FROM questions q JOIN question_question_tag qt ON q.id = qt.question_id WHERE qt.question_tag_id = ?" . $availableCondition;
+        $params[] = $tag_id;
+    } else {
+        return [];
+    }
+
+    $query .= " ORDER BY q.id ASC";
+
+    // دریافت محدودیت سوالات کاربر
+    $question_limit = get_user_question_limit($user_id, $pdo);
+    if ($question_limit !== null) {
+        $query .= " LIMIT " . intval($question_limit);
+    }
+
+    $stmt = $pdo->prepare($query);
+    $stmt->execute($params);
+
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}

@@ -1,0 +1,32 @@
+{
+  "id": "com.farsifahr.app",
+  "name": "Farsi Fahr",
+  "short_name": "FarsiFahr",
+  "description": "آموزش و آمادگی آزمون تئوری گواهینامه آلمانی",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#667eea",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/assets/imgT24Logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/images/logo/Designer.jpeg",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/images/logo/Designer.jpeg",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "maskable"
+    }
+  ]
+}

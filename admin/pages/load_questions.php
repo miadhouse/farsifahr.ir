@@ -18,6 +18,12 @@ try {
         $questions = getRootCategoryQuestions($pdo, $cat2id = $_GET['category_id'], $user_id);
         $categoryType = 'category';
         $categoryId = $_GET['category_id'];
+    } elseif (isset($_GET['special_type'])) {
+        $special_type = $_GET['special_type'];
+        $tag_id = $_GET['tag_id'] ?? null;
+        $questions = getSpecialQuestions($pdo, $special_type, $user_id, $tag_id);
+        $categoryType = 'special';
+        $categoryId = $special_type . ($tag_id ? '_' . $tag_id : '');
     } else {
         throw new Exception('نوع دسته‌بندی مشخص نشده است.');
     }
@@ -59,9 +65,7 @@ try {
         echo '</div>';
         echo '</label>';
         echo '</div>';
-        echo '<button type="button" class="btn btn-sm btn-outline-info bot-fetch-btn" data-q-id="' . $questionId . '" title="دریافت اطلاعات از سایت آلمانی">';
-        echo '<i class="fas fa-robot"></i>';
-        echo '</button>';
+
         echo '</div>';
     }
 
@@ -200,15 +204,9 @@ try {
 <script>
     // Add some interactive behavior for the loaded questions
     $(document).ready(function () {
-        $('.bot-fetch-btn').on('click', function(e) {
-            e.preventDefault();
-            const btn = $(this);
-            const questionId = btn.data('q-id');
-            const originalIcon = btn.html();
-
-            Swal.fire({
-                title: 'در حال دریافت اطلاعات...',
-                text: 'لطفا منتظر بمانید، ربات در حال جستجو در سایت Führerschein-bestehen است.',
+        // Any other interactive behavior can go here
+    });
+</script>t: 'لطفا منتظر بمانید، ربات در حال جستجو در سایت Führerschein-bestehen است.',
                 allowOutsideClick: false,
                 didOpen: () => {
                     Swal.showLoading();

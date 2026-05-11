@@ -1,6 +1,7 @@
 <?php
 // dashboard.php
 require_once(__DIR__ . '/incloud/functions.php');
+require_once(__DIR__ . '/incloud/subscription-functions.php');
 
 // بررسی ورود کاربر
 if (!is_logged_in() || !validate_session($pdo)) {
@@ -9,9 +10,22 @@ if (!is_logged_in() || !validate_session($pdo)) {
 }
 
 // دریافت اطلاعات کاربر
+$user_id = $_SESSION['user_id'];
 $user_name = $_SESSION['name'] ?? 'کاربر';
 $user_role = $_SESSION['role'] ?? 'user';
 $user_email = $_SESSION['email'] ?? '';
+
+// دریافت اطلاعات اشتراک
+$active_sub = get_user_active_subscription($user_id, $pdo);
+$sub_text = '';
+if ($active_sub && $active_sub['plan_slug'] !== 'free') {
+    $days_remaining = get_days_until_expiry($user_id, $pdo);
+    $sub_text = ' <span class="badge bg-success ms-2">' . htmlspecialchars($active_sub['plan_name']);
+    if ($days_remaining !== null) {
+        $sub_text .= ' (' . $days_remaining . ' روز باقی‌مانده)';
+    }
+    $sub_text .= '</span>';
+}
 
 // دریافت آخرین ورودها
 $stmt = $pdo->prepare("
@@ -34,6 +48,30 @@ $stmtReports = $pdo->prepare("
 ");
 $stmtReports->execute([$_SESSION['user_id']]);
 $user_reports = $stmtReports->fetchAll();
+
+// دریافت اطلاعات برنامه مطالعه
+$stmtPlan = $pdo->prepare("SELECT * FROM study_plans WHERE user_id = ?");
+$stmtPlan->execute([$_SESSION['user_id']]);
+$study_plan = $stmtPlan->fetch();
+
+$plan_info = null;
+if ($study_plan) {
+    $created_at = strtotime($study_plan['created_at']);
+    $days_passed = floor((time() - $created_at) / (60 * 60 * 24));
+    $current_day = $days_passed + 1;
+    $days_remaining = max(0, $study_plan['estimated_total_days'] - $days_passed);
+    
+    $today_name = date('D');
+    $study_days = explode(',', $study_plan['study_days']);
+    $is_study_day = in_array($today_name, $study_days);
+    $today_hours = $is_study_day ? $study_plan['daily_hours'] : 0;
+    
+    $plan_info = [
+        'current_day' => $current_day,
+        'days_remaining' => $days_remaining,
+        'today_hours' => $today_hours
+    ];
+}
 ?>
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
@@ -44,14 +82,54 @@ $user_reports = $stmtReports->fetchAll();
     
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#667eea">
     
     <!-- Bootstrap Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     
     <!-- Custom CSS -->
     <link rel="stylesheet" href="assets/css/style.css">
+    <style>
+        .study-plan-bar {
+            background: linear-gradient(90deg, #f8f9fa 0%, #e9ecef 100%);
+            border-bottom: 1px solid #dee2e6;
+            font-size: 0.9rem;
+        }
+        @media (max-width: 768px) {
+            .study-plan-bar .container {
+                flex-direction: column;
+                gap: 10px;
+                text-align: center;
+            }
+        }
+    </style>
 </head>
 <body>
+    <?php if ($plan_info): ?>
+    <div class="study-plan-bar py-2">
+        <div class="container d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center flex-wrap">
+                <span class="me-4">
+                    <i class="bi bi-calendar-check text-primary me-1"></i>
+                    <strong>روز برنامه:</strong> <?php echo $plan_info['current_day']; ?>
+                </span>
+                <span class="me-4">
+                    <i class="bi bi-clock text-primary me-1"></i>
+                    <strong>ساعت مطالعه امروز:</strong> <?php echo $plan_info['today_hours']; ?> ساعت
+                </span>
+                <span class="me-4">
+                    <i class="bi bi-hourglass-split text-primary me-1"></i>
+                    <strong>روزهای باقیمانده:</strong> <?php echo $plan_info['days_remaining']; ?>
+                </span>
+            </div>
+            <a href="index.php#open-study-plan" class="btn btn-sm btn-outline-primary py-0 px-3">
+                <i class="bi bi-pencil-square"></i> ویرایش
+            </a>
+        </div>
+    </div>
+    <?php endif; ?>
+
     <!-- Navbar -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
         <div class="container">
@@ -62,6 +140,7 @@ $user_reports = $stmtReports->fetchAll();
                     <?php if ($user_role === 'admin'): ?>
                         <span class="badge bg-warning">مدیر</span>
                     <?php endif; ?>
+                    <?php echo $sub_text; ?>
                 </span>
                 <a href="logout.php" class="btn btn-outline-light btn-sm">
                     <i class="bi bi-box-arrow-right"></i> خروج
@@ -228,5 +307,84 @@ $user_reports = $stmtReports->fetchAll();
 
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    // Service Worker Registration
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('/sw.js?v=4')
+                .then(reg => console.log('Service Worker registered'))
+                .catch(err => console.log('Service Worker registration failed: ', err));
+        });
+    }
+
+    // PWA Install Prompt Logic
+    let deferredPrompt;
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+
+        if (!sessionStorage.getItem('pwaPromptShown')) {
+            showInstallPrompt('android');
+            sessionStorage.setItem('pwaPromptShown', 'true');
+        }
+    });
+
+    document.addEventListener('DOMContentLoaded', function() {
+        if (isIOS && !isStandalone && !sessionStorage.getItem('pwaPromptShown')) {
+            showInstallPrompt('ios');
+            sessionStorage.setItem('pwaPromptShown', 'true');
+        }
+    });
+
+    function showInstallPrompt(platform) {
+        if (platform === 'android') {
+            Swal.fire({
+                title: 'نصب اپلیکیشن',
+                text: 'آیا مایل هستید برای دسترسی سریع‌تر، اپلیکیشن را نصب کنید؟',
+                icon: 'info',
+                showCancelButton: true,
+                confirmButtonText: 'بله، نصب شود',
+                cancelButtonText: 'بعداً',
+                customClass: {
+                    confirmButton: 'btn btn-primary me-3',
+                    cancelButton: 'btn btn-label-secondary'
+                },
+                buttonsStyling: false
+            }).then((result) => {
+                if (result.isConfirmed && deferredPrompt) {
+                    deferredPrompt.prompt();
+                    deferredPrompt.userChoice.then((choiceResult) => {
+                        deferredPrompt = null;
+                    });
+                }
+            });
+        } else if (platform === 'ios') {
+            Swal.fire({
+                title: 'نصب در آیفون',
+                html: `
+                    <div class="text-end" style="direction: rtl;">
+                        <p>برای نصب اپلیکیشن در آیفون، مراحل زیر را دنبال کنید:</p>
+                        <ol class="pr-3">
+                            <li>در نوار پایین مرورگر دکمه <b>Share</b> <i class="bi bi-share"></i> را بزنید.</li>
+                            <li>در منوی باز شده، گزینه <b>Add to Home Screen</b> را انتخاب کنید.</li>
+                            <li>در بالا سمت راست، دکمه <b>Add</b> را بزنید.</li>
+                        </ol>
+                    </div>
+                `,
+                icon: 'info',
+                confirmButtonText: 'متوجه شدم',
+                customClass: {
+                    confirmButton: 'btn btn-primary'
+                },
+                buttonsStyling: false
+            });
+        }
+    }
+</script>
 </body>
 </html>

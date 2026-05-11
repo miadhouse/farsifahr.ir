@@ -1,6 +1,7 @@
 <?php
 // functions.php
 require_once(__DIR__ . '/../config/config.php');
+require_once(__DIR__ . '/i18n.php');
 
 // بررسی CSRF token
 function verify_csrf_token($token)
@@ -65,17 +66,33 @@ function clear_login_attempts($email, $ip, $pdo)
     $stmt->execute([$email, $ip]);
 }
 
-// ثبت لاگ کاربر
+// ثبت لاگ فعالیت کاربر
 function log_user_action($user_id, $email, $action, $status, $pdo)
 {
-    $ip = $_SERVER['REMOTE_ADDR'];
+    $ip = get_user_ip();
     $user_agent = $_SERVER['HTTP_USER_AGENT'];
 
+    // دریافت منطقه جغرافیایی
+    $location = 'نامشخص';
+    if ($ip !== '127.0.0.1' && $ip !== '::1') {
+        $ch = curl_init("http://ip-api.com/json/{$ip}?lang=fa");
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 3);
+        $response = curl_exec($ch);
+        if ($response) {
+            $data = json_decode($response, true);
+            if ($data && $data['status'] === 'success') {
+                $location = $data['country'] . '، ' . $data['city'];
+            }
+        }
+        curl_close($ch);
+    }
+
     $stmt = $pdo->prepare("
-        INSERT INTO user_logs (user_id, email, action, ip_address, user_agent, status) 
-        VALUES (?, ?, ?, ?, ?, ?)
+        INSERT INTO user_logs (user_id, email, action, ip_address, location, user_agent, status) 
+        VALUES (?, ?, ?, ?, ?, ?, ?)
     ");
-    $stmt->execute([$user_id, $email, $action, $ip, $user_agent, $status]);
+    $stmt->execute([$user_id, $email, $action, $ip, $location, $user_agent, $status]);
 }
 
 // بررسی ورود کاربر
@@ -108,16 +125,12 @@ function logout()
     session_destroy();
 }
 
-// ارسال ایمیل
+// ارسال ایمیل با استفاده از PHPMailer (جایگزین تابع ناامن میل سرور)
 function send_email($to, $subject, $body)
 {
-    // برای سادگی از mail() استفاده می‌کنیم
-    // در محیط واقعی از PHPMailer یا SwiftMailer استفاده کنید
-    $headers = "From: " . SMTP_FROM . "\r\n";
-    $headers .= "Reply-To: " . SMTP_FROM . "\r\n";
-    $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
-
-    return mail($to, $subject, $body, $headers);
+    require_once __DIR__ . '/mail-functions.php';
+    $result = send_email_phpmailer($to, $subject, $body);
+    return $result['success'];
 }
 
 // تولید کپچا
@@ -172,9 +185,32 @@ function verify_recaptcha($response)
     return $resultJson->success;
 }
 
+// تولید کد معرف منحصر به فرد
+function generate_referral_code($pdo, $length = 8)
+{
+    $chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    do {
+        $code = '';
+        for ($i = 0; $i < $length; $i++) {
+            $code .= $chars[rand(0, strlen($chars) - 1)];
+        }
+        
+        // بررسی منحصر به فرد بودن
+        $stmt = $pdo->prepare("SELECT id FROM users WHERE referral_code = ?");
+        $stmt->execute([$code]);
+        $exists = $stmt->rowCount() > 0;
+    } while ($exists);
+    
+    return $code;
+}
+
 // ذخیره سشن در دیتابیس
 function save_session($user_id, $pdo)
 {
+    // پاک کردن سشن‌های قبلی این کاربر برای جلوگیری از لاگین همزمان
+    $stmtDel = $pdo->prepare("DELETE FROM sessions WHERE user_id = ?");
+    $stmtDel->execute([$user_id]);
+
     $session_id = session_id();
     $ip = $_SERVER['REMOTE_ADDR'];
     $user_agent = $_SERVER['HTTP_USER_AGENT'];
@@ -205,7 +241,15 @@ function validate_session($pdo)
     $stmt->execute([$_SESSION['session_id'], $_SESSION['user_id'], SESSION_LIFETIME]);
 
     if ($stmt->rowCount() === 0) {
-        logout();
+        // چک کنیم آیا کاربر در دستگاه دیگری لاگین کرده است
+        $stmtCheck = $pdo->prepare("SELECT id FROM sessions WHERE user_id = ?");
+        $stmtCheck->execute([$_SESSION['user_id']]);
+        if ($stmtCheck->rowCount() > 0) {
+            setcookie('concurrent_login', '1', time() + 60, '/');
+        }
+        
+        // فقط سشن آیدی را پاک می‌کنیم نه کل سشن را
+        unset($_SESSION['session_id']);
         return false;
     }
 
@@ -224,7 +268,48 @@ function get_user_ip()
     } elseif (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
         return $_SERVER['HTTP_X_FORWARDED_FOR'];
     } else {
-        return $_SERVER['REMOTE_ADDR'];
+        return $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
     }
+}
+
+/**
+ * ارسال پیام به ربات تلگرام مدیر
+ *
+ * @param string $message متن پیام
+ * @return bool نتیجه ارسال
+ */
+function send_telegram_admin_message($message)
+{
+    if (!defined('TELEGRAM_BOT_TOKEN') || !defined('TELEGRAM_ADMIN_CHAT_ID')) {
+        return false;
+    }
+
+    $token = TELEGRAM_BOT_TOKEN;
+    $chat_id = TELEGRAM_ADMIN_CHAT_ID;
+
+    if (empty($token) || empty($chat_id)) {
+        return false;
+    }
+
+    $url = "https://api.telegram.org/bot{$token}/sendMessage";
+    
+    $data = [
+        'chat_id' => $chat_id,
+        'text' => $message,
+        'parse_mode' => 'HTML'
+    ];
+
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $url);
+    curl_setopt($ch, CURLOPT_POST, 1);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($data));
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 5);
+    
+    $response = curl_exec($ch);
+    $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+
+    return ($http_code == 200);
 }
 

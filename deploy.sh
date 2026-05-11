@@ -1,3 +1,3 @@
 #!/bin/bash
-cd /home/imiad.online/public_html
+cd /home/farsifahr.com/public_html
 git pull origin dev

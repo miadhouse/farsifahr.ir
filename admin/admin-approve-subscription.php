@@ -6,7 +6,7 @@
 
 session_start();
 require_once('../config/config.php');
-require_once('../functions/subscription-functions.php');
+require_once('../incloud/subscription-functions.php');
 
 // بررسی دسترسی ادمین (این بخش را متناسب با سیستم خود تنظیم کنید)
 if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') {
@@ -98,7 +98,7 @@ $pending_subscriptions = $stmt->fetchAll();
                                 <td>
                                     <a href="?id=<?= $sub['id'] ?>" 
                                        class="btn btn-success btn-sm"
-                                       onclick="return confirm('آیا مطمئن هستید؟')">
+                                       onclick="event.preventDefault(); let url = this.href; Swal.fire({title: 'توجه', text: 'آیا مطمئن هستید؟', icon: 'warning', showCancelButton: true, confirmButtonText: 'بله', cancelButtonText: 'خیر'}).then((result) => { if(result.isConfirmed) { window.location.href = url; } })">
                                         تایید
                                     </a>
                                 </td>

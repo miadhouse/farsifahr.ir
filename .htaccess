@@ -1,11 +1,45 @@
 RewriteEngine On
 RewriteBase /
 
+# Prevent caching of Service Worker
+<Files "sw.js">
+    Header set Cache-Control "no-cache, no-store, must-revalidate"
+    Header set Pragma "no-cache"
+    Header set Expires "0"
+</Files>
+
+# LiteSpeed Cache Bypass for Logged-in Users
+<IfModule LiteSpeed>
+RewriteCond %{HTTP_COOKIE} PHPSESSID [NC]
+RewriteRule .* - [E=Cache-Control:no-cache]
+</IfModule>
+
 # Redirect HTTP to HTTPS
 RewriteCond %{HTTPS} !=on
 RewriteRule ^/?(.*) https://%{SERVER_NAME}/$1 [R,L]
 
-# Optimization: Serve existing files directly
+# Force non-www
+RewriteCond %{HTTP_HOST} ^www\.(.*)$ [NC]
+RewriteRule ^(.*)$ https://%1/$1 [R=301,L]
+
+# 1. Remove .php extension (External Redirect)
+# Only redirect GET requests to avoid stripping POST data in AJAX calls
+RewriteCond %{REQUEST_METHOD} GET [NC]
+RewriteCond %{THE_REQUEST} ^[A-Z]{3,9}\ /index\.php\ HTTP/
+RewriteRule ^index\.php$ / [L,R=301]
+
+# Redirect /path/to/file.php to /path/to/file
+RewriteCond %{REQUEST_METHOD} GET [NC]
+RewriteCond %{THE_REQUEST} ^[A-Z]{3,9}\ /+(.*)\.php[\ ?]
+RewriteRule ^(.*)\.php$ /$1 [L,R=301]
+
+# 2. Internally map extensionless URLs to .php files
+# Prioritize .php files over directories with the same name
+RewriteCond %{REQUEST_FILENAME}\.php -f
+RewriteRule ^(.*?)/?$ /$1.php [L]
+
+# Optimization: Serve existing files and directories directly
+RewriteCond %{REQUEST_FILENAME} -d [OR]
 RewriteCond %{REQUEST_FILENAME} -f
 RewriteRule ^ - [L]
 

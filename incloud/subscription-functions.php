@@ -392,7 +392,25 @@ function get_days_until_expiry($user_id, $pdo) {
  * دریافت ویژگی‌های یک پلن
  */
 function get_plan_features($plan_slug) {
-    $features = [
+    global $pdo;
+    
+    try {
+        $stmt = $pdo->prepare("SELECT features FROM subscription_plans WHERE slug = ? AND is_active = 1");
+        $stmt->execute([$plan_slug]);
+        $features_json = $stmt->fetchColumn();
+        
+        if ($features_json) {
+            $features = json_decode($features_json, true);
+            if (is_array($features) && !empty($features)) {
+                return $features;
+            }
+        }
+    } catch (Exception $e) {
+        error_log("Error fetching plan features: " . $e->getMessage());
+    }
+
+    // Fallback features if database is empty or error occurs
+    $fallbacks = [
         'free' => [
             'دسترسی به 200 سوال اول',
             'بدون محدودیت زمانی',
@@ -408,7 +426,7 @@ function get_plan_features($plan_slug) {
         ]
     ];
     
-    return $features[$plan_slug] ?? [];
+    return $fallbacks[$plan_slug] ?? [];
 }
 
 /**
@@ -492,6 +510,16 @@ function calculate_discount_percentage($plan, $duration_key) {
 }
 
 /**
+ * دریافت مقدار یک تنظیم از دیتابیس
+ */
+function get_setting($key, $pdo, $default = null) {
+    $stmt = $pdo->prepare("SELECT value FROM settings WHERE `key` = ?");
+    $stmt->execute([$key]);
+    $result = $stmt->fetch();
+    return $result ? $result['value'] : $default;
+}
+
+/**
  * فعال‌سازی اشتراک pending و لغو اشتراک‌های قبلی
  */
 function activate_pending_subscription($subscription_id, $pdo) {
@@ -509,6 +537,7 @@ function activate_pending_subscription($subscription_id, $pdo) {
         
         $user_id = $subscription['user_id'];
         $plan_id = $subscription['plan_id'];
+        $referred_by_id = $subscription['referred_by_id'];
         
         // لغو تمام اشتراک‌های فعال و معلق قبلی (به جز این اشتراک)
         $stmt = $pdo->prepare("
@@ -529,6 +558,65 @@ function activate_pending_subscription($subscription_id, $pdo) {
         // بروزرسانی current_plan_id کاربر
         $stmt = $pdo->prepare("UPDATE users SET current_plan_id = ? WHERE id = ?");
         $stmt->execute([$plan_id, $user_id]);
+
+        // اعمال هدیه معرف در صورت وجود
+        if ($referred_by_id && $subscription['referral_bonus_applied'] == 0) {
+            $bonus_new_user = (int)get_setting('referral_reward_new_user', $pdo, 7);
+            $bonus_referrer = (int)get_setting('referral_reward_referrer', $pdo, 14);
+
+            // ۱. اضافه کردن هدیه به خود کاربر (تمدید تاریخ انقضای اشتراک فعلی)
+            if ($bonus_new_user > 0) {
+                $stmtBonusUser = $pdo->prepare("
+                    UPDATE user_subscriptions 
+                    SET expires_at = DATE_ADD(expires_at, INTERVAL ? DAY), 
+                        duration_days = duration_days + ?
+                    WHERE id = ?
+                ");
+                $stmtBonusUser->execute([$bonus_new_user, $bonus_new_user, $subscription_id]);
+            }
+
+            // ۲. اضافه کردن هدیه به معرف (تمدید اشتراک فعال معرف یا ایجاد اشتراک جدید اگر ندارد)
+            if ($bonus_referrer > 0) {
+                $referrer_sub = get_user_active_subscription($referred_by_id, $pdo);
+                if ($referrer_sub) {
+                    // اگر اشتراک فعال دارد، آن را تمدید کن
+                    $stmtBonusRef = $pdo->prepare("
+                        UPDATE user_subscriptions 
+                        SET expires_at = DATE_ADD(expires_at, INTERVAL ? DAY), 
+                            duration_days = duration_days + ?
+                        WHERE id = ?
+                    ");
+                    $stmtBonusRef->execute([$bonus_referrer, $bonus_referrer, $referrer_sub['id']]);
+                } else {
+                    // اگر اشتراک فعال ندارد، یک اشتراک VIP جدید به مدت هدیه برایش ایجاد کن
+                    // ابتدا پیدا کردن ID پلن VIP
+                    $stmtVip = $pdo->prepare("SELECT id FROM subscription_plans WHERE slug = 'vip' LIMIT 1");
+                    $stmtVip->execute();
+                    $vip_plan = $stmtVip->fetch();
+                    if ($vip_plan) {
+                        $expires_at_bonus = date('Y-m-d H:i:s', strtotime("+{$bonus_referrer} days"));
+                        $stmtNewSub = $pdo->prepare("
+                            INSERT INTO user_subscriptions 
+                            (user_id, plan_id, expires_at, duration_days, amount_paid, status, created_at) 
+                            VALUES (?, ?, ?, ?, 0, 'active', NOW())
+                        ");
+                        $stmtNewSub->execute([$referred_by_id, $vip_plan['id'], $expires_at_bonus, $bonus_referrer]);
+                        
+                        // بروزرسانی پلن فعلی معرف
+                        $stmtUpdateRefPlan = $pdo->prepare("UPDATE users SET current_plan_id = ? WHERE id = ?");
+                        $stmtUpdateRefPlan->execute([$vip_plan['id'], $referred_by_id]);
+                    }
+                }
+            }
+
+            // علامت‌گذاری که هدیه اعمال شده است
+            $stmtMarkApplied = $pdo->prepare("UPDATE user_subscriptions SET referral_bonus_applied = 1 WHERE id = ?");
+            $stmtMarkApplied->execute([$subscription_id]);
+
+            // همچنین اگر کاربر قبلاً Referred By نداشته، ثبت کن
+            $stmtUpdateUserRef = $pdo->prepare("UPDATE users SET referred_by_id = ? WHERE id = ? AND referred_by_id IS NULL");
+            $stmtUpdateUserRef->execute([$referred_by_id, $user_id]);
+        }
         
         $pdo->commit();
         return true;

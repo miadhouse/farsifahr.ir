@@ -24,6 +24,32 @@ foreach ($grundstoff_main as $cat) {
 foreach ($zusatzstoff_main as $cat) {
     $zusatzstoff_total += $cat['question_count'];
 }
+
+// Calculate special categories totals
+$stmt = $pdo->prepare("SELECT COUNT(*) FROM question_bookmarks WHERE user_id = ?");
+$stmt->execute([$user_id]);
+$bookmarks_count = $stmt->fetchColumn();
+
+$stmt = $pdo->query("SELECT COUNT(*) FROM questions WHERE points = 5");
+$points5_count = $stmt->fetchColumn();
+
+$stmt = $pdo->query("SELECT COUNT(*) FROM questions WHERE picture LIKE '%.m4v'");
+$video_count = $stmt->fetchColumn();
+
+$stmt = $pdo->query("SELECT COUNT(*) FROM questions WHERE picture IS NOT NULL AND picture != '' AND picture NOT LIKE '%.m4v'");
+$picture_count = $stmt->fetchColumn();
+
+$stmt = $pdo->query("SELECT id, name FROM question_tags ORDER BY name ASC");
+$tags = $stmt->fetchAll(PDO::FETCH_ASSOC);
+$tag_counts = [];
+$total_special = $bookmarks_count + $points5_count + $video_count + $picture_count;
+foreach ($tags as $tag) {
+    $stmtCount = $pdo->prepare("SELECT COUNT(*) FROM question_question_tag WHERE question_tag_id = ?");
+    $stmtCount->execute([$tag['id']]);
+    $tag_count = $stmtCount->fetchColumn();
+    $tag_counts[$tag['id']] = $tag_count;
+    $total_special += $tag_count;
+}
 ?>
 <div class="container-xxl flex-grow-1 container-p-y">
 
@@ -629,6 +655,80 @@ foreach ($zusatzstoff_main as $cat) {
                 opacity: 1;
             }
         }
+
+        /* Dark Mode Support */
+        .dark-style .category-card {
+            background-color: #283144;
+            border: 1px solid #36445d;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+        }
+
+        .dark-style .card-title {
+            background-color: rgba(90, 141, 238, 0.08);
+            border-bottom: 1px solid #36445d;
+        }
+
+        .dark-style .total-questions {
+            color: #d8deea;
+        }
+
+        .dark-style .category-item {
+            background-color: #1c222f;
+            border-color: #36445d;
+            color: #cbd5e0;
+        }
+
+        .dark-style .category-item:hover {
+            background-color: #283144;
+            border-color: #4a5568;
+        }
+
+        .dark-style .subcategory-item {
+            background-color: #1c222f;
+            border-color: #36445d;
+            color: #cbd5e0;
+        }
+
+        .dark-style .subcategory-item:hover {
+            background-color: #283144;
+            border-color: #4a5568;
+        }
+
+        .dark-style .category-item.expanded,
+        .dark-style .category-item.selected,
+        .dark-style .subcategory-item.selected {
+            background-color: rgba(90, 141, 238, 0.16);
+            border-color: #5a8dee;
+            color: #5a8dee;
+        }
+
+        .dark-style .code-badge {
+            background-color: #36445d;
+            color: #a1b0cb;
+        }
+
+        .dark-style .subcategory-code {
+            background-color: #36445d;
+            color: #a1b0cb;
+        }
+
+        .dark-style .no-selection-message {
+            background-color: #283144;
+            color: #a1b0cb;
+            border-top: 1px solid #36445d;
+        }
+
+        .dark-style .subcategories {
+            border-left-color: #36445d;
+        }
+
+        .dark-style .subcategories.expanded {
+            border-left-color: #5a8dee;
+        }
+
+        .dark-style h3 {
+            color: #d8deea !important;
+        }
     </style>
 
     <script>
@@ -824,9 +924,19 @@ foreach ($zusatzstoff_main as $cat) {
                 </div>
             `;
 
-            const url = selectedType === 'subcategory'
-                ? `pages/load_questions.php?subcategory_id=${selectedCategoryId}`
-                : `pages/load_questions.php?category_id=${selectedCategoryId}`;
+            let url;
+            if (selectedType === 'subcategory') {
+                url = `pages/load_questions.php?subcategory_id=${selectedCategoryId}`;
+            } else if (selectedType === 'special') {
+                const parts = String(selectedCategoryId).split('_');
+                const specialType = parts[0];
+                url = `pages/load_questions.php?special_type=${specialType}`;
+                if (parts.length > 1) {
+                    url += `&tag_id=${parts[1]}`;
+                }
+            } else {
+                url = `pages/load_questions.php?category_id=${selectedCategoryId}`;
+            }
 
             fetch(url)
                 .then(response => response.text())
@@ -896,7 +1006,12 @@ foreach ($zusatzstoff_main as $cat) {
             const selectedQuestions = getSelectedQuestionIds();
 
             if (selectedQuestions.length === 0) {
-                alert('لطفا حداقل یک سوال را انتخاب کنید.');
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'توجه',
+                    text: 'لطفا حداقل یک سوال را انتخاب کنید.',
+                    confirmButtonText: 'متوجه شدم'
+                });
                 return;
             }
 
@@ -924,7 +1039,11 @@ foreach ($zusatzstoff_main as $cat) {
             // Add category info
             const categoryInput = document.createElement('input');
             categoryInput.type = 'hidden';
-            categoryInput.name = selectedType === 'subcategory' ? 'subcategory_id' : 'category_id';
+            if (selectedType === 'special') {
+                categoryInput.name = 'special_type';
+            } else {
+                categoryInput.name = selectedType === 'subcategory' ? 'subcategory_id' : 'category_id';
+            }
             categoryInput.value = selectedCategoryId;
             form.appendChild(categoryInput);
 
@@ -1006,6 +1125,21 @@ foreach ($zusatzstoff_main as $cat) {
                 const questionCount = parseInt(this.getAttribute('data-question-count'));
 
                 selectCategory(categoryId, categoryTitle, questionCount, 'category');
+            });
+        });
+
+        // Add click functionality to special category items
+        document.querySelectorAll('.special-category-item').forEach(item => {
+            item.addEventListener('click', function () {
+                const specialType = this.getAttribute('data-special-type');
+                const tagId = this.getAttribute('data-tag-id');
+                const categoryTitle = this.getAttribute('data-category-title');
+                const questionCount = parseInt(this.getAttribute('data-question-count'));
+
+                let id = specialType;
+                if (tagId) id += '_' + tagId;
+
+                selectCategory(id, categoryTitle, questionCount, 'special');
             });
         });
 

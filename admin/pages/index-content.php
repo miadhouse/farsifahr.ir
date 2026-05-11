@@ -24,9 +24,110 @@ if ($userConfig) {
     $examDateText = $userConfig['exam_date_type'] == 'before' ? 'قبل از' : 'بعد از';
     $languageText = $userConfig['language'] == 'DE' ? 'آلمانی' : 'انگلیسی';
 }
+
+// دریافت گزارش‌های اخیر کاربر
+$stmtReports = $pdo->prepare("
+    SELECT qr.*, q.number as q_number 
+    FROM question_reports qr
+    JOIN questions q ON qr.question_id = q.id
+    WHERE qr.user_id = ? 
+    ORDER BY qr.created_at DESC 
+    LIMIT 5
+");
+$stmtReports->execute([$_SESSION['user_id']]);
+$user_reports = $stmtReports->fetchAll();
+
+// بررسی وجود برنامه مطالعه
+$stmtPlanCheck = $pdo->prepare("SELECT * FROM study_plans WHERE user_id = ?");
+$stmtPlanCheck->execute([$_SESSION['user_id']]);
+$study_plan = $stmtPlanCheck->fetch();
+$hasStudyPlanDashboard = $study_plan ? true : false;
+
+$plan_info = null;
+if ($study_plan) {
+    $created_at = strtotime($study_plan['created_at']);
+    $days_passed = floor((time() - $created_at) / (60 * 60 * 24));
+    $current_day = $days_passed + 1;
+    $days_remaining = max(0, $study_plan['estimated_total_days'] - $days_passed);
+    
+    $today_name = date('D');
+    $study_days = explode(',', $study_plan['study_days']);
+    $is_study_day = in_array($today_name, $study_days);
+    $today_hours = $is_study_day ? $study_plan['daily_hours'] : 0;
+    
+    $day_map = [
+        'Sat' => 'شنبه',
+        'Sun' => 'یکشنبه',
+        'Mon' => 'دوشنبه',
+        'Tue' => 'سه‌شنبه',
+        'Wed' => 'چهارشنبه',
+        'Thu' => 'پنجشنبه',
+        'Fri' => 'جمعه'
+    ];
+    $persian_days = array_map(fn($d) => $day_map[$d] ?? $d, $study_days);
+    
+    $plan_info = [
+        'current_day' => $current_day,
+        'days_remaining' => $days_remaining,
+        'today_hours' => $today_hours,
+        'study_days' => implode('، ', $persian_days)
+    ];
+}
 ?>
 
+<script>
+    window.showStudyPlanModal = function() {
+        <?php if (!$hasStudyPlanDashboard): ?>
+        setTimeout(() => {
+            Swal.fire({
+                title: 'برنامه مطالعه اختصاصی',
+                text: 'آیا مایل هستید بدانید چقدر زمان برای آماده شدن نیاز دارید و برنامه مطالعه اختصاصی بگیرید؟',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'بله، همین حالا',
+                cancelButtonText: 'فعلاً نه',
+                customClass: { confirmButton: 'btn btn-primary me-3', cancelButton: 'btn btn-label-secondary' },
+                buttonsStyling: false
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.location.href = '<?= SITE_URL ?>#open-study-plan';
+                }
+            });
+        }, 1000);
+        <?php endif; ?>
+    };
+</script>
+
 <div class="container-xxl flex-grow-1 container-p-y">
+    
+    <?php if ($plan_info): ?>
+    <div class="card mb-4">
+        <div class="card-body py-3 d-flex justify-content-between align-items-center flex-wrap">
+            <div class="d-flex align-items-center flex-wrap gap-4">
+                <span>
+                    <i class="bx bx-calendar-check text-primary me-1"></i>
+                    <strong><?= __('program_day') ?>:</strong> <?php echo $plan_info['current_day']; ?>
+                </span>
+                <span>
+                    <i class="bx bx-time-five text-primary me-1"></i>
+                    <strong><?= __('today_study_hours') ?>:</strong> <?php echo $plan_info['today_hours']; ?> <?= __('hours') ?>
+                </span>
+                <span>
+                    <i class="bx bx-hourglass text-primary me-1"></i>
+                    <strong><?= __('remaining_days') ?>:</strong> <?php echo $plan_info['days_remaining']; ?>
+                </span>
+                <span>
+                    <i class="bx bx-calendar text-primary me-1"></i>
+                    <strong><?= __('study_days_label') ?>:</strong> <?php echo $plan_info['study_days']; ?>
+                </span>
+            </div>
+            <a href="<?= SITE_URL ?>#open-study-plan" class="btn btn-sm btn-outline-primary mt-2 mt-md-0">
+                <i class="bx bx-edit-alt me-1"></i> <?= __('edit_program') ?>
+            </a>
+        </div>
+    </div>
+    <?php endif; ?>
+
     <!-- کارت تنظیمات -->
     <div class="row mb-4">
         <div class="col ">
@@ -73,7 +174,7 @@ if ($userConfig) {
                         <div class="card-img-overlay d-flex align-items-center h-100 px-5"><img class="nav-icons"
                                 src="assets/img/illustrations/1.png" alt="icon">
                             <a class="text-white fs-3 fs-xl-2 fs-xxl-3 stretched-link items fw-bold  ps-4"
-                                href="practice.php">تمرین سوالات</a>
+                                href="practice.php"><?= __('practice_questions') ?></a>
                         </div>
                     </div>
                 </div>
@@ -84,7 +185,7 @@ if ($userConfig) {
                         <div class="card-img-overlay d-flex align-items-center h-100 px-5"><img class="nav-icons"
                                 src="assets/img/illustrations/2.png" alt="icon">
                             <a class="text-white fs-3 fs-xl-2 fs-xxl-3 stretched-link items fw-bold ps-4"
-                                href="../exam/exam_simulator.php">شبیه ساز امتحان</a>
+                                href="../exam/exam_simulator.php"><?= __('exam_simulator') ?></a>
                         </div>
                     </div>
                 </div>
@@ -94,7 +195,7 @@ if ($userConfig) {
                         <div class="card-img-overlay d-flex align-items-center h-100 px-5"><img class="nav-icons"
                                 src="assets/img/illustrations/3.png" alt="icon">
                             <a class="text-white fs-3 fs-xl-2 fs-xxl-3 stretched-link items fw-bold ps-4"
-                                href="vocabulary.php">واژه آموزی</a>
+                                href="vocabulary.php"><?= __('vocabulary_learning') ?></a>
                         </div>
                     </div>
                 </div>
@@ -103,8 +204,9 @@ if ($userConfig) {
                         <img class="nav-img" src="assets/img/backgrounds/about-4-1.png" alt="...">
                         <div class="card-img-overlay d-flex align-items-center h-100 px-5"><img class="nav-icons"
                                 src="assets/img/illustrations/4.png" alt="icon">
-                            <a class="text-white fs-3 fs-xl-2 fs-xxl-3 stretched-link items fw-bold ps-4"
-                                href="#about">کارگاه آموزش</a>
+                            <span class="text-white fs-3 fs-xl-2 fs-xxl-3 items fw-bold ps-4" style="opacity: 0.6; cursor: not-allowed;">
+                                کارگاه آموزش <small style="font-size: 0.6em; font-weight: normal;">(به زودی)</small>
+                            </span>
                         </div>
                     </div>
                 </div>
@@ -696,10 +798,16 @@ if ($userConfig) {
     });
 
 })();
-    // نمایش مودال تنظیمات در صورت نیاز
-    document.addEventListener('DOMContentLoaded', function () {
+    // مدیریت نمایش مودال‌ها به صورت متوالی
+    document.addEventListener('DOMContentLoaded', async function () {
         if (showConfigModal) {
-            openConfigModal();
+            // منتظر بمانید تا مودال تنظیمات بسته شود
+            await openConfigModal();
+        }
+        
+        // نمایش مودال برنامه مطالعه (اگر تابع تعریف شده باشد)
+        if (typeof window.showStudyPlanModal === 'function') {
+            window.showStudyPlanModal();
         }
     });
 

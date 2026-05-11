@@ -22,3 +22,17 @@
     <script src="assets/js/dashboards-analytics.js"></script>
     <script src="assets/js/dashboards-ecommerce.js"></script>
     
+    <script>
+    // Page Loader fade out
+    window.addEventListener('load', function() {
+        const loader = document.getElementById('page-loader');
+        if (loader) {
+            loader.classList.add('fade-out');
+            setTimeout(() => {
+                loader.style.display = 'none';
+            }, 500);
+        }
+    });
+    </script>
+    <script src="//code.tidio.co/nowavmidkbaonz1hejosf6omswpklxsv.js" async></script>
+    

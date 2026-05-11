@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../config/config.php';
+require_once __DIR__ . '/functions.php';
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -8,8 +9,14 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
+// بررسی CSRF token
+$token = $_POST['csrf_token'] ?? '';
+if (!verify_csrf_token($token)) {
+    echo json_encode(['success' => false, 'message' => 'توکن امنیتی نامعتبر است']);
+    exit;
+}
+
 // Check if user is admin
-session_start();
 $isAdmin = isset($_SESSION['role']) && $_SESSION['role'] === 'admin';
 if (!$isAdmin) {
     echo json_encode(['success' => false, 'message' => 'دسترسی غیرمجاز']);
@@ -167,6 +174,7 @@ $filename = uniqid($prefix, true) . '.jpg';
 $destination = $uploadDir . $filename;
 
 if (file_put_contents($destination, $imageData)) {
+    chmod($destination, 0644);
     $url = '/storage/answers/info/' . $filename;
     $msg = $usedGemini ? 'تصویر با موفقیت توسط Gemini 4.0 تولید و اضافه شد.' : 'جمنای هنوز فعال نشده (استفاده از مدل جایگزین)';
     echo json_encode(['success' => true, 'url' => $url, 'message' => $msg]);

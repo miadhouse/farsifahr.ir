@@ -198,4 +198,51 @@ totalElement.textContent = '$' + data.cart.total_price.toFixed(2);
             }
         });
     }
+
+    /**
+     * Mobile Menu Toggle
+     */
+    const mobileMenuToggle = document.querySelector('.humberger_menu_active');
+    const mobileMenu = document.querySelector('.tmp-popup-mobile-menu');
+    const closeButton = document.querySelector('.close-button');
+    const body = document.querySelector('body');
+
+    if (mobileMenuToggle && mobileMenu) {
+        mobileMenuToggle.addEventListener('click', function(e) {
+            e.preventDefault();
+            mobileMenu.classList.add('active');
+            body.classList.add('sidemenu-active');
+        });
+    }
+
+    const closeMobileMenu = function() {
+        if (mobileMenu) mobileMenu.classList.remove('active');
+        body.classList.remove('sidemenu-active');
+        const sidebar = document.querySelector('.tmp_side_bar');
+        if (sidebar) sidebar.classList.remove('tmp_side_bar_open');
+    };
+
+    if (closeButton) {
+        closeButton.addEventListener('click', function(e) {
+            e.preventDefault();
+            closeMobileMenu();
+        });
+    }
+
+    // Close on overlay or specific close buttons
+    const closeButtons = document.querySelectorAll('.close_side_menu_active, .overlay_close_side_menu');
+    closeButtons.forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            closeMobileMenu();
+        });
+    });
+
+    if (mobileMenu) {
+        mobileMenu.addEventListener('click', function(e) {
+            if (e.target === mobileMenu) {
+                closeMobileMenu();
+            }
+        });
+    }
 });

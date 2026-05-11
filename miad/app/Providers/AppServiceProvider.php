@@ -21,9 +21,6 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        config(['app.url' => 'https://imiad.online']);
-        config(['filesystems.disks.public.url' => 'https://imiad.online/storage']);
-
         FilamentView::registerRenderHook(
             'panels::head.start',
             fn (): string => Blade::render('<link rel="stylesheet" href="/assets/css/font-ir.css">'),

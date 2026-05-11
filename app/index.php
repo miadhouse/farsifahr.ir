@@ -105,6 +105,50 @@ $isAdmin = isset($_SESSION['role']) && $_SESSION['role'] === 'admin';
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <link href="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-lite.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-lite.min.js"></script>
+    
+    <!-- Driver.js for Tour -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/driver.js@1.0.1/dist/driver.css"/>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        /* تور استایل */
+        .driver-popover {
+            direction: rtl !important;
+            text-align: right !important;
+            font-family: 'Tahoma', sans-serif !important;
+        }
+        .driver-popover-title {
+            font-weight: bold !important;
+            font-size: 1.1rem !important;
+        }
+        .driver-popover-description {
+            font-size: 0.95rem !important;
+            line-height: 1.6 !important;
+        }
+        .driver-popover-footer {
+            display: flex !important;
+            align-items: center !important;
+            justify-content: space-between !important;
+            flex-wrap: wrap !important;
+            gap: 10px !important;
+        }
+        .driver-popover-progress-text {
+            order: 2 !important;
+            margin-right: auto !important;
+            margin-left: auto !important;
+        }
+        .driver-popover-navigation-btns {
+            order: 3 !important;
+        }
+        #dontShowTourContainer {
+            order: 1 !important;
+        }
+        .driver-popover-next-btn, .driver-popover-prev-btn {
+            background-color: #5a8dee !important;
+            text-shadow: none !important;
+            color: white !important;
+            border: none !important;
+        }
+    </style>
     <style>
         /* استایل تصاویر داخل توضیحات و ترجمه‌ها */
         .note-modal { z-index: 100001 !important; }
@@ -1556,11 +1600,17 @@ function openSourceLink() {
 function geminiFetchInfo() {
     if (!isAdmin) return;
     
-    if (!confirm('آیا مایل به درک مطلب کلی سوال و ترجمه با هوش مصنوعی (Gemini) هستید؟ (ممکن است تا یک دقیقه طول بکشد)')) {
-        return;
-    }
-    
-    const btn = document.getElementById('geminiFetchBtn');
+    Swal.fire({
+        title: 'توجه',
+        text: 'آیا مایل به درک مطلب کلی سوال و ترجمه با هوش مصنوعی (Gemini) هستید؟ (ممکن است تا یک دقیقه طول بکشد)',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'بله',
+        cancelButtonText: 'خیر'
+    }).then((result) => {
+        if (!result.isConfirmed) return;
+        
+        const btn = document.getElementById('geminiFetchBtn');
     const originalIcon = btn.innerHTML;
     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
     btn.disabled = true;
@@ -1594,16 +1644,23 @@ function geminiFetchInfo() {
         btn.innerHTML = originalIcon;
         btn.disabled = false;
     });
+    });
 }
 
 function botFetchInfo() {
     if (!isAdmin) return;
     
-    if (!confirm('آیا مایل به واکشی اطلاعات و ترجمه خودکار از سایت مرجع هستید؟ (ممکن است چند ثانیه طول بکشد)')) {
-        return;
-    }
-    
-    const btn = document.getElementById('botFetchBtn');
+    Swal.fire({
+        title: 'توجه',
+        text: 'آیا مایل به واکشی اطلاعات و ترجمه خودکار از سایت مرجع هستید؟ (ممکن است چند ثانیه طول بکشد)',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'بله',
+        cancelButtonText: 'خیر'
+    }).then((result) => {
+        if (!result.isConfirmed) return;
+        
+        const btn = document.getElementById('botFetchBtn');
     const originalIcon = btn.innerHTML;
     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
     btn.disabled = true;
@@ -1637,6 +1694,7 @@ function botFetchInfo() {
         btn.innerHTML = originalIcon;
         btn.disabled = false;
     });
+    });
 }
 
 function saveAdminEdit(element, type, field, id) {
@@ -1657,13 +1715,21 @@ function saveAdminEdit(element, type, field, id) {
         return;
     }
 
-    if (!confirm('آیا ذخیره مورد تایید است؟')) {
-        // Revert to original if cancelled
-        element.innerHTML = originalContent;
-        return;
-    }
+    Swal.fire({
+        title: 'توجه',
+        text: 'آیا ذخیره مورد تایید است؟',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'بله',
+        cancelButtonText: 'خیر'
+    }).then((result) => {
+        if (!result.isConfirmed) {
+            // Revert to original if cancelled
+            element.innerHTML = originalContent;
+            return;
+        }
 
-    const formData = createFormDataWithCSRF({
+        const formData = createFormDataWithCSRF({
         type: type,
         field: field,
         id: id,
@@ -1703,6 +1769,7 @@ function saveAdminEdit(element, type, field, id) {
     .finally(() => {
         element.contentEditable = "true";
         element.style.opacity = "1";
+    });
     });
 }
 
@@ -2015,13 +2082,27 @@ function hideTranslationContent() {
             console.warn(`Question ${questionId} has no answers - marked as problematic`);
             console.log(`🚨 PROBLEMATIC QUESTION ID: ${questionId}`);
 
-            if (confirm(`سوال با کد ${questionId} فاقد پاسخ است. آیا می‌خواهید این کد را کپی کنید؟`)) {
-                navigator.clipboard.writeText(questionId).then(() => {
-                    alert(`کد سوال ${questionId} کپی شد`);
-                }).catch(() => {
-                    prompt('کد سوال (Ctrl+C برای کپی):', questionId);
-                });
-            }
+            Swal.fire({
+                title: 'سوال مشکل دار',
+                text: `سوال با کد ${questionId} فاقد پاسخ است. آیا می‌خواهید این کد را کپی کنید؟`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'بله، کپی کن',
+                cancelButtonText: 'خیر'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    navigator.clipboard.writeText(questionId).then(() => {
+                        Swal.fire('کپی شد', `کد سوال ${questionId} کپی شد`, 'success');
+                    }).catch(() => {
+                        Swal.fire({
+                            title: 'کپی دستی',
+                            text: 'مرورگر شما از کپی خودکار پشتیبانی نمی‌کند. لطفا کد زیر را کپی کنید:',
+                            input: 'text',
+                            inputValue: questionId
+                        });
+                    });
+                }
+            });
 
             let problematicQuestions = JSON.parse(localStorage.getItem('problematicQuestions') || '[]');
             if (!problematicQuestions.includes(questionId)) {
@@ -2790,6 +2871,16 @@ function answerBuilder(answers = null) {
 
         function nextQuestion() {
             if (mode === 'practice' && !questionSolved) {
+                if (!hasUserAnswer) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'توجه',
+                        text: 'لطفاً ابتدا حداقل یک پاسخ را انتخاب کنید.',
+                        confirmButtonText: 'باشه',
+                        confirmButtonColor: '#5a8dee'
+                    });
+                    return;
+                }
                 solveQuestion();
                 return;
             }
@@ -2898,17 +2989,35 @@ function answerBuilder(answers = null) {
         
         function goToFirstQuestion() {
             if (currentQuestionIndex > 0) {
-                if (confirm('آیا مایل هستید به اولین سوال بروید؟')) {
-                    goToQuestion(0);
-                }
+                Swal.fire({
+                    title: 'توجه',
+                    text: 'آیا مایل هستید به اولین سوال بروید؟',
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonText: 'بله',
+                    cancelButtonText: 'خیر'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        goToQuestion(0);
+                    }
+                });
             }
         }
         
         function goToLastQuestion() {
             if (currentQuestionIndex < selectedQuestions.length - 1) {
-                if (confirm('آیا مایل هستید به آخرین سوال بروید؟')) {
-                    goToQuestion(selectedQuestions.length - 1);
-                }
+                Swal.fire({
+                    title: 'توجه',
+                    text: 'آیا مایل هستید به آخرین سوال بروید؟',
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonText: 'بله',
+                    cancelButtonText: 'خیر'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        goToQuestion(selectedQuestions.length - 1);
+                    }
+                });
             }
         }
 
@@ -3337,6 +3446,158 @@ function answerBuilder(answers = null) {
         });
 </script>
 
+    <script src="https://cdn.jsdelivr.net/npm/driver.js@1.0.1/dist/driver.js.iife.js"></script>
+    <script>
+    function startGuidedTour() {
+        // بررسی اینکه آیا کاربر قبلاً تور را دیده یا خیر
+        if (localStorage.getItem('farsifahr_tour_shown') === 'true') {
+            return;
+        }
+
+        const driver = window.driver.js.driver;
+        const driverObj = driver({
+            showProgress: true,
+            nextBtnText: 'بعدی',
+            prevBtnText: 'قبلی',
+            doneBtnText: 'پایان',
+            allowClose: true,
+            overlayColor: 'rgba(0,0,0,0.8)',
+            onDestroyStarted: () => {
+                if (window.tourCheckboxChecked) {
+                    localStorage.setItem('farsifahr_tour_shown', 'true');
+                }
+                driverObj.destroy();
+            },
+            onPopoverRender: (popover) => {
+                const footer = popover.footer || document.querySelector('.driver-popover-footer');
+                if (footer && !document.getElementById('dontShowTourContainer')) {
+                    const container = document.createElement("div");
+                    container.id = "dontShowTourContainer";
+                    container.style.display = "flex";
+                    container.style.alignItems = "center";
+                    container.style.gap = "5px";
+                    container.style.marginRight = "auto";
+
+                    const checkbox = document.createElement("input");
+                    checkbox.type = "checkbox";
+                    checkbox.id = "dontShowTourCheckbox";
+                    checkbox.style.cursor = "pointer";
+                    if (window.tourCheckboxChecked) checkbox.checked = true;
+                    checkbox.addEventListener("change", (e) => {
+                        window.tourCheckboxChecked = e.target.checked;
+                        if (e.target.checked) {
+                            localStorage.setItem('farsifahr_tour_shown', 'true');
+                        } else {
+                            localStorage.removeItem('farsifahr_tour_shown');
+                        }
+                    });
+
+                    const label = document.createElement("label");
+                    label.htmlFor = "dontShowTourCheckbox";
+                    label.innerText = "دیگر نشان نده";
+                    label.style.fontSize = "12px";
+                    label.style.color = "#666";
+                    label.style.cursor = "pointer";
+                    label.style.margin = "0";
+
+                    const closeBtn = document.createElement("button");
+                    closeBtn.innerText = "بستن";
+                    closeBtn.style.fontSize = "12px";
+                    closeBtn.style.color = "#f56565";
+                    closeBtn.style.border = "1px solid #f56565";
+                    closeBtn.style.borderRadius = "4px";
+                    closeBtn.style.background = "transparent";
+                    closeBtn.style.padding = "2px 8px";
+                    closeBtn.style.cursor = "pointer";
+                    
+                    closeBtn.addEventListener("click", () => {
+                        if (checkbox.checked) {
+                            localStorage.setItem('farsifahr_tour_shown', 'true');
+                        }
+                        driverObj.destroy();
+                    });
+
+                    container.appendChild(closeBtn);
+                    container.appendChild(checkbox);
+                    container.appendChild(label);
+
+                    footer.appendChild(container);
+                }
+            },
+            steps: [
+                { 
+                    element: '#translateBtn', 
+                    popover: { 
+                        title: 'دکمه ترجمه', 
+                        description: 'با کلیک روی این دکمه، صورت سوال و تمام گزینه‌ها بلافاصله به فارسی ترجمه می‌شوند.',
+                        side: "bottom", align: 'start' 
+                    } 
+                },
+                { 
+                    element: '#explainBtn', 
+                    popover: { 
+                        title: 'دکمه توضیح و درک مطلب', 
+                        description: 'این دکمه علاوه بر ترجمه، توضیح کامل و منطق سوال را برای یادگیری بهتر به شما نمایش می‌دهد.',
+                        side: "bottom", align: 'start' 
+                    } 
+                },
+                { 
+                    element: '#solve-btn', 
+                    popover: { 
+                        title: 'حل پاسخ', 
+                        description: 'اگر پاسخ سوالی را نمی‌دانید، این دکمه پاسخ صحیح را به شما نشان می‌دهد.',
+                        side: "left", align: 'start' 
+                    } 
+                },
+                { 
+                    element: '#report-btn', 
+                    popover: { 
+                        title: 'گزارش سوال', 
+                        description: 'در صورت مشاهده هرگونه اشتباه در سوال یا ترجمه، از اینجا گزارش دهید. در صورت تایید، اشتراک VIP هدیه می‌گیرید!',
+                        side: "left", align: 'start' 
+                    } 
+                },
+                { 
+                    element: '#next-btn', 
+                    popover: { 
+                        title: 'ناوبری سوالات', 
+                        description: 'برای رفتن به سوال بعدی از این دکمه استفاده کنید. همچنین می‌توانید از کلیدهای جهت‌نما استفاده کنید.',
+                        side: "top", align: 'start' 
+                    } 
+                },
+                { 
+                    element: '#bookmark-btn', 
+                    popover: { 
+                        title: 'علامت‌گذاری سوال', 
+                        description: 'سوالات مهم یا سخت را ستاره‌دار کنید تا بعداً در بخش سوالات نشان‌شده راحت‌تر آن‌ها را پیدا و مرور کنید.',
+                        side: "top", align: 'start' 
+                    } 
+                },
+                { 
+                    element: '#question-buttons', 
+                    popover: { 
+                        title: 'وضعیت یادگیری سوالات', 
+                        description: 'دایره‌های رنگی وضعیت شما را نشان می‌دهند:<br>🔘 <b>خاکستری:</b> پاسخ داده نشده<br>🔴 <b>قرمز:</b> بلد نیستید (۲ پاسخ غلط)<br>🔵 <b>آبی:</b> ۵۰-۵۰ هستید<br>🟢 <b>سبز:</b> این سوال را کاملاً بلدید',
+                        side: "top", align: 'center' 
+                    } 
+                },
+                { 
+                    element: '#text', 
+                    popover: { 
+                        title: 'ترجمه هوشمند کلمات', 
+                        description: 'روی هر کلمه آلمانی که کلیک کنید، ترجمه آن باز می‌شود. می‌توانید آن را ذخیره کنید تا در بخش "واژه آموزی" داشبورد به صورت فلش‌کارت تمرین کنید.',
+                        side: "bottom", align: 'center' 
+                    } 
+                }
+            ]
+        });
+
+        driverObj.drive();
+    }
+
+    // شروع تور با کمی تاخیر برای لود کامل سوال
+    setTimeout(startGuidedTour, 1500);
+    </script>
 </body>
 
 </html>

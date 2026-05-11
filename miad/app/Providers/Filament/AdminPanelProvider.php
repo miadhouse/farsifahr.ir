@@ -19,6 +19,9 @@ use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 
+use Filament\View\PanelsRenderHook;
+use Illuminate\Support\Facades\Blade;
+
 class AdminPanelProvider extends PanelProvider
 {
     public function panel(Panel $panel): Panel
@@ -33,6 +36,38 @@ class AdminPanelProvider extends PanelProvider
             ->colors([
                 'primary' => Color::Amber,
             ])
+            ->renderHook(
+                PanelsRenderHook::BODY_END,
+                fn (): string => Blade::render('
+                    <style>
+                        /* Fix for RTL Sidebar Animation on Mobile */
+                        .fi-sidebar {
+                            left: auto !important;
+                            right: 0 !important;
+                        }
+
+                        .fi-sidebar.-translate-x-full {
+                            transform: translateX(100%) !important;
+                        }
+
+                        /* Increase input font size */
+                        .fi-input {
+                            font-size: 1.1rem !important;
+                        }
+                        
+                        input::placeholder {
+                            font-size: 1rem !important;
+                        }
+
+                        /* Glassy Login Buttons (optional, if they use Filament login) */
+                        .fi-btn.fi-btn-color-primary {
+                            background: rgba(102, 126, 234, 0.15) !important;
+                            border: 2px solid #667eea !important;
+                            color: #fff !important;
+                        }
+                    </style>
+                '),
+            )
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
             ->pages([

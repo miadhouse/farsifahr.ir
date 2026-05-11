@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../config/config.php';
+require_once __DIR__ . '/functions.php';
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -9,12 +10,13 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 // بررسی CSRF token
-if (!isset($_POST['csrf_token']) || empty($_POST['csrf_token'])) {
-    echo json_encode(['success' => false, 'message' => 'توکن امنیتی ارسال نشده است']);
+$token = $_POST['csrf_token'] ?? '';
+if (!verify_csrf_token($token)) {
+    echo json_encode(['success' => false, 'message' => 'توکن امنیتی نامعتبر است']);
     exit;
 }
 
-session_start();
+// Check if user is admin
 $isAdmin = isset($_SESSION['role']) && $_SESSION['role'] === 'admin';
 if (!$isAdmin) {
     echo json_encode(['success' => false, 'message' => 'دسترسی غیرمجاز']);

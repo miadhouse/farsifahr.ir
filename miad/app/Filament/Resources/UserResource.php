@@ -63,6 +63,20 @@ class UserResource extends Resource
                     ->label('ایمیل')
                     ->searchable()
                     ->sortable(),
+                Tables\Columns\TextColumn::make('referral_code')
+                    ->label('کد معرف')
+                    ->searchable(),
+                Tables\Columns\TextColumn::make('referred_users_count')
+                    ->label('تعداد معرفی')
+                    ->counts('referredUsers'),
+                Tables\Columns\TextColumn::make('purchased_referrals_count')
+                    ->label('معرفی (خرید کرده)')
+                    ->getStateUsing(function ($record) {
+                        return $record->referredUsers()
+                            ->whereHas('subscriptions', function ($query) {
+                                $query->whereIn('status', ['active', 'expired']);
+                            })->count();
+                    }),
                 Tables\Columns\TextColumn::make('role')
                     ->label('نقش')
                     ->sortable(),

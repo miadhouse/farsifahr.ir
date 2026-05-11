@@ -10,5 +10,22 @@ class SubscriptionPlan extends Model
     
     protected $table = 'subscription_plans';
 
-    protected $fillable = ['name', 'price', 'duration_days'];
+    protected $fillable = [
+        'name', 
+        'slug', 
+        'description', 
+        'features',
+        'price_2_weeks', 
+        'price_1_month', 
+        'price_3_months', 
+        'price_6_months', 
+        'price_1_year', 
+        'question_limit', 
+        'is_active', 
+        'sort_order'
+    ];
+
+    protected $casts = [
+        'features' => 'array',
+    ];
 }

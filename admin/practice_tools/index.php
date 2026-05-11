@@ -1,0 +1,1 @@
+<?php echo "INDEX PHP INSIDE PRACTICE DIRECTORY"; ?>

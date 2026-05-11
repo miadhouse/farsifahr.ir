@@ -120,14 +120,24 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
                     clearInterval(timerInterval);
                 }
             });
-            grecaptcha.reset();
+            if (typeof grecaptcha !== 'undefined') {
+                const recaptchas = document.querySelectorAll('.g-recaptcha');
+                for (let i = 0; i < recaptchas.length; i++) {
+                    try { grecaptcha.reset(i); } catch (e) {}
+                }
+            }
         } else {
             Swal.fire({
                 icon: 'error',
                 title: 'خطا',
                 text: result.message
             });
-            grecaptcha.reset();
+            if (typeof grecaptcha !== 'undefined') {
+                const recaptchas = document.querySelectorAll('.g-recaptcha');
+                for (let i = 0; i < recaptchas.length; i++) {
+                    try { grecaptcha.reset(i); } catch (e) {}
+                }
+            }
         }
     } catch (error) {
         Swal.fire({
@@ -135,6 +145,12 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
             title: 'خطا',
             text: 'خطا در برقراری ارتباط با سرور'
         });
+        if (typeof grecaptcha !== 'undefined') {
+            const recaptchas = document.querySelectorAll('.g-recaptcha');
+            for (let i = 0; i < recaptchas.length; i++) {
+                try { grecaptcha.reset(i); } catch (e) {}
+            }
+        }
     } finally {
         submitBtn.disabled = false;
         submitBtn.innerHTML = '<i class="bi bi-box-arrow-in-left"></i> ورود';
@@ -158,6 +174,12 @@ document.getElementById('registerForm').addEventListener('submit', async functio
             title: 'خطا',
             text: 'رمز عبور و تکرار آن مطابقت ندارند'
         });
+        if (typeof grecaptcha !== 'undefined') {
+            const recaptchas = document.querySelectorAll('.g-recaptcha');
+            for (let i = 0; i < recaptchas.length; i++) {
+                try { grecaptcha.reset(i); } catch (e) {}
+            }
+        }
         return;
     }
     
@@ -181,8 +203,12 @@ document.getElementById('registerForm').addEventListener('submit', async functio
                 confirmButtonText: 'باشه'
             }).then(() => {
                 const registerModal = bootstrap.Modal.getInstance(document.getElementById('registerModal'));
-                registerModal.hide();
+                if (registerModal) registerModal.hide();
                 this.reset();
+                
+                // Show login modal
+                const loginModal = new bootstrap.Modal(document.getElementById('loginModal'));
+                loginModal.show();
             });
         } else {
             Swal.fire({
@@ -190,7 +216,12 @@ document.getElementById('registerForm').addEventListener('submit', async functio
                 title: 'خطا',
                 text: result.message
             });
-            grecaptcha.reset();
+            if (typeof grecaptcha !== 'undefined') {
+                const recaptchas = document.querySelectorAll('.g-recaptcha');
+                for (let i = 0; i < recaptchas.length; i++) {
+                    try { grecaptcha.reset(i); } catch (e) {}
+                }
+            }
         }
     } catch (error) {
         Swal.fire({
@@ -198,6 +229,12 @@ document.getElementById('registerForm').addEventListener('submit', async functio
             title: 'خطا',
             text: 'خطا در برقراری ارتباط با سرور'
         });
+        if (typeof grecaptcha !== 'undefined') {
+            const recaptchas = document.querySelectorAll('.g-recaptcha');
+            for (let i = 0; i < recaptchas.length; i++) {
+                try { grecaptcha.reset(i); } catch (e) {}
+            }
+        }
     } finally {
         submitBtn.disabled = false;
         submitBtn.innerHTML = '<i class="bi bi-person-plus"></i> ثبت نام';

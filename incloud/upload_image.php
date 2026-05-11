@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../config/config.php';
+require_once __DIR__ . '/functions.php';
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -8,8 +9,14 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
+// بررسی CSRF token
+$token = $_POST['csrf_token'] ?? '';
+if (!verify_csrf_token($token)) {
+    echo json_encode(['success' => false, 'message' => 'توکن امنیتی نامعتبر است']);
+    exit;
+}
+
 // Check if user is admin
-session_start();
 $isAdmin = isset($_SESSION['role']) && $_SESSION['role'] === 'admin';
 if (!$isAdmin) {
     echo json_encode(['success' => false, 'message' => 'دسترسی غیرمجاز']);
@@ -39,6 +46,7 @@ $filename = uniqid('img_', true) . '.' . $ext;
 $destination = $uploadDir . $filename;
 
 if (move_uploaded_file($file['tmp_name'], $destination)) {
+    chmod($destination, 0644);
     // URL to access the image
     $url = '/storage/answers/info/' . $filename;
     echo json_encode(['success' => true, 'url' => $url]);

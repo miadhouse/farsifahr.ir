@@ -121,7 +121,7 @@ if ($user_sub !== false && $user_sub !== null) {
                   <span class="badge bg-label-primary fs-6 ms-2"><?= htmlspecialchars($user_sub['plan_name']) ?></span>
                 </h6>
                 <?php if ($user_sub['plan_slug'] != 'free'): ?>
-                  <p class="text-muted">مبلغ پرداختی: <?= number_format($user_sub['amount_paid']) ?> تومان</p>
+                  <p class="text-muted">مبلغ پرداختی: <?= number_format($user_sub['amount_paid']) ?> یورو</p>
                 <?php endif; ?>
               </div>
               <div class="mb-4">
@@ -228,23 +228,26 @@ if ($user_sub !== false && $user_sub !== null) {
             <div class="card-body pt-4">
               <p class="mb-4 text-muted small"><?= htmlspecialchars($plan['description']) ?></p>
               
-              <ul class="list-unstyled mb-4">
-                <?php if ($plan['slug'] == 'free'): ?>
-                  <li class="mb-2"><i class="fa fa-check-circle text-success me-2"></i> دسترسی به ۲۰۰ سوال اول</li>
-                  <li class="mb-2"><i class="fa fa-check-circle text-success me-2"></i> بدون محدودیت زمانی</li>
-                  <li class="mb-2 text-muted"><i class="fa fa-times-circle me-2"></i> سوالات بالاتر از ۲۰۰</li>
-                <?php else: ?>
-                  <li class="mb-2"><i class="fa fa-check-circle text-success me-2"></i> دسترسی نامحدود به تمام سوالات</li>
-                  <li class="mb-2"><i class="fa fa-check-circle text-success me-2"></i> آپدیت‌های رایگان</li>
-                  <li class="mb-2"><i class="fa fa-check-circle text-success me-2"></i> پشتیبانی اختصاصی</li>
-                <?php endif; ?>
+              <ul class="list-unstyled mb-4" style="line-height: 2; font-size: 1.1rem;">
+                <?php 
+                $plan_features = get_plan_features($plan['slug']);
+                foreach ($plan_features as $feature):
+                ?>
+                        <li class="mb-2"><i class="fa fa-check-circle text-success me-2 fs-5"></i> <?= htmlspecialchars($feature) ?></li>
+                <?php 
+                endforeach;
+                ?>
               </ul>
 
               <?php if ($plan['slug'] == 'free'): ?>
                 <div class="text-center py-4 bg-light rounded">
                   <h2 class="fw-bold mb-1">رایگان</h2>
                   <p class="text-muted small mb-3">مناسب برای آشنایی اولیه</p>
-                  <button class="btn btn-outline-secondary w-100" disabled>پلن فعلی شما</button>
+                  <?php if ($user_plan_status === 'active'): ?>
+                    <button class="btn btn-outline-secondary w-100" disabled>غیرقابل استفاده</button>
+                  <?php else: ?>
+                    <button class="btn btn-secondary w-100" disabled>پلن فعلی شما</button>
+                  <?php endif; ?>
                 </div>
               <?php else: ?>
                 <div class="vip-durations">
@@ -282,35 +285,40 @@ if ($user_sub !== false && $user_sub !== null) {
                         $row_class = 'bg-light border-'.$dur['color'];
                     }
                   ?>
-                  <div class="pricing-option-row p-2 mb-2 border rounded <?= $row_class ?>">
+                  <div class="pricing-option-row p-3 mb-3 border rounded <?= $row_class ?>">
                     <div class="d-flex justify-content-between align-items-center">
                       <div class="flex-grow-1">
-                        <h6 class="mb-0 small fw-bold"><?= $dur['label'] ?></h6>
+                        <h6 class="mb-0 fs-6 fw-bold"><?= $dur['label'] ?></h6>
                         <?php if ($discount > 0): ?>
-                          <span class="badge bg-<?= $dur['color'] ?> p-1" style="font-size: 10px;"><?= $discount ?>% تخفیف</span>
+                          <span class="badge bg-<?= $dur['color'] ?> p-1 mt-1" style="font-size: 12px;"><?= $discount ?>% تخفیف</span>
                         <?php endif; ?>
                       </div>
                       <div class="text-end me-3">
-                        <div class="fw-bold text-primary small"><?= number_format($plan[$dur['key']]) ?> تومان</div>
+                        <div class="fw-bold text-primary fs-5"><?= number_format($plan[$dur['key']]) ?> یورو</div>
+                        <?php 
+                        $euro_rate = defined('EURO_TO_TOMAN_RATE') ? EURO_TO_TOMAN_RATE : 75000;
+                        $toman_price = $plan[$dur['key']] * $euro_rate;
+                        ?>
+                        <div style="font-size: 0.85rem; color: #a1acb8;">معادل <?= number_format($toman_price) ?> تومان</div>
                       </div>
                       
                       <?php if ($is_active_dur): ?>
-                        <button type="button" class="btn btn-sm btn-success py-1" disabled>
+                        <button type="button" class="btn btn-success fs-5 py-2 px-3" disabled>
                            <span>فعال است</span>
                         </button>
                       <?php elseif ($is_pending_dur): ?>
                         <div class="d-flex gap-1">
-                          <button type="button" class="btn btn-sm btn-warning py-1" disabled>
+                          <button type="button" class="btn btn-warning fs-5 py-2 px-3" disabled>
                              <span>در حال بازبینی</span>
                           </button>
                           <form action="cancel-pending-subscription.php" method="POST" class="d-inline">
-                            <button type="submit" class="btn btn-sm btn-danger py-1" onclick="return confirm('آیا از لغو این درخواست اطمینان دارید؟')">
+                            <button type="submit" class="btn btn-danger fs-5 py-2 px-3" onclick="event.preventDefault(); Swal.fire({title: 'توجه', text: 'آیا از لغو این درخواست اطمینان دارید؟', icon: 'warning', showCancelButton: true, confirmButtonText: 'بله', cancelButtonText: 'خیر'}).then((result) => { if(result.isConfirmed) { this.closest('form').submit(); } })">
                                <i class="bx bx-x"></i>
                             </button>
                           </form>
                         </div>
                       <?php elseif ($user_plan_status === 'active'): ?>
-                        <button type="button" class="btn btn-sm btn-secondary py-1" disabled title="شما یک اشتراک فعال دارید">
+                        <button type="button" class="btn btn-secondary fs-5 py-2 px-3" disabled title="شما یک اشتراک فعال دارید">
                            <span>غیرقابل خرید</span>
                         </button>
                       <?php else: ?>
@@ -320,7 +328,8 @@ if ($user_sub !== false && $user_sub !== null) {
                            data-plan-name="<?= htmlspecialchars($plan['name']) ?>"
                            data-duration-label="<?= htmlspecialchars($dur['label']) ?>"
                            data-price="<?= number_format($plan[$dur['key']]) ?>"
-                           class="btn btn-sm btn-primary btn-buy-ajax py-1">
+                           data-toman-price="<?= number_format($toman_price) ?>"
+                           class="btn btn-primary btn-buy-ajax fs-5 py-2 px-4">
                            <span>خرید</span>
                         </button>
                       <?php endif; ?>
@@ -333,69 +342,6 @@ if ($user_sub !== false && $user_sub !== null) {
           </div>
         </div>
       <?php endforeach; ?>
-    </div>
-  </div>
-
-  <!-- Price Comparison Table -->
-  <div class="row mt-5 mb-5">
-    <div class="col-12">
-      <div class="card shadow-sm">
-        <div class="card-header border-bottom">
-          <h5 class="card-title mb-0">مقایسه قیمت‌ها (VIP)</h5>
-        </div>
-        <div class="card-body p-0">
-          <div class="table-responsive">
-            <table class="table table-bordered text-center mb-0">
-              <thead class="table-light">
-                <tr>
-                  <th class="small">دوره</th>
-                  <th class="small">قیمت کل</th>
-                  <th class="small d-none d-md-table-cell">قیمت روزانه</th>
-                  <th class="small">تخفیف</th>
-                </tr>
-              </thead>
-              <tbody>
-                <?php
-                $vip_plan = null;
-                foreach ($plans as $p) { if ($p['slug'] == 'vip') { $vip_plan = $p; break; } }
-                
-                if ($vip_plan):
-                  $table_durations = [
-                    ['key' => 'price_2_weeks', 'days' => 14, 'label' => '2 هفته'],
-                    ['key' => 'price_1_month', 'days' => 30, 'label' => '1 ماه'],
-                    ['key' => 'price_3_months', 'days' => 90, 'label' => '3 ماه'],
-                    ['key' => 'price_6_months', 'days' => 180, 'label' => '6 ماه'],
-                    ['key' => 'price_1_year', 'days' => 365, 'label' => '1 سال']
-                  ];
-                  
-                  foreach ($table_durations as $dur):
-                    if ($vip_plan[$dur['key']] <= 0) continue;
-                    $price = $vip_plan[$dur['key']];
-                    $daily = $price / $dur['days'];
-                    $discount_val = 0;
-                    if ($vip_plan['price_1_month'] > 0 && $dur['key'] != 'price_1_month') {
-                      $monthly_eq = ($price / $dur['days']) * 30;
-                      $discount_val = round((1 - ($monthly_eq / $vip_plan['price_1_month'])) * 100);
-                    }
-                ?>
-                <tr>
-                  <td class="fw-semibold small"><?= $dur['label'] ?></td>
-                  <td class="small fw-bold text-primary"><?= number_format($price) ?> <small>تومان</small></td>
-                  <td class="small d-none d-md-table-cell text-muted"><?= number_format($daily, 0) ?> <small>تومان</small></td>
-                  <td>
-                    <?php if ($discount_val > 0): ?>
-                      <span class="badge bg-label-success"><?= $discount_val ?>%</span>
-                    <?php else: ?>
-                      <span class="text-muted small">-</span>
-                    <?php endif; ?>
-                  </td>
-                </tr>
-                <?php endforeach; endif; ?>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
     </div>
   </div>
 
@@ -443,7 +389,7 @@ if ($user_sub !== false && $user_sub !== null) {
                   <tr>
                     <td><span class="fw-semibold"><?= htmlspecialchars($history['plan_name']) ?></span></td>
                     <td><?= $duration_label ?></td>
-                    <td><?= number_format($history['amount_paid']) ?> <small>تومان</small></td>
+                    <td><?= number_format($history['amount_paid']) ?> <small>یورو</small></td>
                     <td><small><?= !empty($history['started_at']) ? date('Y/m/d', strtotime($history['started_at'])) : '-' ?></small></td>
                     <td><small><?= !empty($history['expires_at']) ? date('Y/m/d', strtotime($history['expires_at'])) : '-' ?></small></td>
                     <td><span class="badge bg-<?= $status['class'] ?>"><?= $status['text'] ?></span></td>
@@ -478,7 +424,7 @@ if ($user_sub !== false && $user_sub !== null) {
               $total_paid = 0;
               foreach ($subscription_history as $sub) { if (in_array($sub['status'], ['active', 'expired'])) $total_paid += $sub['amount_paid']; }
               echo number_format($total_paid);
-              ?> <small>تومان</small>
+              ?> <small>یورو</small>
             </h3>
           </div>
         </div>
@@ -509,10 +455,20 @@ document.addEventListener('DOMContentLoaded', function() {
       const planName = this.getAttribute('data-plan-name');
       const durationLabel = this.getAttribute('data-duration-label');
       const planPrice = this.getAttribute('data-price');
+      const tomanPrice = this.getAttribute('data-toman-price');
       
       Swal.fire({
         title: 'تایید درخواست اشتراک',
-        html: `آیا از ثبت درخواست اشتراک <b>${planName}</b> برای دوره <b>${durationLabel}</b> با مبلغ <b>${planPrice} تومان</b> اطمینان دارید؟`,
+        html: `
+          <div class="mb-3">
+            آیا از ثبت درخواست اشتراک <b>${planName}</b> برای دوره <b>${durationLabel}</b> با مبلغ <b>${planPrice} یورو (معادل ${tomanPrice} تومان)</b> اطمینان دارید؟
+          </div>
+          <div class="mt-3">
+            <label for="referral_code" class="form-label text-start d-block">کد معرف (اختیاری):</label>
+            <input type="text" id="referral_code" class="form-control" placeholder="اگر کد معرف دارید وارد کنید">
+            <small class="text-muted d-block mt-1">با وارد کردن کد معرف معتبر، ۷ روز هدیه به اشتراک شما اضافه خواهد شد.</small>
+          </div>
+        `,
         icon: 'question',
         showCancelButton: true,
         confirmButtonText: 'بله، ثبت درخواست',
@@ -521,14 +477,19 @@ document.addEventListener('DOMContentLoaded', function() {
         buttonsStyling: false
       }).then(function (result) {
         if (result.value) {
+          const referralCode = document.getElementById('referral_code').value;
           Swal.fire({ title: 'در حال ثبت درخواست...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
           $.ajax({
             url: 'ajax-process-subscription.php',
             type: 'POST',
-            data: { plan_id: planId, duration: duration },
+            data: { 
+              plan_id: planId, 
+              duration: duration,
+              referral_code: referralCode
+            },
             success: function(response) {
               if (response.success) {
-                const waText = `سلام، من درخواست اشتراک ${planName} با مبلغ ${planPrice} تومان را در سایت ثبت کردم.\nایمیل من: ${userEmail}\nلطفا فعال کنید.`;
+                const waText = `سلام، من درخواست اشتراک ${planName} با مبلغ ${planPrice} یورو (معادل ${tomanPrice} تومان) را در سایت ثبت کردم.\nایمیل من: ${userEmail}\nلطفا فعال کنید.`;
                 Swal.fire({ 
                   icon: 'success', 
                   title: 'موفقیت‌آمیز', 

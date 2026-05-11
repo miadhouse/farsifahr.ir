@@ -141,18 +141,63 @@ $user_id = $_SESSION['user_id'];
         justify-content: center;
         gap: 20px;
         margin-top: 30px;
+        flex-wrap: wrap;
     }
 
     .control-btn {
-        padding: 15px 30px;
+        padding: 12px 25px;
         border: none;
         border-radius: 50px;
         font-weight: bold;
         cursor: pointer;
         transition: all 0.3s ease;
-        font-size: 1.1rem;
+        font-size: 1rem;
+        white-space: nowrap;
     }
 
+    .btn-prev {
+        background: #6c757d;
+        color: white;
+        order: 2;
+    }
+
+    .btn-prev:hover {
+        background: #5a6268;
+        transform: scale(1.05);
+    }
+
+    .btn-next {
+        background: #28a745;
+        color: white;
+        order: 1;
+    }
+
+    .btn-next:hover {
+        background: #218838;
+        transform: scale(1.05);
+    }
+
+    .btn-shuffle {
+        background: #ffc107;
+        color: #333;
+        order: 3;
+    }
+
+    .btn-shuffle:hover {
+        background: #e0a800;
+        transform: scale(1.05);
+    }
+
+    .btn-back {
+        background: #dc3545;
+        color: white;
+        order: 4;
+    }
+
+    .btn-back:hover {
+        background: #c82333;
+        transform: scale(1.05);
+    }
 
     .progress-info {
         text-align: center;
@@ -180,19 +225,34 @@ $user_id = $_SESSION['user_id'];
 
     @media (max-width: 768px) {
         .flashcard {
-            height: 350px;
+            height: 300px;
         }
 
         .flashcard-word {
-            font-size: 2rem;
+            font-size: 1.8rem;
         }
 
         .flashcard-translation {
-            font-size: 1.5rem;
+            font-size: 1.4rem;
         }
 
         .category-grid {
             grid-template-columns: 1fr;
+        }
+
+        .flashcard-controls {
+            gap: 10px;
+            padding: 0 15px;
+        }
+
+        .control-btn {
+            padding: 10px 12px;
+            font-size: 0.85rem;
+            flex: 1 1 calc(50% - 10px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
         }
     }
 </style>

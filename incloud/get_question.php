@@ -44,8 +44,12 @@ $questionId = intval($_POST['question_id']);
 $user_id = $_SESSION['user_id'] ?? null;
 
 try {
-    // دریافت exam_date_type کاربر
-    $examDateType = getUserExamDateType($pdo, $user_id);
+    // دریافت exam_date_type و language کاربر
+    $stmt = $pdo->prepare("SELECT exam_date_type, language FROM user_config WHERE user_id = ?");
+    $stmt->execute([$user_id]);
+    $userConfig = $stmt->fetch(PDO::FETCH_ASSOC);
+    $examDateType = $userConfig ? $userConfig['exam_date_type'] : null;
+    $userLanguage = $userConfig ? $userConfig['language'] : 'DE';
     
     // ساخت شرط فیلتر available
     $availableCondition = "";
@@ -71,6 +75,15 @@ try {
             'message' => 'سوالی جهت نمایش وجود ندارد'
         ]);
         exit;
+    }
+    
+    if ($userLanguage === 'EN') {
+        if (!empty($question['en_text'])) {
+            $question['text'] = $question['en_text'];
+        }
+        if (!empty($question['asw_en'])) {
+            $question['asw_pretext'] = $question['asw_en'];
+        }
     }
     
     // بررسی دسترسی کاربر به این سوال بر اساس شماره سوال
@@ -100,7 +113,7 @@ try {
     echo json_encode([
         'success' => true,
         'question' => $question,
-        'answers' => getAnswers($pdo, $questionId),
+        'answers' => getAnswers($pdo, $questionId, $userLanguage),
         'message' => 'سوال با موفقیت بارگذاری شد',
         'user_info' => [
             'is_vip' => is_user_vip($user_id, $pdo),
@@ -123,7 +136,7 @@ try {
     ]);
 }
 
-function getAnswers(PDO $pdo, $questionId)
+function getAnswers(PDO $pdo, $questionId, $userLanguage = 'DE')
 {
     try {
         $stmt = $pdo->prepare("
@@ -134,10 +147,18 @@ function getAnswers(PDO $pdo, $questionId)
         ");
         $stmt->bindValue(':question_id', (int) $questionId, PDO::PARAM_INT);
         $stmt->execute();
-        $answers = $stmt->fetchAll();
+        $answers = $stmt->fetchAll(PDO::FETCH_ASSOC);
         
         if (!$answers) {
             return [];
+        }
+        
+        if ($userLanguage === 'EN') {
+            foreach ($answers as &$ans) {
+                if (!empty($ans['en_text'])) {
+                    $ans['text'] = $ans['en_text'];
+                }
+            }
         }
         
         return $answers;

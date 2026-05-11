@@ -55,6 +55,13 @@ if (isset($_GET['code'])) {
                 'name' => $name,
                 'role' => 'user'
             ];
+
+            // ارسال پیام به مدیر در تلگرام
+            $telegram_message = "🆕 <b>ثبت نام جدید در سایت (گوگل)</b>\n\n";
+            $telegram_message .= "👤 نام: {$name}\n";
+            $telegram_message .= "📧 ایمیل: {$email}\n";
+            $telegram_message .= "🕒 زمان: " . date('Y-m-d H:i:s');
+            send_telegram_admin_message($telegram_message);
         }
         
         // ورود کاربر

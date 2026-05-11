@@ -1113,9 +1113,18 @@ $allQuestions = array_merge($grundstoffIds, $zusatzstoffIds);
         });
 
         function showResultsConfirm() {
-            if (confirm('Möchten Sie die Prüfung jetzt beenden und das Ergebnis sehen?')) {
-                finishExam();
-            }
+            Swal.fire({
+                title: 'توجه',
+                text: 'Möchten Sie die Prüfung jetzt beenden und das Ergebnis sehen?',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'بله',
+                cancelButtonText: 'خیر'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    finishExam();
+                }
+            });
         }
 
         function finishExam() {

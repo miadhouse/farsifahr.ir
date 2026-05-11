@@ -67,7 +67,16 @@ function fetchQuestionInfo($questionCode) {
 
 // اگر درخواست Ajax باشد
 if (isset($_POST['question_id']) && isset($_POST['action']) && $_POST['action'] == 'bot_fetch') {
+    require_once __DIR__ . '/functions.php';
     header('Content-Type: application/json');
+    
+    // بررسی CSRF token
+    $token = $_POST['csrf_token'] ?? '';
+    if (!verify_csrf_token($token)) {
+        echo json_encode(['success' => false, 'message' => 'توکن امنیتی نامعتبر است']);
+        exit;
+    }
+    
     $qId = intval($_POST['question_id']);
     
     // دریافت کد سوال از دیتابیس

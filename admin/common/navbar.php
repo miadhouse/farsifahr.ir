@@ -14,6 +14,7 @@
 
       <ul class="navbar-nav flex-row align-items-center ms-auto">
         <!-- Language -->
+        <?php include("language.php"); ?>
         <!--/ Language -->
 
         <!-- Subscription Status -->

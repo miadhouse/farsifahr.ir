@@ -25,6 +25,7 @@ $user_id = $_SESSION['user_id'];
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             padding: 20px 0;
+            overflow-x: hidden;
         }
 
         .container {
@@ -179,21 +180,24 @@ $user_id = $_SESSION['user_id'];
             justify-content: center;
             gap: 20px;
             margin-top: 30px;
+            flex-wrap: wrap;
         }
 
         .control-btn {
-            padding: 15px 30px;
+            padding: 12px 25px;
             border: none;
             border-radius: 50px;
             font-weight: bold;
             cursor: pointer;
             transition: all 0.3s ease;
-            font-size: 1.1rem;
+            font-size: 1rem;
+            white-space: nowrap;
         }
 
         .btn-prev {
             background: #6c757d;
             color: white;
+            order: 2;
         }
 
         .btn-prev:hover {
@@ -204,6 +208,7 @@ $user_id = $_SESSION['user_id'];
         .btn-next {
             background: #28a745;
             color: white;
+            order: 1;
         }
 
         .btn-next:hover {
@@ -214,6 +219,7 @@ $user_id = $_SESSION['user_id'];
         .btn-shuffle {
             background: #ffc107;
             color: #333;
+            order: 3;
         }
 
         .btn-shuffle:hover {
@@ -224,6 +230,7 @@ $user_id = $_SESSION['user_id'];
         .btn-back {
             background: #dc3545;
             color: white;
+            order: 4;
         }
 
         .btn-back:hover {
@@ -256,20 +263,39 @@ $user_id = $_SESSION['user_id'];
         }
 
         @media (max-width: 768px) {
+            body {
+                padding: 10px 0;
+            }
+
             .flashcard {
-                height: 350px;
+                height: 300px;
             }
 
             .flashcard-word {
-                font-size: 2rem;
+                font-size: 1.8rem;
             }
 
             .flashcard-translation {
-                font-size: 1.5rem;
+                font-size: 1.4rem;
             }
 
             .category-grid {
                 grid-template-columns: 1fr;
+            }
+
+            .flashcard-controls {
+                gap: 10px;
+                padding: 0 15px;
+            }
+
+            .control-btn {
+                padding: 10px 12px;
+                font-size: 0.85rem;
+                flex: 1 1 calc(50% - 10px);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 5px;
             }
         }
     </style>

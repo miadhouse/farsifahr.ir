@@ -13,6 +13,7 @@ use Filament\Tables\Table;
 use Filament\Tables\Actions\Action;
 use Filament\Notifications\Notification;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\DB;
 
 class SubscriptionResource extends Resource
 {
@@ -131,6 +132,56 @@ class SubscriptionResource extends Resource
                             'status' => 'active',
                             'expires_at' => Carbon::now()->addDays($record->duration_days ?: 30),
                         ]);
+
+                        // اعمال هدیه معرف در صورت وجود
+                        if ($record->referred_by_id && $record->referral_bonus_applied == 0) {
+                            $bonusNewUser = (int)(DB::connection('farsi_fahr2')->table('settings')->where('key', 'referral_reward_new_user')->value('value') ?? 7);
+                            $bonusReferrer = (int)(DB::connection('farsi_fahr2')->table('settings')->where('key', 'referral_reward_referrer')->value('value') ?? 14);
+
+                            // ۱. هدیه به خود کاربر
+                            if ($bonusNewUser > 0) {
+                                $record->update([
+                                    'expires_at' => Carbon::parse($record->expires_at)->addDays($bonusNewUser),
+                                    'duration_days' => $record->duration_days + $bonusNewUser,
+                                ]);
+                            }
+
+                            // ۲. هدیه به معرف
+                            if ($bonusReferrer > 0) {
+                                $referrer = \App\Models\SiteUser::find($record->referred_by_id);
+                                if ($referrer) {
+                                    $referrerSub = $referrer->subscriptions()->where('status', 'active')->orderBy('created_at', 'desc')->first();
+                                    if ($referrerSub) {
+                                        $referrerSub->update([
+                                            'expires_at' => Carbon::parse($referrerSub->expires_at)->addDays($bonusReferrer),
+                                            'duration_days' => $referrerSub->duration_days + $bonusReferrer,
+                                        ]);
+                                    } else {
+                                        // ایجاد اشتراک جدید برای معرف
+                                        $vipPlan = \App\Models\SubscriptionPlan::where('slug', 'vip')->first();
+                                        if ($vipPlan) {
+                                            \App\Models\Subscription::create([
+                                                'user_id' => $referrer->id,
+                                                'plan_id' => $vipPlan->id,
+                                                'status' => 'active',
+                                                'expires_at' => Carbon::now()->addDays($bonusReferrer),
+                                                'duration_days' => $bonusReferrer,
+                                                'amount_paid' => 0,
+                                            ]);
+                                            $referrer->update(['current_plan_id' => $vipPlan->id]);
+                                        }
+                                    }
+                                }
+                            }
+
+                            $record->update(['referral_bonus_applied' => 1]);
+                            
+                            // ثبت معرف برای کاربر اگر قبلا نداشته
+                            if (!$record->user->referred_by_id) {
+                                $record->user->update(['referred_by_id' => $record->referred_by_id]);
+                            }
+                        }
+
                         Notification::make()->title('سفارش تایید و فعال شد')->success()->send();
                     }),
 

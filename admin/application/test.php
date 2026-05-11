@@ -1896,9 +1896,18 @@
         }
 
         function closeTest() {
-            if (confirm('آیا مطمئن هستید که می‌خواهید از آزمون خارج شوید؟')) {
-                window.history.back();
-            }
+            Swal.fire({
+                title: 'توجه',
+                text: 'آیا مطمئن هستید که می‌خواهید از آزمون خارج شوید؟',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'بله',
+                cancelButtonText: 'خیر'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.history.back();
+                }
+            });
         }
 
         // Event listener for window resize to recalculate pagination
