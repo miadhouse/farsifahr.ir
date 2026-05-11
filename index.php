@@ -592,10 +592,10 @@ if (is_logged_in()) {
     }
 
     .header-right-group .btn-sm, .nav-action-item .btn-sm {
-        padding: 4px 12px !important;
-        font-size: 13px !important;
+        padding: 6px 18px !important;
+        font-size: 14px !important;
         border-radius: 0 !important;
-        height: 32px !important;
+        height: 40px !important;
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
@@ -617,7 +617,7 @@ if (is_logged_in()) {
         content: "";
         position: absolute;
         width: 1px;
-        height: 16px;
+        height: 20px;
         background: rgba(255, 255, 255, 0.2);
         top: 50%;
         transform: translateY(-50%);
@@ -642,8 +642,8 @@ if (is_logged_in()) {
     .header-right-group .dropdown button.btn-sm,
     .header-right-group .tmp-menu-bars,
     .mobile-hamburger-wrap .tmp-menu-bars {
-        width: 32px !important;
-        height: 32px !important;
+        width: 40px !important;
+        height: 40px !important;
         padding: 0 !important;
         border-radius: 0 !important;
         display: flex !important;
@@ -657,8 +657,8 @@ if (is_logged_in()) {
     /* Center the flag icon specifically */
     .header-right-group .dropdown button.btn-sm .fi {
         margin: 0 !important;
-        width: 16px;
-        height: 11px;
+        width: 20px;
+        height: 14px;
     }
 
     .header-right-group .tmp-menu-bars,
@@ -704,19 +704,19 @@ if (is_logged_in()) {
     }
 
     @media (max-width: 576px) {
-        .header-right-group .btn-sm {
-            padding: 3px 10px !important;
-            height: 30px !important;
-            font-size: 11px !important;
+        .header-right-group .btn-sm, .nav-action-item .btn-sm {
+            padding: 5px 12px !important;
+            height: 36px !important;
+            font-size: 13px !important;
         }
         .header-right-group .dropdown button.btn-sm,
         .header-right-group .tmp-menu-bars {
-            width: 30px !important;
-            height: 30px !important;
+            width: 36px !important;
+            height: 36px !important;
         }
         .header-right-group .dropdown button.btn-sm .fi {
-            width: 14px;
-            height: 10px;
+            width: 18px;
+            height: 12px;
         }
     }
 
