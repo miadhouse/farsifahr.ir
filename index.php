@@ -755,35 +755,51 @@ if (is_logged_in()) {
     /* Header components overhaul for LTR */
     .header-content {
         display: flex !important;
-        flex-direction: row-reverse !important; /* Mirroring for LTR */
+        flex-direction: row !important; /* Standard LTR direction */
         justify-content: space-between !important;
         align-items: center !important;
         position: relative !important;
     }
     
-    .header-content .logo {
-        position: absolute !important;
-        left: 50% !important;
-        transform: translateX(-50%) !important;
-        margin: 0 !important;
-        z-index: 10;
-    }
-    
-    /* Ensure the groups are visible and aligned correctly */
-    .header-content .header-right-group {
-        display: flex !important;
-        margin: 0 !important;
-        order: 1 !important; /* First in row-reverse = Left */
-    }
-    
-    .header-content .mobile-hamburger-wrap {
-        display: flex !important;
-        margin: 0 !important;
-        order: 4 !important; /* Last in row-reverse = Right */
+    /* MOBILE/TABLET LTR: Actions Left, Logo Center, Hamburger Right */
+    @media (max-width: 1199px) {
+        .header-content {
+            flex-direction: row-reverse !important; /* Mirroring for specific mobile layout */
+        }
+        .header-content .logo {
+            position: absolute !important;
+            left: 50% !important;
+            transform: translateX(-50%) !important;
+            margin: 0 !important;
+            z-index: 10;
+        }
+        .header-content .header-right-group {
+            order: 1 !important; /* First in row-reverse = Left */
+        }
+        .header-content .mobile-hamburger-wrap {
+            order: 4 !important; /* Last in row-reverse = Right */
+        }
+        .header-content .tmp-mainmenu-nav {
+            display: none !important;
+        }
     }
 
-    .header-content .tmp-mainmenu-nav {
-        display: none !important; /* Hide centered nav to allow logo centering */
+    /* DESKTOP LTR: Logo Left, Menu Center, Actions Right */
+    @media (min-width: 1200px) {
+        .header-content .logo {
+            order: 1 !important;
+            position: static !important;
+            transform: none !important;
+        }
+        .header-content .tmp-mainmenu-nav {
+            order: 2 !important;
+            display: block !important;
+            margin: 0 auto !important;
+        }
+        .header-content .header-right-group {
+            order: 3 !important;
+            margin-left: 0 !important;
+        }
     }
     
     /* Navigation fix */
