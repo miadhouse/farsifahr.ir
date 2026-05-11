@@ -97,18 +97,19 @@ if (is_logged_in()) {
 
     /* تم تاریک برای modal */
     .modal.slidedown .modal-content {
-        /* background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%); */
-        border: 1px solid #2d3748;
+        background: rgba(15, 23, 42, 0.7) !important;
+        border: 1px solid rgba(255, 255, 255, 0.1);
         border-radius: 20px;
-        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
         color: #e2e8f0;
-        backdrop-filter: blur(10px);
+        backdrop-filter: blur(15px) saturate(180%);
+        -webkit-backdrop-filter: blur(15px) saturate(180%);
     }
 
     /* هدر modal */
     .modal.slidedown .modal-header {
-        background: linear-gradient(135deg, #4868f8ff 0%, #2a77a8ff 100%);
-        border-bottom: 1px solid #4a5568;
+        background: transparent;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         border-radius: 20px 20px 0 0;
         padding: 20px 25px;
     }
@@ -134,7 +135,7 @@ if (is_logged_in()) {
     /* بدنه modal */
     .modal.slidedown .modal-body {
         padding: 30px 25px;
-        background: rgba(26, 32, 44, 0.95);
+        background: transparent;
     }
 
     /* فرم ها */
@@ -723,9 +724,7 @@ if (is_logged_in()) {
         border: 1px solid #36445d;
     }
     .estimator-modal .modal-content {
-        background-color: #1c222f;
         color: #e2e8f0;
-        border: 1px solid #36445d;
     }
     .estimator-modal .form-label {
         color: #cbd5e0;
