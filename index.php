@@ -741,13 +741,20 @@ if (is_logged_in()) {
 
     /* LTR Special Styles */
     <?php if (get_lang_dir() === 'ltr'): ?>
-    body, h1, h2, h3, h4, h5, h6, .title, .btn, .nav-link, span, p, div:not([class*="fa-"]):not([class*="bi-"]), a:not([class*="fa-"]):not([class*="bi-"]) {
+    :root {
+        --font-primary: 'Inter', sans-serif !important;
+        --font-secondary: 'Inter', sans-serif !important;
+    }
+    
+    body, h1, h2, h3, h4, h5, h6, .title, .btn, .nav-link, span, p, div, a, button, input, textarea, select {
         font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
     }
-    /* Explicitly restore icon fonts */
-    [class^="fa-"], [class*=" fa-"], [class^="bi-"], [class*=" bi-"], .fas, .far, .fab, .fa-regular, .fa-solid, .fa-brands, .fa {
-        font-family: "Font Awesome 6 Pro", "bootstrap-icons" !important;
+    
+    /* Strong re-restoration of icon fonts */
+    i, .fa, .fas, .far, .fab, .fa-regular, .fa-solid, .fa-brands, .bi, [class^="fa-"], [class*=" fa-"], [class^="bi-"], [class*=" bi-"] {
+        font-family: "Font Awesome 6 Pro", "bootstrap-icons", "fontawesome", "feather" !important;
     }
+    
     body {
         text-align: left !important;
         direction: ltr !important;
@@ -1447,10 +1454,10 @@ if (is_logged_in()) {
     <div class="container">
         <div class="section-head">
             <div class="section-sub-title center-title tmp-scroll-trigger tmp-fade-in animation-order-1">
-                <span class="subtitle">جدول اشتراک‌ها</span>
+                <span class="subtitle"><?= __('subscription_table', 'جدول اشتراک‌ها') ?></span>
             </div>
-            <h2 class="title split-collab tmp-scroll-trigger tmp-fade-in animation-order-2">انتخاب اشتراک جدید</h2>
-            <p>طرحی را انتخاب کنید که به بهترین وجه با نیازهای شما مطابقت داشته باشد.</p>
+            <h2 class="title split-collab tmp-scroll-trigger tmp-fade-in animation-order-2"><?= __('choose_new_subscription', 'انتخاب اشتراک جدید') ?></h2>
+            <p><?= __('subscription_description', 'طرحی را انتخاب کنید که به بهترین وجه با نیازهای شما مطابقت داشته باشد.') ?></p>
         </div>
         
         <div class="row justify-content-center mt-5">
@@ -2463,26 +2470,50 @@ if (is_logged_in()) {
         }
     });
 
-    // تبدیل اعداد فارسی به لاتین برای زبان‌های غیرفارسی
+    // تبدیل اعداد فارسی به لاتین برای زبان‌های غیرفارسی با استفاده از MutationObserver
     <?php if (get_lang_dir() === 'ltr'): ?>
     (function() {
         const persianDigits = [/۰/g, /۱/g, /۲/g, /۳/g, /۴/g, /۵/g, /۶/g, /۷/g, /۸/g, /۹/g];
         const latinDigits = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
         
         function convertDigits(node) {
-            if (node.nodeType === 3) {
+            if (node.nodeType === 3) { // Text node
                 let text = node.nodeValue;
+                let changed = false;
                 for (let i = 0; i < 10; i++) {
-                    text = text.replace(persianDigits[i], latinDigits[i]);
+                    if (text.includes(String.fromCharCode(0x06F0 + i))) {
+                        text = text.replace(persianDigits[i], latinDigits[i]);
+                        changed = true;
+                    }
                 }
-                node.nodeValue = text;
+                if (changed) node.nodeValue = text;
             } else if (node.nodeType === 1 && node.nodeName !== 'SCRIPT' && node.nodeName !== 'STYLE') {
                 for (let i = 0; i < node.childNodes.length; i++) {
                     convertDigits(node.childNodes[i]);
                 }
             }
         }
-        document.addEventListener('DOMContentLoaded', () => convertDigits(document.body));
+
+        // Run once on load
+        document.addEventListener('DOMContentLoaded', () => {
+            convertDigits(document.body);
+            
+            // Observe for changes (like Odometer updates)
+            const observer = new MutationObserver((mutations) => {
+                mutations.forEach((mutation) => {
+                    mutation.addedNodes.forEach((node) => convertDigits(node));
+                    if (mutation.type === 'characterData') {
+                        convertDigits(mutation.target);
+                    }
+                });
+            });
+            
+            observer.observe(document.body, {
+                childList: true,
+                subtree: true,
+                characterData: true
+            });
+        });
     })();
     <?php endif; ?>
 </script>
