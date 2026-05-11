@@ -624,8 +624,8 @@ if (is_logged_in()) {
             position: relative;
         }
 
-        /* RTL Specific behavior for logo centering */
-        [dir="rtl"] .header-content .logo {
+        /* Centered logo for both RTL and LTR on mobile */
+        .header-content .logo {
             position: absolute !important;
             left: 50% !important;
             transform: translateX(-50%) !important;
@@ -633,9 +633,13 @@ if (is_logged_in()) {
             margin: 0 !important;
         }
 
-        /* RTL Handling: In Persian, Right is start, Left is end */
+        /* RTL Handling: Hamburger Right (1), Buttons Left (3) */
         [dir="rtl"] .mobile-hamburger-wrap { order: 1; }
         [dir="rtl"] .header-right-group { order: 3; }
+
+        /* LTR Handling: Buttons Left (1), Hamburger Right (3) */
+        [dir="ltr"] .header-right-group { order: 1; }
+        [dir="ltr"] .mobile-hamburger-wrap { order: 3; }
     }
 
     /* Remove dropdown arrow for language switcher to keep it circular */
@@ -686,33 +690,30 @@ if (is_logged_in()) {
         text-align: left !important;
     }
     
-    /* Header components order fix */
+    /* Header components order fix for LTR */
     .header-content {
         display: flex !important;
         justify-content: space-between !important;
         flex-direction: row !important;
         position: relative !important;
     }
-    .header-content .logo {
-        order: 1 !important;
-        position: static !important;
-        transform: none !important;
-        margin: 0 !important;
-    }
-    .header-content .tmp-mainmenu-nav {
-        order: 2 !important;
-    }
-    .header-content .header-right-group {
-        order: 3 !important;
-        display: flex !important;
-        margin-left: auto !important;
-        margin-right: 0 !important;
-        gap: 15px !important;
-    }
-    .header-content .mobile-hamburger-wrap {
-        order: 4 !important;
-        margin-left: 15px !important;
-        margin-right: 0 !important;
+    
+    /* On Desktop (xl and up), we keep a more standard LTR layout or mirror as requested */
+    @media (min-width: 1200px) {
+        .header-content .header-right-group {
+            order: 1 !important;
+            margin-right: auto !important;
+            margin-left: 0 !important;
+        }
+        .header-content .logo {
+            order: 2 !important;
+            position: absolute !important;
+            left: 50% !important;
+            transform: translateX(-50%) !important;
+        }
+        .header-content .tmp-mainmenu-nav {
+            display: none !important; /* Hide centered nav to allow logo centering */
+        }
     }
     
     /* Ensure flex containers don't stay reversed */
