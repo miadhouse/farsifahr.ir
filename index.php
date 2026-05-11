@@ -992,6 +992,16 @@ if (is_logged_in()) {
             display: flex;
         }
     }
+    /* Styles for when Desktop Mode is active on mobile */
+    body.admin-desktop-active .admin-desktop-toggle {
+        display: flex !important;
+        width: 80px;
+        height: 80px;
+        bottom: 30px;
+        left: 30px;
+        font-size: 1.8rem;
+        background: #f56565; /* Red color to stand out */
+    }
 </style>
 
 <body>
@@ -2437,11 +2447,13 @@ if (is_logged_in()) {
             const icon = document.querySelector('.admin-desktop-toggle i');
             
             if (isDesktop) {
+                document.body.classList.add('admin-desktop-active');
                 if (viewport) {
                     viewport.setAttribute('content', 'width=1200, initial-scale=0.3, maximum-scale=5.0, user-scalable=yes');
                 }
                 if (icon) icon.className = 'fas fa-mobile-alt';
             } else {
+                document.body.classList.remove('admin-desktop-active');
                 if (viewport) {
                     viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
                 }
