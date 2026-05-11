@@ -570,12 +570,12 @@ if (is_logged_in()) {
             gap: 10px !important;
         }
         .header-one .logo img {
-            max-width: 90px !important;
+            max-width: 70px !important;
         }
     }
 
     .header-one .logo img {
-        max-width: 140px;
+        max-width: 110px;
         height: auto;
     }
 
