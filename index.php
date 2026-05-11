@@ -587,8 +587,13 @@ if (is_logged_in()) {
     }
 
     .header-right-group .btn-sm {
-        padding: 10px 20px !important; /* Slightly larger */
+        padding: 10px 24px !important;
         font-size: 14px !important;
+        border-radius: 50px !important; /* Force pill shape */
+        height: 45px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
     }
 
     /* Perfect circle for icon-only buttons */
@@ -599,6 +604,16 @@ if (is_logged_in()) {
         height: 45px !important;
         padding: 0 !important;
         border-radius: 50% !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+
+    /* Center the flag icon specifically */
+    .header-right-group .dropdown button.btn-sm .fi {
+        margin: 0 !important;
+        width: 22px;
+        height: 16px;
     }
 
     .header-right-group .tmp-menu-bars,
@@ -1014,7 +1029,7 @@ if (is_logged_in()) {
                                 $curr = get_current_lang();
                                 $flag = $curr == 'fa' ? 'ir' : ($curr == 'en' ? 'us' : 'de');
                                 ?>
-                                <button class="btn btn-dark btn-sm dropdown-toggle d-flex align-items-center gap-1 p-2" type="button" data-bs-toggle="dropdown">
+                                <button class="btn btn-dark btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
                                     <span class="fi fi-<?= $flag ?>"></span>
                                 </button>
                                 <ul class="dropdown-menu dropdown-menu-end bg-dark">
