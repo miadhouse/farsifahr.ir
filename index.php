@@ -591,7 +591,7 @@ if (is_logged_in()) {
         transition: all 0.3s ease;
     }
 
-    .header-right-group .btn-sm {
+    .header-right-group .btn-sm, .nav-action-item .btn-sm {
         padding: 4px 12px !important;
         font-size: 13px !important;
         border-radius: 0 !important;
@@ -602,36 +602,40 @@ if (is_logged_in()) {
         background: transparent !important;
         border: none !important;
         box-shadow: none !important;
-        position: relative;
         color: rgba(255,255,255,0.8) !important;
     }
 
-    /* Vertical line separator */
-    .header-right-group .guest-btn-gap a:first-child,
-    .header-right-group .guest-btn-gap a:nth-child(2) {
-        border-right: 1px solid rgba(255, 255, 255, 0.15) !important;
-    }
-    
-    [dir="ltr"] .header-right-group .guest-btn-gap a:first-child,
-    [dir="ltr"] .header-right-group .guest-btn-gap a:nth-child(2) {
-        border-right: none !important;
-        border-left: 1px solid rgba(255, 255, 255, 0.15) !important;
+    /* Vertical line separator fix */
+    .nav-action-item {
+        position: relative;
+        display: flex;
+        align-items: center;
     }
 
-    /* Gap between Register and Language */
-    .header-right-group .guest-btn-gap {
-        border-right: 1px solid rgba(255, 255, 255, 0.15) !important;
-        margin-right: 5px;
-        padding-right: 5px;
+    /* Add border to all but last item */
+    .nav-action-item:not(:last-child)::after {
+        content: "";
+        position: absolute;
+        width: 1px;
+        height: 16px;
+        background: rgba(255, 255, 255, 0.2);
+        top: 50%;
+        transform: translateY(-50%);
+    }
+
+    [dir="rtl"] .nav-action-item:not(:last-child)::after {
+        left: 0;
+    }
+
+    [dir="ltr"] .nav-action-item:not(:last-child)::after {
+        right: 0;
     }
     
-    [dir="ltr"] .header-right-group .guest-btn-gap {
-        border-right: none !important;
-        border-left: 1px solid rgba(255, 255, 255, 0.15) !important;
-        margin-right: 0;
-        margin-left: 5px;
-        padding-right: 0;
-        padding-left: 5px;
+    .header-right-group {
+        gap: 0 !important;
+    }
+    .nav-actions-wrapper {
+        gap: 0 !important;
     }
 
     /* Perfect circle for icon-only buttons */
@@ -1054,37 +1058,51 @@ if (is_logged_in()) {
                                         </li>
                                     </ul>
                                 </div>
+                                <!-- Language Switcher (Logged In) -->
+                                <div class="dropdown nav-action-item">
+                                    <?php 
+                                    $curr = get_current_lang();
+                                    $flag = $curr == 'fa' ? 'ir' : ($curr == 'en' ? 'us' : 'de');
+                                    ?>
+                                    <button class="btn btn-dark btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                        <span class="fi fi-<?= $flag ?>"></span>
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end bg-dark">
+                                        <li><a class="dropdown-item text-white" href="?lang=fa"><span class="fi fi-ir me-2"></span> فارسی</a></li>
+                                        <li><a class="dropdown-item text-white" href="?lang=de"><span class="fi fi-de me-2"></span> Deutsch</a></li>
+                                        <li><a class="dropdown-item text-white" href="?lang=en"><span class="fi fi-us me-2"></span> English</a></li>
+                                    </ul>
+                                </div>
                             <?php else: ?>
-                                <!-- Guest User Buttons -->
-                                <div class="d-flex align-items-center guest-btn-gap" style="gap: 0;">
-                                    <a href="javascript:void(0)" class="btn btn-outline-light btn-sm px-2 px-sm-3 d-flex align-items-center gap-1" style="font-weight: 500;" data-bs-toggle="modal"
+                                <!-- Guest Actions + Language Wrapper -->
+                                <div class="d-flex align-items-center nav-actions-wrapper">
+                                    <a href="javascript:void(0)" class="btn btn-outline-light btn-sm nav-action-item" data-bs-toggle="modal"
                                         data-bs-target="#loginModal">
                                         <i class="fa-regular fa-arrow-right-to-bracket"></i>
                                         <span class="d-none d-sm-inline"><?= __('login') ?></span>
                                     </a>
-                                    <a href="javascript:void(0)" class="btn btn-outline-primary btn-sm px-2 px-sm-3 text-white d-flex align-items-center gap-1" style="font-weight: 500; border-color: #5a8dee; background-color: transparent;" data-bs-toggle="modal"
+                                    <a href="javascript:void(0)" class="btn btn-outline-primary btn-sm text-white nav-action-item" data-bs-toggle="modal"
                                         data-bs-target="#registerModal">
                                         <i class="fa-regular fa-user-plus"></i>
                                         <span class="d-none d-sm-inline"><?= __('register') ?></span>
                                     </a>
+                                    <!-- Language Switcher -->
+                                    <div class="dropdown nav-action-item">
+                                        <?php 
+                                        $curr = get_current_lang();
+                                        $flag = $curr == 'fa' ? 'ir' : ($curr == 'en' ? 'us' : 'de');
+                                        ?>
+                                        <button class="btn btn-dark btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                            <span class="fi fi-<?= $flag ?>"></span>
+                                        </button>
+                                        <ul class="dropdown-menu dropdown-menu-end bg-dark">
+                                            <li><a class="dropdown-item text-white" href="?lang=fa"><span class="fi fi-ir me-2"></span> فارسی</a></li>
+                                            <li><a class="dropdown-item text-white" href="?lang=de"><span class="fi fi-de me-2"></span> Deutsch</a></li>
+                                            <li><a class="dropdown-item text-white" href="?lang=en"><span class="fi fi-us me-2"></span> English</a></li>
+                                        </ul>
+                                    </div>
                                 </div>
                             <?php endif; ?>
-
-                            <!-- Language Switcher -->
-                            <div class="dropdown">
-                                <?php 
-                                $curr = get_current_lang();
-                                $flag = $curr == 'fa' ? 'ir' : ($curr == 'en' ? 'us' : 'de');
-                                ?>
-                                <button class="btn btn-dark btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                                    <span class="fi fi-<?= $flag ?>"></span>
-                                </button>
-                                <ul class="dropdown-menu dropdown-menu-end bg-dark">
-                                    <li><a class="dropdown-item text-white" href="?lang=fa"><span class="fi fi-ir me-2"></span> فارسی</a></li>
-                                    <li><a class="dropdown-item text-white" href="?lang=de"><span class="fi fi-de me-2"></span> Deutsch</a></li>
-                                    <li><a class="dropdown-item text-white" href="?lang=en"><span class="fi fi-us me-2"></span> English</a></li>
-                                </ul>
-                            </div>
                         </div>
                     </div>
 
