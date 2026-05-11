@@ -965,6 +965,33 @@ if (is_logged_in()) {
     .glass-btn .btn-text {
         line-height: 1;
     }
+    .admin-desktop-toggle {
+        position: fixed;
+        bottom: 20px;
+        left: 20px;
+        z-index: 9999;
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background: #5a8dee;
+        color: white;
+        border: none;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        display: none; /* Hidden by default, shown via JS if mobile */
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    .admin-desktop-toggle:hover {
+        transform: scale(1.1);
+        background: #4868f8;
+    }
+    @media (max-width: 1199px) {
+        .admin-desktop-toggle.is-admin {
+            display: flex;
+        }
+    }
 </style>
 
 <body>
@@ -2392,6 +2419,30 @@ if (is_logged_in()) {
         }
     });
 </script>
+    <?php if (is_admin()): ?>
+    <!-- Admin Desktop Toggle -->
+    <button class="admin-desktop-toggle is-admin" onclick="toggleDesktopMode()" title="تغییر به حالت دسکتاپ/موبایل">
+        <i class="fas fa-desktop"></i>
+    </button>
+    <script>
+        function toggleDesktopMode() {
+            const isDesktop = localStorage.getItem('adminDesktopMode') === 'true';
+            localStorage.setItem('adminDesktopMode', isDesktop ? 'false' : 'true');
+            window.location.reload();
+        }
+
+        (function() {
+            if (localStorage.getItem('adminDesktopMode') === 'true') {
+                const viewport = document.querySelector('meta[name="viewport"]');
+                if (viewport) {
+                    viewport.setAttribute('content', 'width=1200, initial-scale=0.3, maximum-scale=5.0, user-scalable=yes');
+                }
+                const btn = document.querySelector('.admin-desktop-toggle i');
+                if (btn) btn.className = 'fas fa-mobile-alt';
+            }
+        })();
+    </script>
+    <?php endif; ?>
 </body>
 
 </html >
