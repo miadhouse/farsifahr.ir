@@ -1512,10 +1512,12 @@ if (is_logged_in()) {
     <section class="study-plan-area tmp-section-gapTop" id="study-plan">
         <div class="container">
             <div class="section-head text-center mb--50">
-                <span class="subtitle" style="color: #5a8dee; font-weight: bold; margin-bottom: 15px; display: block;"><?= __('study_plan_subtitle') ?></span>
                 <h2 class="title" style="color: #fff; font-size: 2.2rem; margin-bottom: 20px;">
-                    <?= __('study_plan_new_title', 'دوست داری بدونی حدودا چند روزه امتحان میشی، فرم زیر رو رایگان پر کن تا بهت بگم.') ?>
+                    <?= __('study_plan_header_title', 'دوست داری بدونی چقدر زمان لازم داری برای آماده شدن تا امتحان؟') ?>
                 </h2>
+                <p style="color: #a1b0cb; font-size: 1.2rem; max-width: 800px; margin: 0 auto;">
+                    <?= __('study_plan_header_subtitle', 'میتونی فرم زیر رو رایگان پر کنی تا بهت برنامه مطالعاتی بدم') ?>
+                </p>
             </div>
 
             <div class="step-form-container">
