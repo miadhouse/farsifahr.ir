@@ -592,13 +592,46 @@ if (is_logged_in()) {
     }
 
     .header-right-group .btn-sm {
-        padding: 4px 14px !important;
-        font-size: 12px !important;
-        border-radius: 50px !important; /* Force pill shape */
+        padding: 4px 12px !important;
+        font-size: 13px !important;
+        border-radius: 0 !important;
         height: 32px !important;
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        position: relative;
+        color: rgba(255,255,255,0.8) !important;
+    }
+
+    /* Vertical line separator */
+    .header-right-group .guest-btn-gap a:first-child,
+    .header-right-group .guest-btn-gap a:nth-child(2) {
+        border-right: 1px solid rgba(255, 255, 255, 0.15) !important;
+    }
+    
+    [dir="ltr"] .header-right-group .guest-btn-gap a:first-child,
+    [dir="ltr"] .header-right-group .guest-btn-gap a:nth-child(2) {
+        border-right: none !important;
+        border-left: 1px solid rgba(255, 255, 255, 0.15) !important;
+    }
+
+    /* Gap between Register and Language */
+    .header-right-group .guest-btn-gap {
+        border-right: 1px solid rgba(255, 255, 255, 0.15) !important;
+        margin-right: 5px;
+        padding-right: 5px;
+    }
+    
+    [dir="ltr"] .header-right-group .guest-btn-gap {
+        border-right: none !important;
+        border-left: 1px solid rgba(255, 255, 255, 0.15) !important;
+        margin-right: 0;
+        margin-left: 5px;
+        padding-right: 0;
+        padding-left: 5px;
     }
 
     /* Perfect circle for icon-only buttons */
@@ -608,10 +641,13 @@ if (is_logged_in()) {
         width: 32px !important;
         height: 32px !important;
         padding: 0 !important;
-        border-radius: 50% !important;
+        border-radius: 0 !important;
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
     }
 
     /* Center the flag icon specifically */
@@ -980,7 +1016,7 @@ if (is_logged_in()) {
                                 </li>
                             </ul>
                         </nav>
-                        <div class="header-right-group d-flex align-items-center gap-2 gap-sm-3">
+                        <div class="header-right-group d-flex align-items-center gap-0">
                             <div class="social-share-wrapper d-none d-xl-block">
                                 <div class="social-link"><a target="_blank" href="<?= INSTAGRAM_URL ?>"><i class="fa-brands fa-instagram"></i></a> <a target="_blank" href="<?= TELEGRAM_CHANNEL_URL ?>"><i class="fa-brands fa-telegram"></i></a></div>
                             </div>
@@ -1020,13 +1056,13 @@ if (is_logged_in()) {
                                 </div>
                             <?php else: ?>
                                 <!-- Guest User Buttons -->
-                                <div class="d-flex align-items-center gap-1 gap-sm-2">
-                                    <a href="javascript:void(0)" class="btn btn-outline-light btn-sm px-2 px-sm-3 d-flex align-items-center gap-1 rounded-pill" style="font-weight: 500;" data-bs-toggle="modal"
+                                <div class="d-flex align-items-center guest-btn-gap" style="gap: 0;">
+                                    <a href="javascript:void(0)" class="btn btn-outline-light btn-sm px-2 px-sm-3 d-flex align-items-center gap-1" style="font-weight: 500;" data-bs-toggle="modal"
                                         data-bs-target="#loginModal">
                                         <i class="fa-regular fa-arrow-right-to-bracket"></i>
                                         <span class="d-none d-sm-inline"><?= __('login') ?></span>
                                     </a>
-                                    <a href="javascript:void(0)" class="btn btn-outline-primary btn-sm px-2 px-sm-3 text-white d-flex align-items-center gap-1 rounded-pill" style="font-weight: 500; border-color: #5a8dee; background-color: transparent;" data-bs-toggle="modal"
+                                    <a href="javascript:void(0)" class="btn btn-outline-primary btn-sm px-2 px-sm-3 text-white d-flex align-items-center gap-1" style="font-weight: 500; border-color: #5a8dee; background-color: transparent;" data-bs-toggle="modal"
                                         data-bs-target="#registerModal">
                                         <i class="fa-regular fa-user-plus"></i>
                                         <span class="d-none d-sm-inline"><?= __('register') ?></span>
