@@ -830,6 +830,12 @@ if (is_logged_in()) {
     .banner-content-two {
         text-align: left !important;
     }
+    /* Hero section image flip for LTR */
+    .banner-two-main-wrapper .banner-right-content .main-img > img,
+    .benner-two-bg-red-img img,
+    .logo-under-img img {
+        transform: scaleX(-1) !important;
+    }
     <?php endif; ?>
     @keyframes pwaSlideDown {
         from { transform: translateY(-100%); }
