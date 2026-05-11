@@ -624,7 +624,8 @@ if (is_logged_in()) {
             position: relative;
         }
 
-        .header-content .logo {
+        /* RTL Specific behavior for logo centering */
+        [dir="rtl"] .header-content .logo {
             position: absolute !important;
             left: 50% !important;
             transform: translateX(-50%) !important;
@@ -684,45 +685,45 @@ if (is_logged_in()) {
     .text-start {
         text-align: left !important;
     }
-    /* Fix for some theme specific classes that might be hardcoded to RTL */
-    .tmp-header-area-start .header-content .header-right-group {
-        margin-right: 0 !important;
-        margin-left: auto !important;
-    }
-    .header-right-group {
-        flex-direction: row !important;
-    }
-    .mobile-hamburger-wrap {
-        margin-right: 20px !important;
-        margin-left: 0 !important;
-    }
-    /* Ensure flex containers don't stay reversed */
-    .d-flex {
-        flex-direction: row;
-    }
-    [dir="rtl"] .d-flex {
-        /* Keep RTL behavior for RTL dir */
-    }
     
     /* Header components order fix */
     .header-content {
         display: flex !important;
         justify-content: space-between !important;
         flex-direction: row !important;
+        position: relative !important;
     }
     .header-content .logo {
         order: 1 !important;
+        position: static !important;
+        transform: none !important;
+        margin: 0 !important;
     }
     .header-content .tmp-mainmenu-nav {
         order: 2 !important;
     }
     .header-content .header-right-group {
         order: 3 !important;
+        display: flex !important;
         margin-left: auto !important;
         margin-right: 0 !important;
+        gap: 15px !important;
     }
     .header-content .mobile-hamburger-wrap {
         order: 4 !important;
+        margin-left: 15px !important;
+        margin-right: 0 !important;
+    }
+    
+    /* Ensure flex containers don't stay reversed */
+    .d-flex {
+        flex-direction: row !important;
+    }
+    
+    /* Fix for some theme specific classes that might be hardcoded to RTL */
+    .tmp-header-area-start .header-content .header-right-group {
+        margin-right: 0 !important;
+        margin-left: auto !important;
     }
     
     /* Navigation fix */
@@ -731,6 +732,7 @@ if (is_logged_in()) {
     }
     .tmp-mainmenu-nav .mainmenu {
         justify-content: flex-start !important;
+        flex-direction: row !important;
     }
     
     /* Footer fix */
