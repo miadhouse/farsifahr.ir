@@ -836,6 +836,11 @@ if (is_logged_in()) {
     .logo-under-img img {
         transform: scaleX(-1) !important;
     }
+    .banner-two-main-wrapper .banner-right-content .main-img .banner-big-text-1,
+    .banner-two-main-wrapper .banner-right-content .main-img .banner-big-text-2 {
+        white-space: nowrap !important;
+        width: max-content !important;
+    }
     <?php endif; ?>
     @keyframes pwaSlideDown {
         from { transform: translateY(-100%); }
