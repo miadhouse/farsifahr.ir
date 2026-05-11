@@ -673,8 +673,76 @@ if (is_logged_in()) {
         align-items: center;
         font-size: 14px;
         animation: pwaSlideDown 0.5s ease;
-        direction: rtl;
+        direction: <?= get_lang_dir() ?>;
     }
+
+    /* LTR Special Styles */
+    <?php if (get_lang_dir() === 'ltr'): ?>
+    body {
+        text-align: left !important;
+        direction: ltr !important;
+    }
+    .text-end {
+        text-align: right !important;
+    }
+    .text-start {
+        text-align: left !important;
+    }
+    /* Fix for some theme specific classes that might be hardcoded to RTL */
+    .tmp-header-area-start .header-content .header-right-group {
+        margin-right: 0 !important;
+        margin-left: auto !important;
+    }
+    .header-right-group {
+        flex-direction: row !important;
+    }
+    .mobile-hamburger-wrap {
+        margin-right: 20px !important;
+        margin-left: 0 !important;
+    }
+    /* Ensure flex containers don't stay reversed */
+    .d-flex {
+        flex-direction: row;
+    }
+    [dir="rtl"] .d-flex {
+        /* Keep RTL behavior for RTL dir */
+    }
+    
+    /* Header components order fix */
+    .header-content {
+        display: flex !important;
+        justify-content: space-between !important;
+        flex-direction: row !important;
+    }
+    
+    /* Navigation fix */
+    .tmp-mainmenu-nav {
+        direction: ltr !important;
+    }
+    .tmp-mainmenu-nav .mainmenu {
+        justify-content: flex-start !important;
+    }
+    
+    /* Footer fix */
+    .footer-widget {
+        text-align: left !important;
+    }
+    .footer-widget .ft-title::after {
+        left: 0 !important;
+        right: auto !important;
+    }
+    
+    /* Buttons and Icons */
+    .btn i, .btn span {
+        margin-right: 8px !important;
+        margin-left: 0 !important;
+    }
+    
+    /* Hero section fix */
+    .banner-content-two {
+        text-align: left !important;
+    }
+    <?php endif; ?>
     @keyframes pwaSlideDown {
         from { transform: translateY(-100%); }
         to { transform: translateY(0); }
@@ -832,10 +900,10 @@ if (is_logged_in()) {
     <div id="pwa-install-banner">
         <div class="banner-content">
             <i class="fas fa-mobile-alt"></i>
-            <span>نصب اپلیکیشن فارسی‌فهر برای دسترسی سریع‌تر</span>
+            <span><?= __('pwa_install_text', 'نصب اپلیکیشن فارسی‌فهر برای دسترسی سریع‌تر') ?></span>
         </div>
         <div class="banner-actions">
-            <button class="btn-install" id="btn-pwa-install">نصب</button>
+            <button class="btn-install" id="btn-pwa-install"><?= __('install', 'نصب') ?></button>
             <button class="btn-close-banner" id="btn-pwa-close">&times;</button>
         </div>
     </div>
@@ -2187,19 +2255,19 @@ if (is_logged_in()) {
                     });
                 } else if (platform === 'ios') {
                     Swal.fire({
-                        title: 'نصب در آیفون',
+                        title: '<?= __('install_on_ios', 'نصب در آیفون') ?>',
                         html: `
-                            <div class="text-end" style="direction: rtl;">
-                                <p>برای نصب اپلیکیشن در آیفون، مراحل زیر را دنبال کنید:</p>
-                                <ol class="pr-3">
-                                    <li>در نوار پایین مرورگر دکمه <b>Share</b> <i class="fas fa-share-square"></i> را بزنید.</li>
-                                    <li>در منوی باز شده، گزینه <b>Add to Home Screen</b> را انتخاب کنید.</li>
-                                    <li>در بالا سمت راست، دکمه <b>Add</b> را بزنید.</li>
+                            <div class="text-<?= get_lang_dir() === 'rtl' ? 'end' : 'start' ?>" style="direction: <?= get_lang_dir() ?>;">
+                                <p><?= __('ios_install_instruction', 'برای نصب اپلیکیشن در آیفون، مراحل زیر را دنبال کنید:') ?></p>
+                                <ol class="ps-3">
+                                    <li><?= __('ios_step_1', 'در نوار پایین مرورگر دکمه <b>Share</b> <i class="fas fa-share-square"></i> را بزنید.') ?></li>
+                                    <li><?= __('ios_step_2', 'در منوی باز شده، گزینه <b>Add to Home Screen</b> را انتخاب کنید.') ?></li>
+                                    <li><?= __('ios_step_3', 'در بالا سمت راست، دکمه <b>Add</b> را بزنید.') ?></li>
                                 </ol>
                             </div>
                         `,
                         icon: 'info',
-                        confirmButtonText: 'متوجه شدم',
+                        confirmButtonText: '<?= __('got_it', 'متوجه شدم') ?>',
                         customClass: {
                             confirmButton: 'btn btn-primary'
                         },
