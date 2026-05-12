@@ -57,19 +57,37 @@ $user_id = 0; // Anonymous
     window.fetch = function(url, options) {
         if (typeof url === 'string') {
             try {
-                // If it's a relative URL, construct a valid URL object relative to current origin
-                const urlObj = new URL(url, window.location.origin + window.location.pathname);
-                const path = urlObj.pathname;
+                // Determine the absolute path for comparison
+                let absolutePath = '';
+                if (url.startsWith('http')) {
+                    absolutePath = new URL(url).pathname;
+                } else {
+                    // Handle relative paths
+                    const base = window.location.origin + window.location.pathname;
+                    absolutePath = new URL(url, base).pathname;
+                }
                 
                 const allowedEndpoints = [
                     'get_preview_question.php'
                 ];
                 
-                const isMutation = path.includes('/incloud/') && !allowedEndpoints.some(allowed => path.endsWith(allowed));
+                const isIncloud = absolutePath.includes('/incloud/');
+                const isAllowed = allowedEndpoints.some(allowed => absolutePath.endsWith(allowed));
                 
-                if (isMutation) {
-                    console.log('Intercepted mutation fetch in preview mode:', url);
-                    return Promise.resolve(new Response(JSON.stringify({success: true, message: 'در نسخه پیش‌نمایش این قابلیت غیرفعال است.'}), {
+                if (isIncloud && !isAllowed) {
+                    console.log('Intercepted mutation/private fetch in preview mode:', url);
+                    
+                    let mockResponse = {success: true, message: 'در نسخه پیش‌نمایش این قابلیت غیرفعال است.'};
+                    
+                    // Specific mock for question statuses to prevent JS errors
+                    if (absolutePath.endsWith('get_question_statuses.php')) {
+                        mockResponse = {
+                            success: true,
+                            data: {} // Empty object to satisfy loadQuestionStatuses
+                        };
+                    }
+                    
+                    return Promise.resolve(new Response(JSON.stringify(mockResponse), {
                         status: 200,
                         headers: { 'Content-Type': 'application/json' }
                     }));
@@ -924,8 +942,7 @@ $user_id = 0; // Anonymous
             </div>
         </div>
         <div class="fixed-bottom container-fluid p-0">
-            <div class="d-flex justify-content-between align-items-center p-2 px-md-4 px-2"
-                style="background: var(--bs-success);">
+            <div class="d-flex justify-content-between align-items-center p-2 px-md-4 px-2 bg-success">
                 <div class="d-flex gap-1">
                     <button class="btn btn-light text-success btn-sm px-2" onclick="goToFirstQuestion()" title="سوال اول">
                         <i class="fas fa-fast-backward"></i>
@@ -3010,8 +3027,10 @@ function answerBuilder(answers = null) {
             container.innerHTML = '';
 
             function getQuestionsPerPage() {
-                if (window.innerWidth < 768) {
-                    return 3;
+                if (window.innerWidth < 450) {
+                    return 5;
+                } else if (window.innerWidth < 768) {
+                    return 8;
                 } else if (window.innerWidth < 992) {
                     return 10;
                 } else {
