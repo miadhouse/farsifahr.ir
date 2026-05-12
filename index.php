@@ -1217,20 +1217,20 @@ if (is_logged_in()) {
                                         <li>
                                             <a class="dropdown-item bg-black text-light" href="admin">
                                                 <i class="fa-regular fa-speedometer me-2"></i>
-                                                داشبورد
+                                                <?= __('dashboard', 'داشبورد') ?>
                                             </a>
                                         </li>
                                         <li>
                                             <a class="dropdown-item bg-black text-light" href="admin/subscription.php">
                                                 <i class="fa-regular fa-crown me-2"></i>
-                                                اشتراک
+                                                <?= __('subscription', 'اشتراک') ?>
                                             </a>
                                         </li>
                                         <li><hr class="dropdown-divider"></li>
                                         <li>
                                             <a class="dropdown-item bg-black text-danger" href="logout.php">
                                                 <i class="fa-regular fa-arrow-right-from-bracket me-2"></i>
-                                                خروج
+                                                <?= __('logout', 'خروج') ?>
                                             </a>
                                         </li>
                                     </ul>
@@ -1861,12 +1861,11 @@ if (is_logged_in()) {
             <div class="section-head mb--50">
                 <div
                     class="section-sub-title center-title tmp-scroll-trigger tmp-fade-in animation-order-1 tmp-scroll-trigger--offscreen">
-                    <span class="subtitle">آخرین وبلاگ</span>
+                    <span class="subtitle"><?= __('last_blog', 'آخرین وبلاگ') ?></span>
                 </div>
                 <h2
                     class="title split-collab tmp-scroll-trigger tmp-fade-in animation-order-2 tmp-scroll-trigger--offscreen">
-                    اطلاعات اولیه و<br>
-                    آموزش های رایگان
+                    <?= __('free_training_info', 'اطلاعات اولیه و آموزش های رایگان') ?>
                 </h2>
             </div>
             <div class="row">
@@ -1877,21 +1876,21 @@ if (is_logged_in()) {
                             <div class="img-box"><a href="blog-details.html"> <img alt="Blog Thumbnail" class="w-100"
                                         src="assets/images/blog/blog-img-1.jpg">
                                 </a></div>
-                            <span>12 دی</span>
+                            <span><?= __('blog_date_12_dey', '12 دی') ?></span>
                         </div>
                         <div class="blog-content-wrap">
                             <div class="blog-tags">
                                 <ul>
-                                    <li><a href="#"><i class="fa-regular fa-user"></i>مسبز</a></li>
-                                    <li><a href="#"><i class="fa-regular fa-comments"></i>نظرات (05)</a></li>
+                                    <li><a href="#"><i class="fa-regular fa-user"></i><?= __('author_name', 'مسبز') ?></a></li>
+                                    <li><a href="#"><i class="fa-regular fa-comments"></i><?= __('comments_count', 'نظرات (05)') ?></a></li>
                                 </ul>
                             </div>
-                            <h3 class="blog-title"><a href="blog-details.html">از کجا شروع کنم برای اخذ گواهینامه؟</a>
+                            <h3 class="blog-title"><a href="blog-details.html"><?= __('from_where_to_start', 'از کجا شروع کنم برای اخذ گواهینامه؟') ?></a>
                             </h3>
                             <div class="read-more-btn"><a
                                     class="tmp-btn hover-icon-reverse radius-round btn-border btn-md"
                                     href="blog-details.html"> <span class="icon-reverse-wrapper"> <span
-                                            class="btn-text">بیشتر بخوانید</span> <span class="btn-icon"><i
+                                            class="btn-text"><?= __('read_more', 'بیشتر بخوانید') ?></span> <span class="btn-icon"><i
                                                 class="fa-sharp fa-regular fa-arrow-left"></i></span> <span
                                             class="btn-icon"><i class="fa-sharp fa-regular fa-arrow-left"></i></span>
                                     </span> </a>
@@ -1906,21 +1905,21 @@ if (is_logged_in()) {
                             <div class="img-box"><a href="blog-details.html"> <img alt="Blog Thumbnail" class="w-100"
                                         src="assets/images/blog/blog-img-2.jpg">
                                 </a></div>
-                            <span>12 دی</span>
+                            <span><?= __('blog_date_12_dey', '12 دی') ?></span>
                         </div>
                         <div class="blog-content-wrap">
                             <div class="blog-tags">
                                 <ul>
-                                    <li><a href="#"><i class="fa-regular fa-user"></i>مسبز</a></li>
-                                    <li><a href="#"><i class="fa-regular fa-comments"></i>نظرات (05)</a></li>
+                                    <li><a href="#"><i class="fa-regular fa-user"></i><?= __('author_name', 'مسبز') ?></a></li>
+                                    <li><a href="#"><i class="fa-regular fa-comments"></i><?= __('comments_count', 'نظرات (05)') ?></a></li>
                                 </ul>
                             </div>
-                            <h3 class="blog-title"><a href="blog-details.html">مراحل و قوانین ترجمه گواهینامه ایران</a>
+                            <h3 class="blog-title"><a href="blog-details.html"><?= __('translation_rules_iran', 'مراحل و قوانین ترجمه گواهینامه ایران') ?></a>
                             </h3>
                             <div class="read-more-btn"><a
                                     class="tmp-btn hover-icon-reverse radius-round btn-border btn-md"
                                     href="blog-details.html"> <span class="icon-reverse-wrapper"> <span
-                                            class="btn-text">بیشتر بخوانید</span> <span class="btn-icon"><i
+                                            class="btn-text"><?= __('read_more', 'بیشتر بخوانید') ?></span> <span class="btn-icon"><i
                                                 class="fa-sharp fa-regular fa-arrow-left"></i></span> <span
                                             class="btn-icon"><i class="fa-sharp fa-regular fa-arrow-left"></i></span>
                                     </span> </a>
@@ -1935,21 +1934,21 @@ if (is_logged_in()) {
                             <div class="img-box"><a href="blog-details.html"> <img alt="Blog Thumbnail" class="w-100"
                                         src="assets/images/blog/blog-img-3.jpg">
                                 </a></div>
-                            <span>12 دی</span>
+                            <span><?= __('blog_date_12_dey', '12 دی') ?></span>
                         </div>
                         <div class="blog-content-wrap">
                             <div class="blog-tags">
                                 <ul>
-                                    <li><a href="#"><i class="fa-regular fa-user"></i>مسبز</a></li>
-                                    <li><a href="#"><i class="fa-regular fa-comments"></i>نظرات (05)</a></li>
+                                    <li><a href="#"><i class="fa-regular fa-user"></i><?= __('author_name', 'مسبز') ?></a></li>
+                                    <li><a href="#"><i class="fa-regular fa-comments"></i><?= __('comments_count', 'نظرات (05)') ?></a></li>
                                 </ul>
                             </div>
-                            <h3 class="blog-title"><a href="blog-details.html">راهکارهایی برای کاهش استرس در امتحان</a>
+                            <h3 class="blog-title"><a href="blog-details.html"><?= __('reduce_stress_exam', 'راهکارهایی برای کاهش استرس در امتحان') ?></a>
                             </h3>
                             <div class="read-more-btn"><a
                                     class="tmp-btn hover-icon-reverse radius-round btn-border btn-md"
                                     href="blog-details.html"> <span class="icon-reverse-wrapper"> <span
-                                            class="btn-text">بیشتر بخوانید</span> <span class="btn-icon"><i
+                                            class="btn-text"><?= __('read_more', 'بیشتر بخوانید') ?></span> <span class="btn-icon"><i
                                                 class="fa-sharp fa-regular fa-arrow-left"></i></span> <span
                                             class="btn-icon"><i class="fa-sharp fa-regular fa-arrow-left"></i></span>
                                     </span> </a>
@@ -1969,7 +1968,7 @@ if (is_logged_in()) {
                         <div class="single-footer-wrapper border-right mr--20">
                             <div class="logo"><a href="<?= SITE_URL ?>"> <img alt="Farsi - Fahr"
                                         src="assets/images/logo/logoAsset%201.svg"> </a></div>
-                            <p class="description"><?= FOOTER_DESCRIPTION ?></p>
+                            <p class="description"><?= __('footer_description', FOOTER_DESCRIPTION) ?></p>
                             <div class="social-link footer"><a target="_blank" href="<?= INSTAGRAM_URL ?>"><i class="fa-brands fa-instagram"></i></a> <a target="_blank" href="<?= TELEGRAM_CHANNEL_URL ?>"><i class="fa-brands fa-telegram"></i></a></div>
                         </div>
                     </div>
@@ -2019,7 +2018,7 @@ if (is_logged_in()) {
             <div class="row">
                 <div class="col-lg-12">
                     <div class="main-wrapper tmp-scroll-trigger animation-order-1 tmp-scroll-trigger--offscreen">
-                        <p class="copy-right-para"><?= COPYRIGHT_TEXT ?>
+                        <p class="copy-right-para"><?= __('copyright_text', COPYRIGHT_TEXT) ?>
                         </p>
                     </div>
                 </div>
@@ -2083,7 +2082,7 @@ if (is_logged_in()) {
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">ورود به حساب کاربری</h5>
+                    <h5 class="modal-title"><?= __('login_title', 'ورود به حساب کاربری') ?></h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
@@ -2092,12 +2091,12 @@ if (is_logged_in()) {
                         <input type="hidden" name="action" value="login">
 
                         <div class="mb-3">
-                            <label class="form-label">ایمیل</label>
+                            <label class="form-label"><?= __('email_label', 'ایمیل') ?></label>
                             <input type="email" class="form-control" name="email" required>
                         </div>
 
                         <div class="mb-3">
-                            <label class="form-label">رمز عبور</label>
+                            <label class="form-label"><?= __('password_label', 'رمز عبور') ?></label>
                             <input type="password" class="form-control" name="password" required>
                         </div>
 
@@ -2107,22 +2106,22 @@ if (is_logged_in()) {
 
                         <div class="mb-3 form-check">
                             <input type="checkbox" class="form-check-input" name="remember" id="remember">
-                            <label class="form-check-label" for="remember">مرا به خاطر بسپار</label>
+                            <label class="form-check-label" for="remember"><?= __('remember_me', 'مرا به خاطر بسپار') ?></label>
                         </div>
 
                         <div class="d-grid gap-2">
                             <button type="submit" class="btn btn-primary">
-                                <i class="bi bi-box-arrow-in-left"></i> ورود
+                                <i class="bi bi-box-arrow-in-left"></i> <?= __('login_button', 'ورود') ?>
                             </button>
-                            <div class="text-center text-muted small mt-2">ورود سریع با گوگل یا ثبت نام سریع با گوگل</div>
+                            <div class="text-center text-muted small mt-2"><?= __('quick_google_auth', 'ورود سریع با گوگل یا ثبت نام سریع با گوگل') ?></div>
                             <button type="button" class="btn btn-outline-danger d-flex align-items-center justify-content-center gap-2" onclick="googleLogin()" style="border: 2px solid #f56565; color: #fff; background: rgba(245, 101, 101, 0.1);">
                                 <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20">
-                                ورود سریع با گوگل
+                                <?= __('google_login_button', 'ورود سریع با گوگل') ?>
                             </button>
                         </div>
 
                         <div class="text-center mt-3">
-                            <a href="#" onclick="showResetModal()">رمز عبور خود را فراموش کرده‌اید؟</a>
+                            <a href="#" onclick="showResetModal()"><?= __('forgot_password', 'رمز عبور خود را فراموش کرده‌اید؟') ?></a>
                         </div>
                     </form>
                 </div>
@@ -2135,7 +2134,7 @@ if (is_logged_in()) {
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">ثبت نام</h5>
+                    <h5 class="modal-title"><?= __('register_title', 'ثبت نام') ?></h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
@@ -2144,23 +2143,23 @@ if (is_logged_in()) {
                         <input type="hidden" name="action" value="register">
 
                         <div class="mb-3">
-                            <label class="form-label">نام و نام خانوادگی</label>
+                            <label class="form-label"><?= __('full_name_label', 'نام و نام خانوادگی') ?></label>
                             <input type="text" class="form-control" name="name" required>
                         </div>
 
                         <div class="mb-3">
-                            <label class="form-label">ایمیل</label>
+                            <label class="form-label"><?= __('email_label', 'ایمیل') ?></label>
                             <input type="email" class="form-control" name="email" required>
                         </div>
 
                         <div class="mb-3">
-                            <label class="form-label">رمز عبور</label>
+                            <label class="form-label"><?= __('password_label', 'رمز عبور') ?></label>
                             <input type="password" class="form-control" name="password" id="password" required>
-                            <small class="text-muted">حداقل 8 کاراکتر، شامل حروف بزرگ، کوچک و عدد</small>
+                            <small class="text-muted"><?= __('password_hint', 'حداقل 8 کاراکتر، شامل حروف بزرگ، کوچک و عدد') ?></small>
                         </div>
 
                         <div class="mb-3">
-                            <label class="form-label">تکرار رمز عبور</label>
+                            <label class="form-label"><?= __('confirm_password_label', 'تکرار رمز عبور') ?></label>
                             <input type="password" class="form-control" name="password_confirm" required>
                         </div>
 
@@ -2170,13 +2169,13 @@ if (is_logged_in()) {
 
                         <div class="d-grid gap-2">
                             <button type="submit" class="btn btn-success">
-                                <i class="bi bi-person-plus"></i> ثبت نام
+                                <i class="bi bi-person-plus"></i> <?= __('register_title', 'ثبت نام') ?>
                             </button>
 
-                            <div class="text-center text-muted small mt-2">ورود سریع با گوگل یا ثبت نام سریع با گوگل</div>
+                            <div class="text-center text-muted small mt-2"><?= __('quick_google_auth', 'ورود سریع با گوگل یا ثبت نام سریع با گوگل') ?></div>
                             <button type="button" class="btn btn-outline-danger d-flex align-items-center justify-content-center gap-2" onclick="googleLogin()" style="border: 2px solid #f56565; color: #fff; background: rgba(245, 101, 101, 0.1);">
                                 <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20">
-                                ثبت نام سریع با گوگل
+                                <?= __('google_register_button', 'ثبت نام سریع با گوگل') ?>
                             </button>
                         </div>
                     </form>
@@ -2190,7 +2189,7 @@ if (is_logged_in()) {
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">بازیابی رمز عبور</h5>
+                    <h5 class="modal-title"><?= __('reset_password_title', 'بازیابی رمز عبور') ?></h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
@@ -2199,14 +2198,14 @@ if (is_logged_in()) {
                         <input type="hidden" name="action" value="reset">
 
                         <div class="mb-3">
-                            <label class="form-label">ایمیل حساب کاربری</label>
+                            <label class="form-label"><?= __('account_email_label', 'ایمیل حساب کاربری') ?></label>
                             <input type="email" class="form-control" name="email" required>
-                            <small class="text-muted">لینک بازیابی رمز عبور به این ایمیل ارسال خواهد شد</small>
+                            <small class="text-muted"><?= __('reset_link_desc', 'لینک بازیابی رمز عبور به این ایمیل ارسال خواهد شد') ?></small>
                         </div>
 
                         <div class="d-grid">
                             <button type="submit" class="btn btn-warning">
-                                <i class="bi bi-envelope"></i> ارسال لینک بازیابی
+                                <i class="bi bi-envelope"></i> <?= __('send_reset_link', 'ارسال لینک بازیابی') ?>
                             </button>
                         </div>
                     </form>
@@ -2250,11 +2249,11 @@ if (is_logged_in()) {
             if (this.checked) {
                 monthlyPrices.forEach(el => el.classList.add('d-none'));
                 yearlyPrices.forEach(el => el.classList.remove('d-none'));
-                perMonthTexts.forEach(el => el.textContent = 'سالانه (با تخفیف)');
+                perMonthTexts.forEach(el => el.textContent = '<?= __("yearly_discounted", "سالانه (با تخفیف)") ?>');
             } else {
                 monthlyPrices.forEach(el => el.classList.remove('d-none'));
                 yearlyPrices.forEach(el => el.classList.add('d-none'));
-                perMonthTexts.forEach(el => el.textContent = 'ماهانه');
+                perMonthTexts.forEach(el => el.textContent = '<?= __("monthly", "ماهانه") ?>');
             }
         });
 </script>
@@ -2539,9 +2538,9 @@ if (is_logged_in()) {
         document.addEventListener('DOMContentLoaded', function() {
             Swal.fire({
                 icon: 'warning',
-                title: 'خروج از حساب',
-                text: 'شما در دستگاه یا مرورگر دیگری وارد حساب خود شدید. بنابراین از این نشست خارج شدید.',
-                confirmButtonText: 'متوجه شدم'
+                title: '<?= __("logout_alert_title", "خروج از حساب") ?>',
+                text: '<?= __("logout_alert_desc", "شما در دستگاه یا مرورگر دیگری وارد حساب خود شدید. بنابراین از این نشست خارج شدید.") ?>',
+                confirmButtonText: '<?= __("got_it", "متوجه شدم") ?>'
             });
             document.cookie = 'concurrent_login=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
         });
@@ -2709,7 +2708,7 @@ if (is_logged_in()) {
 </script>
     <?php if (is_admin()): ?>
     <!-- Admin Desktop Toggle -->
-    <button class="admin-desktop-toggle is-admin" onclick="toggleDesktopMode()" title="تغییر به حالت دسکتاپ/موبایل">
+    <button class="admin-desktop-toggle is-admin" onclick="toggleDesktopMode()" title="<?= __("toggle_desktop_title", "تغییر به حالت دسکتاپ/موبایل") ?>">
         <i class="fas fa-desktop"></i>
     </button>
     <script>
