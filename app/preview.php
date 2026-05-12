@@ -919,10 +919,6 @@ $user_id = 0; // Anonymous
                             onclick="toggleBookmark()" title="علامت گذاری سوال">
                             <i id="bookmark-icon" class="far fa-star text-warning"></i>
                         </button>
-                        <button id="report-btn" class="btn btn-danger mx-1 btn-sm p-1"
-                            onclick="openReportModal()" title="گزارش مشکل در سوال">
-                            <i class="fas fa-exclamation-circle"></i>
-                        </button>
                     </div>
                 </div>
             </div>
@@ -3534,14 +3530,6 @@ function answerBuilder(answers = null) {
                     popover: { 
                         title: 'حل پاسخ', 
                         description: 'اگر پاسخ سوالی را نمی‌دانید، این دکمه پاسخ صحیح را به شما نشان می‌دهد.',
-                        side: "left", align: 'start' 
-                    } 
-                },
-                { 
-                    element: '#report-btn', 
-                    popover: { 
-                        title: 'گزارش سوال', 
-                        description: 'در صورت مشاهده هرگونه اشتباه در سوال یا ترجمه، از اینجا گزارش دهید. در صورت تایید، اشتراک VIP هدیه می‌گیرید!',
                         side: "left", align: 'start' 
                     } 
                 },
