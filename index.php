@@ -1726,10 +1726,10 @@ if (is_logged_in()) {
               <div class="col-lg-6 col-12 mb-4">
                 <div class="card <?= $card_class ?> h-100 shadow-sm" style="border-radius: 15px; border: 1px solid #36445d; background-color: #283144; box-shadow: 0 4px 24px 0 rgba(0, 0, 0, 0.2);">
                   <div class="card-header bg-label-primary py-3" style="background-color: rgba(90, 141, 238, 0.1); border-radius: 15px 15px 0 0; padding: 1.5rem;">
-                    <h4 class="<?= $plan_class ?> mb-0 fw-bold" style="color: #5a8dee !important; margin: 0; text-align: center; font-size: 1.8rem;"><?= htmlspecialchars($plan['name']) ?></h4>
+                    <h4 class="<?= $plan_class ?> mb-0 fw-bold" style="color: #5a8dee !important; margin: 0; text-align: center; font-size: 1.8rem;"><?= __("plan_" . $plan['slug'] . "_name", htmlspecialchars($plan['name'])) ?></h4>
                   </div>
                   <div class="card-body pt-4" style="padding: 2rem;">
-                    <p class="mb-4 text-center" style="font-size: 1.2rem; color: #a1b0cb;"><?= htmlspecialchars($plan['description']) ?></p>
+                    <p class="mb-4 text-center" style="font-size: 1.2rem; color: #a1b0cb;"><?= __("plan_" . $plan['slug'] . "_desc", htmlspecialchars($plan['description'])) ?></p>
                     
                     <ul class="list-unstyled mb-4" style="line-height: 2.2; margin-bottom: 2rem; padding-right: 0; font-size: 1.15rem; color: #d8deea;">
                       <?php 
@@ -1739,7 +1739,7 @@ if (is_logged_in()) {
                           // Note: We'll keep the check icon for all unless it's a known negative feature, 
                           // but the database features are usually positive.
                       ?>
-                              <li class="mb-2"><i class="fa fa-check-circle text-success me-2 fs-4" style="color: #71dd37;"></i> <?= htmlspecialchars($feature) ?></li>
+                              <li class="mb-2"><i class="fa fa-check-circle text-success me-2 fs-4" style="color: #71dd37;"></i> <?= __(htmlspecialchars($feature)) ?></li>
                       <?php 
                       endforeach;
                       ?>
@@ -1747,27 +1747,27 @@ if (is_logged_in()) {
 
                     <?php if ($plan['slug'] == 'free'): ?>
                       <div class="text-center py-4 rounded" style="background-color: #1c222f; padding: 2rem; border-radius: 10px; border: 1px solid #36445d;">
-                        <h2 class="fw-bold mb-1" style="font-size: 2.5rem; color: #d8deea;">رایگان</h2>
-                        <p class="small mb-4" style="color: #8295ba; font-size: 1.1rem;">مناسب برای آشنایی اولیه</p>
+                        <h2 class="fw-bold mb-1" style="font-size: 2.5rem; color: #d8deea;"><?= __('free_plan_title', 'رایگان') ?></h2>
+                        <p class="small mb-4" style="color: #8295ba; font-size: 1.1rem;"><?= __('free_plan_subtitle', 'مناسب برای آشنایی اولیه') ?></p>
                         <?php if ($is_user_logged_in): ?>
                             <?php if ($user_plan_status === 'active'): ?>
-                                <button class="btn w-100 fs-5" style="background-color: #36445d; color: #8295ba; padding: 12px; border-radius: 8px; font-weight: bold; border: none;" disabled>غیرقابل استفاده</button>
+                                <button class="btn w-100 fs-5" style="background-color: #36445d; color: #8295ba; padding: 12px; border-radius: 8px; font-weight: bold; border: none;" disabled><?= __('unavailable', 'غیرقابل استفاده') ?></button>
                             <?php else: ?>
-                                <a href="admin/subscription.php" class="btn w-100 fs-5" style="background-color: #8592a3; color: white; padding: 12px; border-radius: 8px; font-weight: bold; text-decoration: none; display: block;">پلن فعلی شما</a>
+                                <a href="admin/subscription.php" class="btn w-100 fs-5" style="background-color: #8592a3; color: white; padding: 12px; border-radius: 8px; font-weight: bold; text-decoration: none; display: block;"><?= __('your_current_plan', 'پلن فعلی شما') ?></a>
                             <?php endif; ?>
                         <?php else: ?>
-                            <button class="btn w-100 fs-5" data-bs-toggle="modal" data-bs-target="#loginModal" style="background-color: #5a8dee; color: white; padding: 12px; border-radius: 8px; font-weight: bold; border: none; cursor: pointer;">شروع رایگان</button>
+                            <button class="btn w-100 fs-5" data-bs-toggle="modal" data-bs-target="#loginModal" style="background-color: #5a8dee; color: white; padding: 12px; border-radius: 8px; font-weight: bold; border: none; cursor: pointer;"><?= __('start_free', 'شروع رایگان') ?></button>
                         <?php endif; ?>
                       </div>
                     <?php else: ?>
                       <div class="vip-durations">
                         <?php 
                         $durations = [
-                          ['key' => 'price_2_weeks', 'label' => '۲ هفته (۱۴ روز)', 'duration' => '2_weeks', 'color' => 'primary'],
-                          ['key' => 'price_1_month', 'label' => '۱ ماه (۳۰ روز)', 'duration' => '1_month', 'color' => 'primary'],
-                          ['key' => 'price_3_months', 'label' => '۳ ماه (۹۰ روز)', 'duration' => '3_months', 'color' => 'success', 'special' => true],
-                          ['key' => 'price_6_months', 'label' => '۶ ماه (۱۸۰ روز)', 'duration' => '6_months', 'color' => 'info'],
-                          ['key' => 'price_1_year', 'label' => '۱ سال (۳۶۵ روز)', 'duration' => '1_year', 'color' => 'warning', 'star' => true]
+                          ['key' => 'price_2_weeks', 'label' => __('duration_2_weeks', '۲ هفته (۱۴ روز)'), 'duration' => '2_weeks', 'color' => 'primary'],
+                          ['key' => 'price_1_month', 'label' => __('duration_1_month', '۱ ماه (۳۰ روز)'), 'duration' => '1_month', 'color' => 'primary'],
+                          ['key' => 'price_3_months', 'label' => __('duration_3_months', '۳ ماه (۹۰ روز)'), 'duration' => '3_months', 'color' => 'success', 'special' => true],
+                          ['key' => 'price_6_months', 'label' => __('duration_6_months', '۶ ماه (۱۸۰ روز)'), 'duration' => '6_months', 'color' => 'info'],
+                          ['key' => 'price_1_year', 'label' => __('duration_1_year', '۱ سال (۳۶۵ روز)'), 'duration' => '1_year', 'color' => 'warning', 'star' => true]
                         ];
 
                         foreach ($durations as $dur):
@@ -1804,39 +1804,39 @@ if (is_logged_in()) {
                             <div class="flex-grow-1" style="flex: 1; min-width: 150px;">
                               <h6 class="mb-1 fw-bold fs-5" style="color: #d8deea; display: inline-block; margin: 0;"><?= $dur['label'] ?></h6>
                               <?php if ($discount > 0): ?>
-                                <span class="badge" style="<?= $badge_style ?>"><?= $discount ?>% تخفیف</span>
+                                <span class="badge" style="<?= $badge_style ?>"><?= $discount ?>% <?= __('discount', 'تخفیف') ?></span>
                               <?php endif; ?>
                             </div>
                             <div class="text-end me-3" style="margin-right: 15px;">
-                              <div class="fw-bold text-primary fs-4" style="color: #5a8dee !important; line-height: 1;"><?= number_format($plan[$dur['key']]) ?> <small style="font-size: 0.7em; color: #8295ba;">یورو</small></div>
+                              <div class="fw-bold text-primary fs-4" style="color: #5a8dee !important; line-height: 1;"><?= number_format($plan[$dur['key']]) ?> <small style="font-size: 0.7em; color: #8295ba;"><?= __('euro', 'یورو') ?></small></div>
                               <?php 
                               $euro_rate = defined('EURO_TO_TOMAN_RATE') ? EURO_TO_TOMAN_RATE : 75000;
                               $toman_price = $plan[$dur['key']] * $euro_rate;
                               ?>
-                              <div style="font-size: 0.85rem; color: #8295ba; margin-top: 4px;">معادل <?= number_format($toman_price) ?> <small>تومان</small></div>
+                              <div style="font-size: 0.85rem; color: #8295ba; margin-top: 4px;"><?= __('equivalent', 'معادل') ?> <?= number_format($toman_price) ?> <small><?= __('toman', 'تومان') ?></small></div>
                             </div>
                             
                             <div style="margin-top: 10px; text-align: left; min-width: 100px;">
                               <?php if ($is_active_dur): ?>
                                 <button type="button" class="btn fs-5 py-2 px-4" style="background-color: #71dd37; color: white; border: none; border-radius: 5px; font-weight: bold;" disabled>
-                                   فعال است
+                                   <?= __('active_status', 'فعال است') ?>
                                 </button>
                               <?php elseif ($is_pending_dur): ?>
                                 <button type="button" class="btn fs-5 py-2 px-4" style="background-color: #ffab00; color: white; border: none; border-radius: 5px; font-weight: bold;" disabled>
-                                   در حال بررسی
+                                   <?= __('pending_status', 'در حال بررسی') ?>
                                 </button>
                               <?php elseif ($is_user_logged_in && $user_plan_status === 'active'): ?>
-                                <button type="button" class="btn fs-5 py-2 px-4" style="background-color: #8592a3; color: white; border: none; border-radius: 5px; font-weight: bold;" disabled title="شما یک اشتراک فعال دارید">
-                                   خرید
+                                <button type="button" class="btn fs-5 py-2 px-4" style="background-color: #8592a3; color: white; border: none; border-radius: 5px; font-weight: bold;" disabled title="<?= __('you_have_active_subscription', 'شما یک اشتراک فعال دارید') ?>">
+                                   <?= __('purchase', 'خرید') ?>
                                 </button>
                               <?php else: ?>
                                 <?php if ($is_user_logged_in): ?>
                                   <a href="admin/subscription.php" class="btn fs-5 py-2 px-5" style="background-color: #5a8dee; color: white; border: none; border-radius: 5px; font-weight: bold; text-decoration: none;">
-                                     خرید
+                                     <?= __('purchase', 'خرید') ?>
                                   </a>
                                 <?php else: ?>
                                   <button type="button" data-bs-toggle="modal" data-bs-target="#loginModal" class="btn fs-5 py-2 px-5" style="background-color: #5a8dee; color: white; border: none; border-radius: 5px; font-weight: bold; cursor: pointer;">
-                                     خرید
+                                     <?= __('purchase', 'خرید') ?>
                                   </button>
                                 <?php endif; ?>
                               <?php endif; ?>
