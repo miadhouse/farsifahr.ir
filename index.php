@@ -1422,6 +1422,81 @@ if (is_logged_in()) {
         </div>
         <div class="banner-shape-two"><img alt="" src="assets/images/banner/banner-shape-two.png"></div>
     </div>
+
+    <!-- App Preview Section Start -->
+    <style>
+        .app-preview-section {
+            text-align: center;
+            padding-bottom: 50px;
+        }
+        .app-preview-title {
+            color: #fff;
+            margin-bottom: 40px;
+            font-size: 2rem;
+            font-weight: bold;
+        }
+        .mobile-mockup {
+            position: relative;
+            width: 340px;
+            height: 700px;
+            margin: 0 auto;
+            border: 14px solid #283144;
+            border-radius: 45px;
+            background-color: #1c222f;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        .mobile-notch {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 140px;
+            height: 25px;
+            background-color: #283144;
+            border-bottom-left-radius: 18px;
+            border-bottom-right-radius: 18px;
+            z-index: 10;
+        }
+        .mobile-content {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #8295ba;
+            font-size: 1.1rem;
+            padding: 20px;
+            text-align: center;
+        }
+        @media (max-width: 400px) {
+            .mobile-mockup {
+                width: 290px;
+                height: 600px;
+                border-width: 12px;
+                border-radius: 35px;
+            }
+            .mobile-notch {
+                width: 110px;
+                height: 20px;
+            }
+        }
+    </style>
+    <section class="app-preview-section tmp-section-gapTop" id="app-preview">
+        <div class="container">
+            <h2 class="app-preview-title tmp-scroll-trigger tmp-fade-in animation-order-1"><?= __('test_app_title', 'در اینجا میتونی قابلیت های farsifahr رو تست کنی') ?></h2>
+            <div class="mobile-mockup tmp-scroll-trigger tmp-fade-in animation-order-2">
+                <div class="mobile-notch"></div>
+                <div class="mobile-content">
+                    <!-- App content will be loaded here in the next tasks -->
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- App Preview Section End -->
+
     <div class="about-content-area">
         <div class="container tmp-section-gap">
             <div class="text-para-doc-wrap">
@@ -1508,80 +1583,6 @@ if (is_logged_in()) {
             </div>
         </div>
     </section>
-
-    <!-- App Preview Section Start -->
-    <style>
-        .app-preview-section {
-            text-align: center;
-            padding-bottom: 50px;
-        }
-        .app-preview-title {
-            color: #fff;
-            margin-bottom: 40px;
-            font-size: 2rem;
-            font-weight: bold;
-        }
-        .mobile-mockup {
-            position: relative;
-            width: 340px;
-            height: 700px;
-            margin: 0 auto;
-            border: 14px solid #283144;
-            border-radius: 45px;
-            background-color: #1c222f;
-            box-shadow: 0 25px 50px rgba(0,0,0,0.5);
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-        }
-        .mobile-notch {
-            position: absolute;
-            top: 0;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 140px;
-            height: 25px;
-            background-color: #283144;
-            border-bottom-left-radius: 18px;
-            border-bottom-right-radius: 18px;
-            z-index: 10;
-        }
-        .mobile-content {
-            width: 100%;
-            height: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #8295ba;
-            font-size: 1.1rem;
-            padding: 20px;
-            text-align: center;
-        }
-        @media (max-width: 400px) {
-            .mobile-mockup {
-                width: 290px;
-                height: 600px;
-                border-width: 12px;
-                border-radius: 35px;
-            }
-            .mobile-notch {
-                width: 110px;
-                height: 20px;
-            }
-        }
-    </style>
-    <section class="app-preview-section tmp-section-gapTop" id="app-preview">
-        <div class="container">
-            <h2 class="app-preview-title tmp-scroll-trigger tmp-fade-in animation-order-1"><?= __('test_app_title', 'در اینجا میتونی قابلیت های farsifahr رو تست کنی') ?></h2>
-            <div class="mobile-mockup tmp-scroll-trigger tmp-fade-in animation-order-2">
-                <div class="mobile-notch"></div>
-                <div class="mobile-content">
-                    <!-- App content will be loaded here in the next tasks -->
-                </div>
-            </div>
-        </div>
-    </section>
-    <!-- App Preview Section End -->
 
     <!-- Study Plan Section Start -->
     <section class="study-plan-area tmp-section-gapTop" id="study-plan">
