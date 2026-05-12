@@ -21,7 +21,7 @@ switch ($action) {
         handle_delete_plan($pdo);
         break;
     default:
-        echo json_encode(['success' => false, 'message' => 'عملیات نامعتبر']);
+        echo json_encode(['success' => false, 'message' => __('invalid_operation', 'عملیات نامعتبر')]);
 }
 
 function calculate_plan_logic($data) {
@@ -92,7 +92,7 @@ function handle_save_plan($pdo) {
         $password = $_POST['password'] ?? '';
         
         if (empty($email) || empty($password)) {
-            echo json_encode(['success' => false, 'message' => 'لطفا ایمیل و رمز عبور را وارد کنید']);
+            echo json_encode(['success' => false, 'message' => __('enter_email_password', 'لطفا ایمیل و رمز عبور را وارد کنید')]);
             return;
         }
 
@@ -100,7 +100,7 @@ function handle_save_plan($pdo) {
         $stmt = $pdo->prepare("SELECT id FROM users WHERE email = ?");
         $stmt->execute([$email]);
         if ($stmt->rowCount() > 0) {
-            echo json_encode(['success' => false, 'message' => 'این ایمیل قبلا ثبت شده است. لطفا لاگین کنید.']);
+            echo json_encode(['success' => false, 'message' => __('email_already_registered', 'این ایمیل قبلا ثبت شده است. لطفا لاگین کنید.')]);
             return;
         }
 
@@ -108,23 +108,24 @@ function handle_save_plan($pdo) {
         try {
             $hashed_password = hash_password($password);
             $stmt = $pdo->prepare("INSERT INTO users (name, email, password, role, email_verified) VALUES (?, ?, ?, 'user', 1)");
-            $stmt->execute([$name ?: 'کاربر جدید', $email, $hashed_password]);
+            $stmt->execute([$name ?: __('new_user', 'کاربر جدید'), $email, $hashed_password]);
             $user_id = $pdo->lastInsertId();
             
             // لاگین خودکار
             $_SESSION['user_id'] = $user_id;
             $_SESSION['email'] = $email;
-            $_SESSION['name'] = $name ?: 'کاربر جدید';
+            $_SESSION['name'] = $name ?: __('new_user', 'کاربر جدید');
             $_SESSION['role'] = 'user';
             $_SESSION['logged_in'] = true;
             save_session($user_id, $pdo);
 
             // اطلاع رسانی تلگرام ثبت نام
-            $telegram_message = "🆕 <b>ثبت نام جدید (از طریق فرم برنامه مطالعه)</b>\n\n👤 نام: {$name}\n📧 ایمیل: {$email}";
+            $telegram_title = __('new_user_study_plan', 'کاربر جدید (از طریق فرم برنامه مطالعه)');
+            $telegram_message = "🆕 <b>{$telegram_title}</b>\n\n👤 نام: {$name}\n📧 ایمیل: {$email}";
             send_telegram_admin_message($telegram_message);
 
         } catch (Exception $e) {
-            echo json_encode(['success' => false, 'message' => 'خطا در ثبت نام: ' . $e->getMessage()]);
+            echo json_encode(['success' => false, 'message' => __('registration_error', 'خطا در ثبت نام: ') . $e->getMessage()]);
             return;
         }
     }
@@ -154,18 +155,20 @@ function handle_save_plan($pdo) {
 
         // اطلاع رسانی تلگرام
         $user_email = $_SESSION['email'];
-        $telegram_message = "📅 <b>برنامه مطالعه جدید ثبت شد</b>\n\n👤 کاربر: {$user_email}\n🇩🇪 سطح آلمان: {$level}\n⏱ زمان روزانه: {$daily_hours} ساعت\n🗓 تخمین کل: {$calc['calendar_days']} روز";
+        $telegram_title = __('study_plan_registered_telegram', 'برنامه مطالعه جدید ثبت شد');
+        $telegram_message = "📅 <b>{$telegram_title}</b>\n\n👤 کاربر: {$user_email}\n🇩🇪 سطح آلمان: {$level}\n⏱ زمان روزانه: {$daily_hours} ساعت\n🗓 تخمین کل: {$calc['calendar_days']} روز";
         send_telegram_admin_message($telegram_message);
 
         // ارسال ایمیل
         require_once __DIR__ . '/mail-functions.php';
         
         $day_map = [
-            'Sat' => 'شنبه', 'Sun' => 'یکشنبه', 'Mon' => 'دوشنبه',
-            'Tue' => 'سه‌شنبه', 'Wed' => 'چهارشنبه', 'Thu' => 'پنجشنبه', 'Fri' => 'جمعه'
+            'Sat' => __('sat', 'شنبه'), 'Sun' => __('sun', 'یکشنبه'), 'Mon' => __('mon', 'دوشنبه'),
+            'Tue' => __('tue', 'سه‌شنبه'), 'Wed' => __('wed', 'چهارشنبه'), 'Thu' => __('thu', 'پنجشنبه'), 'Fri' => __('fri', 'جمعه')
         ];
         $persian_days = array_map(fn($d) => $day_map[trim($d)] ?? $d, explode(',', $study_days));
-        $persian_days_str = implode('، ', $persian_days);
+        $separator = get_current_lang() === 'fa' ? '، ' : ', ';
+        $persian_days_str = implode($separator, $persian_days);
 
         send_study_plan_email($user_email, $_SESSION['name'], [
             'calendar_days' => $calc['calendar_days'],
@@ -175,9 +178,9 @@ function handle_save_plan($pdo) {
             'weeks' => $calc['weeks']
         ]);
 
-        echo json_encode(['success' => true, 'message' => 'برنامه مطالعه شما با موفقیت ذخیره شد. یک نسخه نیز برای شما ایمیل شد.', 'redirect' => 'admin']);
+        echo json_encode(['success' => true, 'message' => __('study_plan_saved_successfully', 'برنامه مطالعه شما با موفقیت ذخیره شد. یک نسخه نیز برای شما ایمیل شد.'), 'redirect' => 'admin']);
     } catch (Exception $e) {
-        echo json_encode(['success' => false, 'message' => 'خطا در ذخیره برنامه: ' . $e->getMessage()]);
+        echo json_encode(['success' => false, 'message' => __('save_plan_error', 'خطا در ذخیره برنامه: ') . $e->getMessage()]);
     }
 }
 
@@ -198,14 +201,14 @@ function handle_get_user_plan($pdo) {
 
 function handle_delete_plan($pdo) {
     if (!is_logged_in()) {
-        echo json_encode(['success' => false, 'message' => 'لطفا ابتدا لاگین کنید']);
+        echo json_encode(['success' => false, 'message' => __('please_login_first', 'لطفا ابتدا لاگین کنید')]);
         return;
     }
     try {
         $stmt = $pdo->prepare("DELETE FROM study_plans WHERE user_id = ?");
         $stmt->execute([$_SESSION['user_id']]);
-        echo json_encode(['success' => true, 'message' => 'برنامه مطالعه شما با موفقیت حذف شد.']);
+        echo json_encode(['success' => true, 'message' => __('study_plan_deleted_successfully', 'برنامه مطالعه شما با موفقیت حذف شد.')]);
     } catch (Exception $e) {
-        echo json_encode(['success' => false, 'message' => 'خطا در حذف برنامه: ' . $e->getMessage()]);
+        echo json_encode(['success' => false, 'message' => __('delete_plan_error', 'خطا در حذف برنامه: ') . $e->getMessage()]);
     }
 }

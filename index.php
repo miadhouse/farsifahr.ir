@@ -1551,7 +1551,7 @@ if (is_logged_in()) {
                                 </div>
                             </div>
                             <div class="col-6 col-md-4 col-lg-2">
-                                <div class="level-select-item active" data-level="b1">
+                                <div class="level-select-item" data-level="b1">
                                     <div class="fs-2 mb-1">🇩🇪</div>
                                     <div>B1</div>
                                 </div>
@@ -1569,7 +1569,7 @@ if (is_logged_in()) {
                                 </div>
                             </div>
                         </div>
-                        <input type="hidden" name="german_level" id="input_level" value="b1">
+                        <input type="hidden" name="german_level" id="input_level" value="">
                     </div>
 
                     <!-- Step 2: Previous Study -->
@@ -2291,12 +2291,12 @@ if (is_logged_in()) {
         const sumDays = document.getElementById('sum_days');
 
         const dayMap = {
-            'Sat': 'شنبه', 'Sun': 'یکشنبه', 'Mon': 'دوشنبه',
-            'Tue': 'سه‌شنبه', 'Wed': 'چهارشنبه', 'Thu': 'پنجشنبه', 'Fri': 'جمعه'
+            'Sat': '<?= __("sat", "شنبه") ?>', 'Sun': '<?= __("sun", "یکشنبه") ?>', 'Mon': '<?= __("mon", "دوشنبه") ?>',
+            'Tue': '<?= __("tue", "سه‌شنبه") ?>', 'Wed': '<?= __("wed", "چهارشنبه") ?>', 'Thu': '<?= __("thu", "پنجشنبه") ?>', 'Fri': '<?= __("fri", "جمعه") ?>'
         };
 
         const levelMap = {
-            'none': 'بدون دانش', 'a1': 'A1', 'a2': 'A2',
+            'none': '<?= __("no_knowledge", "بدون دانش") ?>', 'a1': 'A1', 'a2': 'A2',
             'b1': 'B1', 'b2': 'B2', 'c1': 'C1'
         };
 
@@ -2326,13 +2326,14 @@ if (is_logged_in()) {
         function updateSummary() {
             sumLevel.textContent = levelMap[inputLevel.value] || '-';
             sumPercent.textContent = inputPercent.value + '%';
-            sumHours.textContent = inputHours.value + ' ساعت';
+            sumHours.textContent = inputHours.value + ' <?= __("hours", "ساعت") ?>';
             
+            const separator = '<?= get_current_lang() === "fa" ? "، " : ", " ?>';
             const selectedDays = Array.from(dayCheckboxes)
                 .filter(cb => cb.checked)
                 .map(cb => dayMap[cb.value])
-                .join('، ');
-            sumDays.textContent = selectedDays || 'هیچ روزی انتخاب نشده';
+                .join(separator);
+            sumDays.textContent = selectedDays || '<?= __("no_day_selected", "هیچ روزی انتخاب نشده") ?>';
         }
 
         function updateEstimation() {
@@ -2342,7 +2343,7 @@ if (is_logged_in()) {
             const studyDaysCount = Array.from(dayCheckboxes).filter(cb => cb.checked).length;
 
             percentLabel.textContent = percent + '%';
-            hoursLabel.textContent = (hours >= 8 ? 'بالای 8' : hours) + ' ساعت';
+            hoursLabel.textContent = (hours >= 8 ? '<?= __("above_8", "بالای 8") ?>' : hours) + ' <?= __("hours", "ساعت") ?>';
 
             if (studyDaysCount === 0) {
                 resultDays.textContent = '--';
@@ -2385,6 +2386,16 @@ if (is_logged_in()) {
 
         // Navigation Events
         btnNext.addEventListener('click', () => {
+            if (currentStep === 1) {
+                if (!inputLevel.value) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: '<?= __("attention", "توجه") ?>',
+                        text: '<?= __("please_select_german_level", "لطفا سطح زبان آلمانی خود را انتخاب کنید") ?>'
+                    });
+                    return;
+                }
+            }
             if (currentStep < totalSteps) {
                 currentStep++;
                 updateUI();
@@ -2455,11 +2466,11 @@ if (is_logged_in()) {
             formData.append('study_days', selectedDays);
 
             if (selectedDays.length === 0) {
-                Swal.fire({ icon: 'warning', title: 'توجه', text: 'لطفا حداقل یک روز در هفته را انتخاب کنید' });
+                Swal.fire({ icon: 'warning', title: '<?= __("attention", "توجه") ?>', text: '<?= __("select_at_least_one_day", "لطفا حداقل یک روز در هفته را انتخاب کنید") ?>' });
                 return;
             }
 
-            Swal.fire({ title: 'در حال پردازش...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+            Swal.fire({ title: '<?= __("processing", "در حال پردازش...") ?>', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
 
             $.ajax({
                 url: 'incloud/study_plan_handler.php',
@@ -2471,34 +2482,33 @@ if (is_logged_in()) {
                     if (response.success) {
                         Swal.fire({
                             icon: 'success',
-                            title: 'موفقیت‌آمیز',
+                            title: '<?= __("success_msg_title", "موفقیت‌آمیز") ?>',
                             text: response.message,
-                            confirmButtonText: 'ورود به پنل کاربری'
+                            confirmButtonText: '<?= __("login_to_panel", "ورود به پنل کاربری") ?>'
                         }).then(() => {
                             window.location.href = response.redirect;
                         });
                     } else {
-                        Swal.fire({ icon: 'error', title: 'خطا', text: response.message });
+                        Swal.fire({ icon: 'error', title: '<?= __("error_msg_title", "خطا") ?>', text: response.message });
                     }
                 },
                 error: function() {
-                    Swal.fire({ icon: 'error', title: 'خطا', text: 'خطا در ارتباط با سرور' });
+                    Swal.fire({ icon: 'error', title: '<?= __("error_msg_title", "خطا") ?>', text: '<?= __("server_error", "خطا در ارتباط با سرور") ?>' });
                 }
             });
         });
-    });
-    </script>
+
         // Delete Logic
         const btnDelete = document.getElementById('btnDeleteStudyPlan');
         if (btnDelete) {
             btnDelete.addEventListener('click', function() {
                 Swal.fire({
-                    title: 'حذف برنامه مطالعه',
-                    text: 'آیا از حذف برنامه مطالعه خود اطمینان دارید؟ این عمل غیرقابل بازگشت است.',
+                    title: '<?= __("delete_plan_title", "حذف برنامه مطالعه") ?>',
+                    text: '<?= __("delete_plan_confirm_text", "آیا از حذف برنامه مطالعه خود اطمینان دارید؟ این عمل غیرقابل بازگشت است.") ?>',
                     icon: 'warning',
                     showCancelButton: true,
-                    confirmButtonText: 'بله، حذف شود',
-                    cancelButtonText: 'انصراف',
+                    confirmButtonText: '<?= __("yes_delete", "بله، حذف شود") ?>',
+                    cancelButtonText: '<?= __("cancel", "انصراف") ?>',
                     customClass: { confirmButton: 'btn btn-danger me-3', cancelButton: 'btn btn-label-secondary' },
                     buttonsStyling: false
                 }).then((result) => {
@@ -2509,11 +2519,11 @@ if (is_logged_in()) {
                             data: { action: 'delete' },
                             success: function(response) {
                                 if (response.success) {
-                                    Swal.fire({ icon: 'success', title: 'حذف شد', text: response.message }).then(() => {
+                                    Swal.fire({ icon: 'success', title: '<?= __("success_msg_title", "موفقیت‌آمیز") ?>', text: response.message }).then(() => {
                                         location.reload();
                                     });
                                 } else {
-                                    Swal.fire({ icon: 'error', title: 'خطا', text: response.message });
+                                    Swal.fire({ icon: 'error', title: '<?= __("error_msg_title", "خطا") ?>', text: response.message });
                                 }
                             }
                         });
