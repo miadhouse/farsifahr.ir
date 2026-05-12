@@ -816,9 +816,8 @@ $user_id = 0; // Anonymous
         <div class="text-white bg-success d-flex justify-content-between align-items-center p-2 px-4"
             style="border-bottom-right-radius: 30px;border-bottom-left-radius: 30px;position: sticky;top: 0;z-index: 1000;">
             <div class="d-flex align-items-center gap-2">
-                <a class="btn btn-warning btn-sm btn-danger btn-circle" href="../admin/practice.php"> <i
+                <a class="btn btn-warning btn-sm btn-danger btn-circle" href="javascript:void(0)"> <i
                         class="fas fa-times"></i></a>
-                <span id="code"></span>
                 
                 <!-- Translation & Explanation Buttons -->
                 <button class="btn btn-sm btn-light" id="translateBtn" onclick="toggleTranslation()" title="ترجمه سوال و پاسخ‌ها">
@@ -842,7 +841,7 @@ $user_id = 0; // Anonymous
                 </button>
                 <?php endif; ?>
             </div>
-            <span>Punkte: <span id="punkt"></span></span>
+            <!-- Metadata removed as per request -->
         </div>
         <div class="mt-4 p-4" style="padding-bottom: 350px !important;">
             <h1 id="text" class="fw-bold h6 mb-4 question-text"></h1>
@@ -2451,8 +2450,11 @@ function solveQuestion() {
                 showRegularQuestion(data);
             }
 
-            document.getElementById("code").innerText = question.number || 'N/A';
-            document.getElementById("punkt").innerText = question.points || '0';
+            const codeElement = document.getElementById("code");
+            const punktElement = document.getElementById("punkt");
+            
+            if (codeElement) codeElement.innerText = question.number || 'N/A';
+            if (punktElement) punktElement.innerText = question.points || '0';
         }
         
         function showVideoQuestion(data, fileNameWithoutExt) {

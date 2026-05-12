@@ -1458,7 +1458,7 @@ if (is_logged_in()) {
             background-color: #283144;
             border-bottom-left-radius: 18px;
             border-bottom-right-radius: 18px;
-            z-index: 10;
+            z-index: 100; /* Increased z-index */
         }
         .mobile-content {
             width: 100%;
@@ -1468,8 +1468,9 @@ if (is_logged_in()) {
             justify-content: center;
             color: #8295ba;
             font-size: 1.1rem;
-            padding: 20px;
+            padding: 0;
             text-align: center;
+            z-index: 1; /* Ensure content is below notch */
         }
         @media (max-width: 400px) {
             .mobile-mockup {
@@ -1489,7 +1490,7 @@ if (is_logged_in()) {
             <h2 class="app-preview-title tmp-scroll-trigger tmp-fade-in animation-order-1"><?= __('test_app_title', 'در اینجا میتونی قابلیت های farsifahr رو تست کنی') ?></h2>
             <div class="mobile-mockup tmp-scroll-trigger tmp-fade-in animation-order-2">
                 <div class="mobile-notch"></div>
-                <div class="mobile-content" style="padding: 0; padding-top: 25px;">
+                <div class="mobile-content" style="padding: 0;">
                     <iframe src="app/preview.php" width="100%" height="100%" frameborder="0" style="border-radius: 30px; background-color: #fff;"></iframe>
                 </div>
             </div>
