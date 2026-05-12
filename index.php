@@ -1508,6 +1508,81 @@ if (is_logged_in()) {
             </div>
         </div>
     </section>
+
+    <!-- App Preview Section Start -->
+    <style>
+        .app-preview-section {
+            text-align: center;
+            padding-bottom: 50px;
+        }
+        .app-preview-title {
+            color: #fff;
+            margin-bottom: 40px;
+            font-size: 2rem;
+            font-weight: bold;
+        }
+        .mobile-mockup {
+            position: relative;
+            width: 340px;
+            height: 700px;
+            margin: 0 auto;
+            border: 14px solid #283144;
+            border-radius: 45px;
+            background-color: #1c222f;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        .mobile-notch {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 140px;
+            height: 25px;
+            background-color: #283144;
+            border-bottom-left-radius: 18px;
+            border-bottom-right-radius: 18px;
+            z-index: 10;
+        }
+        .mobile-content {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #8295ba;
+            font-size: 1.1rem;
+            padding: 20px;
+            text-align: center;
+        }
+        @media (max-width: 400px) {
+            .mobile-mockup {
+                width: 290px;
+                height: 600px;
+                border-width: 12px;
+                border-radius: 35px;
+            }
+            .mobile-notch {
+                width: 110px;
+                height: 20px;
+            }
+        }
+    </style>
+    <section class="app-preview-section tmp-section-gapTop" id="app-preview">
+        <div class="container">
+            <h2 class="app-preview-title tmp-scroll-trigger tmp-fade-in animation-order-1"><?= __('test_app_title', 'در اینجا میتونی قابلیت های farsifahr رو تست کنی') ?></h2>
+            <div class="mobile-mockup tmp-scroll-trigger tmp-fade-in animation-order-2">
+                <div class="mobile-notch"></div>
+                <div class="mobile-content">
+                    <!-- App content will be loaded here in the next tasks -->
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- App Preview Section End -->
+
     <!-- Study Plan Section Start -->
     <section class="study-plan-area tmp-section-gapTop" id="study-plan">
         <div class="container">
@@ -2236,6 +2311,30 @@ if (is_logged_in()) {
     <script src="assets/js/vendor/backtop.js"></script>
     <script src="assets/js/plugins/text-type.js"></script>
     <script src="assets/js/main.js"></script>
+    <script>
+        const authTranslations = {
+            logging_in: '<?= __("logging_in", "در حال ورود...") ?>',
+            success: '<?= __("success", "موفقیت‌آمیز") ?>',
+            email_verification_required: '<?= __("email_verification_required", "تایید ایمیل الزامی است") ?>',
+            resend_verification_email: '<?= __("resend_verification_email", "ارسال مجدد ایمیل تایید") ?>',
+            can_resend_in: '<?= __("can_resend_in", "امکان ارسال مجدد تا") ?>',
+            seconds_later: '<?= __("seconds_later", "ثانیه دیگر") ?>',
+            got_it: '<?= __("got_it", "متوجه شدم") ?>',
+            sending: '<?= __("sending", "در حال ارسال...") ?>',
+            sent: '<?= __("sent", "ارسال شد") ?>',
+            connection_error: '<?= __("connection_error", "خطا در برقراری ارتباط") ?>',
+            error_msg_title: '<?= __("error_msg_title", "خطا") ?>',
+            login_button: '<?= __("login_button", "ورود") ?>',
+            password_mismatch: '<?= __("password_mismatch", "رمز عبور و تکرار آن مطابقت ندارند") ?>',
+            registering: '<?= __("registering", "در حال ثبت نام...") ?>',
+            register_title: '<?= __("register_title", "ثبت نام") ?>',
+            send_reset_link: '<?= __("send_reset_link", "ارسال لینک بازیابی") ?>',
+            weak_password: '<?= __("weak_password", "رمز عبور ضعیف") ?>',
+            medium_password: '<?= __("medium_password", "رمز عبور متوسط") ?>',
+            strong_password: '<?= __("strong_password", "رمز عبور قوی") ?>',
+            ok: '<?= __("ok", "باشه") ?>'
+        };
+    </script>
     <script src="assets/js/script.js"></script>
 
     <!-- Billing Toggle Script -->
