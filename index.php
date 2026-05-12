@@ -35,9 +35,9 @@ if (is_logged_in()) {
     <meta charset="utf-8">
     <meta content="IE=edge" http-equiv="X-UA-Compatible">
     <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport">
-    <meta content="Farsi Fahr | آموزش و آمادگی آزمون تئوری گواهینامه آلمانی" name="description">
+    <meta content="<?= __('site_title', 'Farsi Fahr | آموزش و آمادگی آزمون تئوری گواهینامه آلمانی') ?>" name="description">
     <link href="assets/images/favicon.svg" rel="shortcut icon" type="image/x-icon">
-    <title>Farsi Fahr | آموزش و آمادگی آزمون تئوری گواهینامه آلمانی</title>
+    <title><?= __('site_title', 'Farsi Fahr | آموزش و آمادگی آزمون تئوری گواهینامه آلمانی') ?></title>
     <link href="assets/css/vendor/fontawesome.css" rel="stylesheet">
     <link href="assets/css/vendor/animate.min.css" rel="stylesheet">
     <?php if (get_lang_dir() === 'rtl'): ?>
