@@ -693,21 +693,14 @@ $user_id = 0; // Anonymous
         }
 
         /* Active State for Buttons */
-        #translateBtn.active {
-            background-color: #667eea !important;
-            color: white !important;
-            box-shadow: 0 0 10px rgba(102, 126, 234, 0.5);
-        }
-
-        #explainBtn.active {
-            background-color: #f5576c !important;
-            color: white !important;
-            box-shadow: 0 0 10px rgba(245, 87, 108, 0.5);
+        #translateBtn.active, #explainBtn.active {
+            color: #ffc107 !important;
+            text-decoration: underline !important;
         }
 
         /* Button Hover Effects */
         #translateBtn:hover, #explainBtn:hover {
-            transform: scale(1.05);
+            color: #ffc107 !important;
             transition: all 0.2s ease;
         }
 
@@ -831,19 +824,12 @@ $user_id = 0; // Anonymous
         </div>
     </div>
     <div class="container" style="min-height: 100vh;">
-        <div class="text-white bg-success d-flex justify-content-between align-items-center p-2 px-4"
-            style="border-bottom-right-radius: 30px;border-bottom-left-radius: 30px;position: sticky;top: 0;z-index: 1000;">
+        <div class="text-white bg-success d-flex justify-content-between align-items-center p-3 px-4"
+            style="border-bottom-right-radius: 30px;border-bottom-left-radius: 30px;position: sticky;top: 0;z-index: 1000; min-height: 70px;">
             <div class="d-flex align-items-center gap-2">
                 <a class="btn btn-warning btn-sm btn-danger btn-circle" href="javascript:void(0)"> <i
                         class="fas fa-times"></i></a>
                 
-                <!-- Translation & Explanation Buttons -->
-                <button class="btn btn-sm btn-light" id="translateBtn" onclick="toggleTranslation()" title="ترجمه سوال و پاسخ‌ها">
-                    <i class="fas fa-language"></i>
-                </button>
-                <button class="btn btn-sm btn-info" id="explainBtn" onclick="toggleExplanation()" title="توضیح سوال و پاسخ‌ها">
-                    <i class="fas fa-info-circle"></i>
-                </button>
                 <?php if ($isAdmin): ?>
                 <button class="btn btn-sm btn-primary" id="geminiFetchBtn" onclick="geminiFetchInfo()" title="درک مطلب و ترجمه با هوش مصنوعی (Gemini)">
                     <i class="fas fa-brain"></i>
@@ -859,7 +845,24 @@ $user_id = 0; // Anonymous
                 </button>
                 <?php endif; ?>
             </div>
-            <!-- Metadata removed as per request -->
+
+            <!-- Centered Translation & Explanation Text Buttons -->
+            <div class="d-flex align-items-center gap-0 flex-grow-1 justify-content-center">
+                <button class="btn btn-link text-white text-decoration-none fw-bold p-0 px-2" id="translateBtn" onclick="toggleTranslation()">
+                    ترجمه
+                </button>
+                <div style="width: 1px; height: 20px; background-color: rgba(255,255,255,0.5); margin: 0 5px;"></div>
+                <button class="btn btn-link text-white text-decoration-none fw-bold p-0 px-2" id="explainBtn" onclick="toggleExplanation()">
+                    توضیح
+                </button>
+            </div>
+
+            <!-- Points/Metadata on the right -->
+            <div class="d-flex align-items-center">
+                <div class="badge bg-light text-success fw-bold" style="font-size: 0.9rem;">
+                    امتیاز: <span id="punkt">0</span>
+                </div>
+            </div>
         </div>
         <div class="mt-4 p-4" style="padding-bottom: 350px !important;">
             <h1 id="text" class="fw-bold h6 mb-4 question-text"></h1>
@@ -2463,10 +2466,7 @@ function solveQuestion() {
                 showRegularQuestion(data);
             }
 
-            const codeElement = document.getElementById("code");
             const punktElement = document.getElementById("punkt");
-            
-            if (codeElement) codeElement.innerText = question.number || 'N/A';
             if (punktElement) punktElement.innerText = question.points || '0';
         }
         
@@ -3028,9 +3028,9 @@ function answerBuilder(answers = null) {
 
             function getQuestionsPerPage() {
                 if (window.innerWidth < 450) {
-                    return 5;
+                    return 3;
                 } else if (window.innerWidth < 768) {
-                    return 8;
+                    return 5;
                 } else if (window.innerWidth < 992) {
                     return 10;
                 } else {

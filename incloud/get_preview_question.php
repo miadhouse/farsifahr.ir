@@ -55,43 +55,30 @@ try {
     $language = 'de';
     
     // دریافت ترجمه و توضیحات
-    $questionTranslation = '';
-    $questionExplanation = '';
-    
-    // در حالت پیش‌نمایش، دسترسی کامل می‌دهیم
-    $stmt = $pdo->prepare("SELECT content FROM qa_translations WHERE question_id = ? AND lang = ? AND type = 'translation'");
-    $stmt->execute([$questionId, $language]);
-    $questionTranslation = $stmt->fetchColumn() ?: '';
-
-    $stmt = $pdo->prepare("SELECT content FROM qa_translations WHERE question_id = ? AND lang = ? AND type = 'explanation'");
-    $stmt->execute([$questionId, $language]);
-    $questionExplanation = $stmt->fetchColumn() ?: '';
+    $questionTranslation = $question['farsi_text'] ?? '';
+    $questionExplanation = $question['info'] ?? '';
 
     // دریافت پاسخ‌ها
-    $stmt = $pdo->prepare("SELECT * FROM answers WHERE question_id = ? ORDER BY id ASC");
+    $stmt = $pdo->prepare("
+        SELECT a.*
+        FROM answers a
+        INNER JOIN questions q ON a.question_number = q.number
+        WHERE q.id = ?
+        ORDER BY a.id ASC
+    ");
     $stmt->execute([$questionId]);
     $answers = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     $formattedAnswers = [];
     foreach ($answers as $answer) {
-        $answerData = [
-            'id' => $answer['id'],
-            'asw_corr' => $answer['asw_corr'],
-            'content' => $answer['asw_de'] ?: ($answer['asw_en'] ?: $answer['asw_es']),
-            'type' => $answer['type'],
-        ];
-
-        // دریافت ترجمه و توضیح پاسخ در صورت VIP بودن
-        $answerData['translation'] = '';
-        $answerData['explanation'] = '';
+        $answerData = $answer;
         
-        $stmt = $pdo->prepare("SELECT content FROM qa_translations WHERE answer_id = ? AND lang = ? AND type = 'translation'");
-        $stmt->execute([$answer['id'], $language]);
-        $answerData['translation'] = $stmt->fetchColumn() ?: '';
-
-        $stmt = $pdo->prepare("SELECT content FROM qa_translations WHERE answer_id = ? AND lang = ? AND type = 'explanation'");
-        $stmt->execute([$answer['id'], $language]);
-        $answerData['explanation'] = $stmt->fetchColumn() ?: '';
+        // اطمینان از وجود فیلد text و asw_pretext برای نمایش (طبق نیاز frontend)
+        $answerData['text'] = $answer['text'] ?? ($answer['asw_de'] ?? '');
+        
+        // دریافت ترجمه و توضیح پاسخ از ستون‌های خود جدول
+        $answerData['translation'] = $answer['farsi_text'] ?? '';
+        $answerData['explanation'] = $answer['info'] ?? ''; 
         
         $formattedAnswers[] = $answerData;
     }
@@ -100,13 +87,17 @@ try {
         'success' => true,
         'question' => [
             'id' => $question['id'],
-            'content' => $question['qst_de'] ?: ($question['qst_en'] ?: $question['qst_es']),
+            'number' => $question['number'],
+            'text' => $question['text'] ?? ($question['qst_de'] ?? ''),
+            'asw_pretext' => $question['asw_pretext'] ?? '',
+            'farsi_text' => $question['farsi_text'] ?? '',
+            'info' => $question['info'] ?? '',
             'translation' => $questionTranslation,
             'explanation' => $questionExplanation,
-            'image' => $question['image'],
-            'video' => $question['video'],
-            'type' => $question['type'],
-            'points' => $question['pts'],
+            'picture' => $question['picture'] ?? ($question['image'] ?? ''),
+            'video' => $question['video'] ?? '',
+            'type' => $question['type'] ?? '',
+            'points' => $question['points'] ?? ($question['pts'] ?? 0),
             'is_bookmarked' => false
         ],
         'answers' => $formattedAnswers
