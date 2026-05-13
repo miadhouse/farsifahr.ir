@@ -2087,6 +2087,26 @@ if (is_logged_in()) {
                         <p class="copy-right-para"><?= __('copyright_text', COPYRIGHT_TEXT) ?>
                         </p>
                     </div>
+                    <!-- Site Designer Credit -->
+                    <div class="site-designer-credit mt-2 text-center" style="font-size: 10px; opacity: 0.6; direction: ltr;">
+                        <?php
+                        $designer_label = [
+                            'fa' => 'طراح سایت: miad',
+                            'en' => 'Site Designer: miad',
+                            'de' => 'Webdesigner: miad'
+                        ][get_current_lang()];
+                        $email_label = [
+                            'fa' => 'ارسال ایمیل',
+                            'en' => 'Send Email',
+                            'de' => 'E-Mail senden'
+                        ][get_current_lang()];
+                        ?>
+                        <span><?= $designer_label ?></span>
+                        <span class="mx-1">|</span>
+                        <a href="mailto:miadaleali@gmail.com" style="color: inherit; text-decoration: none;">
+                            <i class="fa-solid fa-envelope me-1"></i><?= $email_label ?>
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
