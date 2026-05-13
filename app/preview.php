@@ -3545,14 +3545,6 @@ function answerBuilder(answers = null) {
                     } 
                 },
                 { 
-                    element: '#solve-btn', 
-                    popover: { 
-                        title: 'حل پاسخ', 
-                        description: 'اگر پاسخ سوالی را نمی‌دانید، این دکمه پاسخ صحیح را به شما نشان می‌دهد.',
-                        side: "left", align: 'start' 
-                    } 
-                },
-                { 
                     element: '#next-btn', 
                     popover: { 
                         title: 'ناوبری سوالات', 
