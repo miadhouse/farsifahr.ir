@@ -1205,13 +1205,14 @@ if (is_logged_in()) {
                             <?php if (is_logged_in()): ?>
                                 <!-- User Dropdown Menu -->
                                 <div class="dropdown">
-                                    <button class="btn btn-dark btn-md text-white dropdown-toggle d-flex align-items-center gap-2" 
+                                    <button class="btn btn-dark btn-lg text-white dropdown-toggle d-flex align-items-center gap-3" 
                                             type="button" 
                                             id="userDropdown" 
                                             data-bs-toggle="dropdown" 
-                                            aria-expanded="false">
-                                        <i class="fa-regular fa-user-circle"></i>
-                                        <span class="d-none d-sm-inline"><?= $_SESSION['name'] ?></span>
+                                            aria-expanded="false"
+                                            style="padding: 10px 20px; font-size: 1.1rem;">
+                                        <i class="fa-regular fa-user-circle" style="font-size: 1.5rem;"></i>
+                                        <span class="d-none d-sm-inline fw-bold"><?= $_SESSION['name'] ?></span>
                                     </button>
                                     <ul style="background-color: #212529 !important;" class="dropdown-menu bg-black text-light w-100  dropdown-menu-end" aria-labelledby="userDropdown">
                                         <li>
