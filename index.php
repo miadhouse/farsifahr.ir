@@ -551,16 +551,64 @@ if (is_logged_in()) {
             display: none;
         }
 
+        .rpp-banner-two-area {
+            padding-top: 80px !important;
+        }
+
+        .banner-two-main-wrapper .row {
+            display: flex !important;
+            flex-direction: column !important;
+        }
+
+        /* Image Column First */
+        .banner-two-main-wrapper .row .col-lg-6.order-lg-2 {
+            order: 1 !important;
+            margin-bottom: 0 !important;
+        }
+
+        /* Text Column Second */
+        .banner-two-main-wrapper .row .col-lg-6.order-lg-1 {
+            order: 2 !important;
+            margin-top: 30px !important; /* Space after image */
+            position: relative;
+            z-index: 2;
+        }
+
+        .banner-two-main-wrapper .banner-right-content {
+            -webkit-mask-image: linear-gradient(to bottom, black 0%, black 85%, transparent 100%);
+            mask-image: linear-gradient(to bottom, black 0%, black 85%, transparent 100%);
+            position: relative;
+            z-index: 1;
+        }
+
         .banner-two-main-wrapper .banner-right-content .main-img img {
-            max-width: 60%;
+            max-width: 40% !important;
             margin: 0 auto;
         }
+
         .banner-two-main-wrapper .banner-right-content .main-img::after {
-            height: 300px;
+            display: none !important;
+        }
+
+        .banner-two-main-wrapper .banner-right-content .main-img .benner-two-bg-red-img {
+            width: 100% !important;
+            left: 0 !important;
+            right: 0 !important;
+            height: auto !important;
+            max-height: 250px !important;
+            overflow: hidden !important;
+            top: 200px !important;
+            bottom: auto !important;
         }
         .banner-two-main-wrapper .banner-right-content .main-img .benner-two-bg-red-img img {
-            max-width: 100%;
-            width: 100%;
+            width: 100% !important;
+            max-width: 100% !important;
+            height: auto !important;
+            object-fit: contain !important; /* Prevents deformation */
+        }
+
+        .banner-two-main-wrapper .banner-right-content .main-img .logo-under-img-wrap {
+            display: none !important;
         }
 
         .banner-two-main-wrapper .banner-right-content .main-img .banner-big-text-1,
@@ -576,9 +624,11 @@ if (is_logged_in()) {
         }
         .banner-two-main-wrapper .banner-right-content .main-img .banner-big-text-1 {
             top: 55% !important;
+            opacity: 0.1 !important;
         }
         .banner-two-main-wrapper .banner-right-content .main-img .banner-big-text-2 {
             top: 65% !important;
+            opacity: 0.3 !important;
         }
 
         /* Header Mobile Fixes */
@@ -1859,27 +1909,66 @@ if (is_logged_in()) {
                     <?php else: ?>
                       <div class="vip-durations">
                         <?php 
-                        $durations = [
-                          ['key' => 'price_2_weeks', 'label' => __('duration_2_weeks', '۲ هفته (۱۴ روز)'), 'duration' => '2_weeks', 'color' => 'primary'],
-                          ['key' => 'price_1_month', 'label' => __('duration_1_month', '۱ ماه (۳۰ روز)'), 'duration' => '1_month', 'color' => 'primary'],
-                          ['key' => 'price_3_months', 'label' => __('duration_3_months', '۳ ماه (۹۰ روز)'), 'duration' => '3_months', 'color' => 'success', 'special' => true],
-                          ['key' => 'price_6_months', 'label' => __('duration_6_months', '۶ ماه (۱۸۰ روز)'), 'duration' => '6_months', 'color' => 'info'],
-                          ['key' => 'price_1_year', 'label' => __('duration_1_year', '۱ سال (۳۶۵ روز)'), 'duration' => '1_year', 'color' => 'warning', 'star' => true]
-                        ];
+                        $plan_durations = [];
+                        if (!empty($plan['durations'])) {
+                            $decoded_durations = json_decode($plan['durations'], true);
+                            if (is_array($decoded_durations)) {
+                                foreach ($decoded_durations as $index => $d) {
+                                    $plan_durations[] = [
+                                        'key' => 'dyn_' . $index,
+                                        'label' => $d['label'],
+                                        'duration_days' => $d['days'],
+                                        'price' => $d['price'],
+                                        'color' => ($index % 2 == 0) ? 'primary' : 'info'
+                                    ];
+                                }
+                            }
+                        }
 
-                        foreach ($durations as $dur):
-                          if (!isset($plan[$dur['key']]) || $plan[$dur['key']] <= 0) continue;
-                          
-                          $duration_days = get_duration_days($dur['duration']);
+                        // Fallback if no dynamic durations found
+                        if (empty($plan_durations)) {
+                            $fallback_keys = [
+                                ['key' => 'price_2_weeks', 'label' => __('duration_2_weeks', '۲ هفته (۱۴ روز)'), 'days' => 14],
+                                ['key' => 'price_1_month', 'label' => __('duration_1_month', '۱ ماه (۳۰ روز)'), 'days' => 30],
+                                ['key' => 'price_3_months', 'label' => __('duration_3_months', '۳ ماه (۹۰ روز)'), 'days' => 90],
+                                ['key' => 'price_6_months', 'label' => __('duration_6_months', '۶ ماه (۱۸۰ روز)'), 'days' => 180],
+                                ['key' => 'price_1_year', 'label' => __('duration_1_year', '۱ سال (۳۶۵ روز)'), 'days' => 365]
+                            ];
+                            foreach ($fallback_keys as $fb) {
+                                if (isset($plan[$fb['key']]) && $plan[$fb['key']] > 0) {
+                                    $plan_durations[] = [
+                                        'key' => $fb['key'],
+                                        'label' => $fb['label'],
+                                        'duration_days' => $fb['days'],
+                                        'price' => $plan[$fb['key']],
+                                        'color' => 'primary'
+                                    ];
+                                }
+                            }
+                        }
+
+                        // پیدا کردن قیمت یک ماه برای محاسبه تخفیف
+                        $price_1_month = 0;
+                        foreach ($plan_durations as $pd) {
+                            if ($pd['duration_days'] == 30) {
+                                $price_1_month = $pd['price'];
+                                break;
+                            }
+                        }
+                        if ($price_1_month <= 0 && !empty($plan['price_1_month'])) {
+                            $price_1_month = $plan['price_1_month'];
+                        }
+
+                        foreach ($plan_durations as $dur):
+                          $duration_days = $dur['duration_days'];
                           $is_active_dur = ($user_sub && $user_sub['plan_id'] == $plan['id'] && $user_sub['duration_days'] == $duration_days);
                           $is_pending_dur = ($pending_sub && $pending_sub['plan_id'] == $plan['id'] && $pending_sub['duration_days'] == $duration_days);
 
                           $discount = 0;
-                          if ($dur['key'] != 'price_1_month' && $plan['price_1_month'] > 0) {
-                            $days = $duration_days;
-                            $saving = ($plan['price_1_month'] / 30 * $days) - $plan[$dur['key']];
+                          if ($duration_days != 30 && $price_1_month > 0) {
+                            $saving = ($price_1_month / 30 * $duration_days) - $dur['price'];
                             if ($saving > 0) {
-                              $discount = round(($saving / ($plan['price_1_month'] / 30 * $days)) * 100);
+                              $discount = round(($saving / ($price_1_month / 30 * $duration_days)) * 100);
                             }
                           }
 
@@ -1890,8 +1979,6 @@ if (is_logged_in()) {
                               $row_style .= ' border-color: #71dd37; background-color: rgba(113, 221, 55, 0.1);';
                           } elseif ($is_pending_dur) {
                               $row_style .= ' border-color: #ffab00; background-color: rgba(255, 171, 0, 0.1);';
-                          } elseif (isset($dur['special']) || isset($dur['star'])) {
-                              $row_style .= ' background-color: rgba(90, 141, 238, 0.08); border-color: #5a8dee;';
                           } else {
                               $row_style .= ' border-color: #36445d;';
                           }
@@ -1905,10 +1992,10 @@ if (is_logged_in()) {
                               <?php endif; ?>
                             </div>
                             <div class="text-end me-3" style="margin-right: 15px;">
-                              <div class="fw-bold text-primary fs-4" style="color: #5a8dee !important; line-height: 1;"><?= number_format($plan[$dur['key']]) ?> <small style="font-size: 0.7em; color: #8295ba;"><?= __('euro', 'یورو') ?></small></div>
+                              <div class="fw-bold text-primary fs-4" style="color: #5a8dee !important; line-height: 1;"><?= number_format($dur['price']) ?> <small style="font-size: 0.7em; color: #8295ba;"><?= __('euro', 'یورو') ?></small></div>
                               <?php 
                               $euro_rate = defined('EURO_TO_TOMAN_RATE') ? EURO_TO_TOMAN_RATE : 75000;
-                              $toman_price = $plan[$dur['key']] * $euro_rate;
+                              $toman_price = $dur['price'] * $euro_rate;
                               ?>
                               <div style="font-size: 0.85rem; color: #8295ba; margin-top: 4px;"><?= __('equivalent', 'معادل') ?> <?= number_format($toman_price) ?> <small><?= __('toman', 'تومان') ?></small></div>
                             </div>
@@ -1928,7 +2015,7 @@ if (is_logged_in()) {
                                 </button>
                               <?php else: ?>
                                 <?php if ($is_user_logged_in): ?>
-                                  <a href="admin/subscription.php" class="btn fs-5 py-2 px-5" style="background-color: #5a8dee; color: white; border: none; border-radius: 5px; font-weight: bold; text-decoration: none;">
+                                  <a href="admin/subscription.php?plan_id=<?= $plan['id'] ?>&days=<?= $duration_days ?>&amount=<?= $dur['price'] ?>" class="btn fs-5 py-2 px-5" style="background-color: #5a8dee; color: white; border: none; border-radius: 5px; font-weight: bold; text-decoration: none;">
                                      <?= __('purchase', 'خرید') ?>
                                   </a>
                                 <?php else: ?>

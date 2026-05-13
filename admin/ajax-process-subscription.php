@@ -55,7 +55,7 @@ if (!$plan) {
 
 // اعتبارسنجی duration
 if ($plan['slug'] !== 'free') {
-    if (empty($duration) || !validate_duration($duration)) {
+    if (empty($duration) || !validate_duration($duration, $plan)) {
         echo json_encode(['success' => false, 'message' => 'دوره زمانی انتخاب شده نامعتبر است.']);
         exit;
     }
@@ -90,7 +90,7 @@ try {
     // لغو تمام اشتراک‌های قبلی فعال و معلق (اختیاری - بر اساس منطق پروژه شما)
     // در اینجا ما فقط معلق‌های قبلی را چک کردیم. اگر کاربر بخواهد ارتقا دهد، سیستم قبلاً معلق‌ها را چک کرده است.
     
-    $duration_days = get_duration_days($duration);
+    $duration_days = get_duration_days($duration, $plan);
     $expires_at = null;
     
     if ($duration_days > 0) {

@@ -252,27 +252,66 @@ if ($user_sub !== false && $user_sub !== null) {
               <?php else: ?>
                 <div class="vip-durations">
                   <?php 
-                  $durations = [
-                    ['key' => 'price_2_weeks', 'label' => '۲ هفته (۱۴ روز)', 'duration' => '2_weeks', 'color' => 'primary'],
-                    ['key' => 'price_1_month', 'label' => '۱ ماه (۳۰ روز)', 'duration' => '1_month', 'color' => 'primary'],
-                    ['key' => 'price_3_months', 'label' => '۳ ماه (۹۰ روز)', 'duration' => '3_months', 'color' => 'success', 'special' => true],
-                    ['key' => 'price_6_months', 'label' => '۶ ماه (۱۸۰ روز)', 'duration' => '6_months', 'color' => 'info'],
-                    ['key' => 'price_1_year', 'label' => '۱ سال (۳۶۵ روز)', 'duration' => '1_year', 'color' => 'warning', 'star' => true]
-                  ];
+                  $plan_durations = [];
+                  if (!empty($plan['durations'])) {
+                      $decoded_durations = json_decode($plan['durations'], true);
+                      if (is_array($decoded_durations)) {
+                          foreach ($decoded_durations as $index => $d) {
+                              $plan_durations[] = [
+                                  'key' => 'dyn_' . $index,
+                                  'label' => $d['label'],
+                                  'duration_days' => $d['days'],
+                                  'price' => $d['price'],
+                                  'color' => ($index % 2 == 0) ? 'primary' : 'info'
+                              ];
+                          }
+                      }
+                  }
 
-                  foreach ($durations as $dur):
-                    if (!isset($plan[$dur['key']]) || $plan[$dur['key']] <= 0) continue;
-                    
-                    $duration_days = get_duration_days($dur['duration']);
+                  // Fallback if no dynamic durations found
+                  if (empty($plan_durations)) {
+                      $fallback_keys = [
+                          ['key' => 'price_2_weeks', 'label' => '۲ هفته (۱۴ روز)', 'days' => 14, 'color' => 'primary'],
+                          ['key' => 'price_1_month', 'label' => '۱ ماه (۳۰ روز)', 'days' => 30, 'color' => 'primary'],
+                          ['key' => 'price_3_months', 'label' => '۳ ماه (۹۰ روز)', 'days' => 90, 'color' => 'success'],
+                          ['key' => 'price_6_months', 'label' => '۶ ماه (۱۸۰ روز)', 'days' => 180, 'color' => 'info'],
+                          ['key' => 'price_1_year', 'label' => '۱ سال (۳۶۵ روز)', 'days' => 365, 'color' => 'warning']
+                      ];
+                      foreach ($fallback_keys as $fb) {
+                          if (isset($plan[$fb['key']]) && $plan[$fb['key']] > 0) {
+                              $plan_durations[] = [
+                                  'key' => $fb['key'],
+                                  'label' => $fb['label'],
+                                  'duration_days' => $fb['days'],
+                                  'price' => $plan[$fb['key']],
+                                  'color' => $fb['color']
+                              ];
+                          }
+                      }
+                  }
+
+                  // پیدا کردن قیمت یک ماه برای محاسبه تخفیف
+                  $price_1_month = 0;
+                  foreach ($plan_durations as $pd) {
+                      if ($pd['duration_days'] == 30) {
+                          $price_1_month = $pd['price'];
+                          break;
+                      }
+                  }
+                  if ($price_1_month <= 0 && !empty($plan['price_1_month'])) {
+                      $price_1_month = $plan['price_1_month'];
+                  }
+
+                  foreach ($plan_durations as $dur):
+                    $duration_days = $dur['duration_days'];
                     $is_active_dur = ($user_sub && $user_sub['plan_id'] == $plan['id'] && $user_sub['duration_days'] == $duration_days);
                     $is_pending_dur = ($pending_sub && $pending_sub['plan_id'] == $plan['id'] && $pending_sub['duration_days'] == $duration_days);
 
                     $discount = 0;
-                    if ($dur['key'] != 'price_1_month' && $plan['price_1_month'] > 0) {
-                      $days = $duration_days;
-                      $saving = ($plan['price_1_month'] / 30 * $days) - $plan[$dur['key']];
+                    if ($duration_days != 30 && $price_1_month > 0) {
+                      $saving = ($price_1_month / 30 * $duration_days) - $dur['price'];
                       if ($saving > 0) {
-                        $discount = round(($saving / ($plan['price_1_month'] / 30 * $days)) * 100);
+                        $discount = round(($saving / ($price_1_month / 30 * $duration_days)) * 100);
                       }
                     }
 
@@ -281,8 +320,6 @@ if ($user_sub !== false && $user_sub !== null) {
                         $row_class = 'border-success bg-label-success';
                     } elseif ($is_pending_dur) {
                         $row_class = 'border-warning bg-label-warning';
-                    } elseif (isset($dur['special']) || isset($dur['star'])) {
-                        $row_class = 'bg-light border-'.$dur['color'];
                     }
                   ?>
                   <div class="pricing-option-row p-3 mb-3 border rounded <?= $row_class ?>">
@@ -294,10 +331,10 @@ if ($user_sub !== false && $user_sub !== null) {
                         <?php endif; ?>
                       </div>
                       <div class="text-end me-3">
-                        <div class="fw-bold text-primary fs-5"><?= number_format($plan[$dur['key']]) ?> یورو</div>
+                        <div class="fw-bold text-primary fs-5"><?= number_format($dur['price']) ?> یورو</div>
                         <?php 
                         $euro_rate = defined('EURO_TO_TOMAN_RATE') ? EURO_TO_TOMAN_RATE : 75000;
-                        $toman_price = $plan[$dur['key']] * $euro_rate;
+                        $toman_price = $dur['price'] * $euro_rate;
                         ?>
                         <div style="font-size: 0.85rem; color: #a1acb8;">معادل <?= number_format($toman_price) ?> تومان</div>
                       </div>
@@ -324,10 +361,10 @@ if ($user_sub !== false && $user_sub !== null) {
                       <?php else: ?>
                         <button type="button" 
                            data-plan-id="<?= $plan['id'] ?>" 
-                           data-duration="<?= $dur['duration'] ?>"
+                           data-duration="<?= $dur['key'] ?>"
                            data-plan-name="<?= htmlspecialchars($plan['name']) ?>"
                            data-duration-label="<?= htmlspecialchars($dur['label']) ?>"
-                           data-price="<?= number_format($plan[$dur['key']]) ?>"
+                           data-price="<?= number_format($dur['price']) ?>"
                            data-toman-price="<?= number_format($toman_price) ?>"
                            class="btn btn-primary btn-buy-ajax fs-5 py-2 px-4">
                            <span>خرید</span>

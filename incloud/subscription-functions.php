@@ -311,7 +311,23 @@ function get_user_subscription_history($user_id, $pdo) {
 /**
  * دریافت گزینه‌های مدت زمان VIP
  */
-function get_vip_duration_options() {
+function get_vip_duration_options($plan = null) {
+    if ($plan && !empty($plan['durations'])) {
+        $decoded = json_decode($plan['durations'], true);
+        if (is_array($decoded)) {
+            $options = [];
+            foreach ($decoded as $index => $d) {
+                $options[] = [
+                    'days' => $d['days'],
+                    'label' => $d['label'],
+                    'price_key' => 'dyn_' . $index,
+                    'price' => $d['price']
+                ];
+            }
+            return $options;
+        }
+    }
+
     return [
         [
             'days' => 14,
@@ -353,6 +369,18 @@ function get_vip_price($duration_days, $pdo) {
         return null;
     }
     
+    // ابتدا در فیلد جدید جستجو کن
+    if (!empty($plan['durations'])) {
+        $decoded = json_decode($plan['durations'], true);
+        if (is_array($decoded)) {
+            foreach ($decoded as $d) {
+                if ($d['days'] == $duration_days) {
+                    return $d['price'];
+                }
+            }
+        }
+    }
+
     $price_map = [
         14 => $plan['price_2_weeks'] ?? 0,
         30 => $plan['price_1_month'] ?? 0,
@@ -368,7 +396,7 @@ function get_vip_price($duration_days, $pdo) {
  * فرمت کردن قیمت
  */
 function format_price($price) {
-    return number_format($price, 0, '.', ',') . ' تومان';
+    return number_format($price, 0, '.', ',') . ' یورو';
 }
 
 /**
@@ -432,7 +460,15 @@ function get_plan_features($plan_slug) {
 /**
  * تبدیل duration به روز
  */
-function get_duration_days($duration_key) {
+function get_duration_days($duration_key, $plan = null) {
+    if (str_starts_with($duration_key, 'dyn_') && $plan && !empty($plan['durations'])) {
+        $index = (int)str_replace('dyn_', '', $duration_key);
+        $decoded = json_decode($plan['durations'], true);
+        if (isset($decoded[$index])) {
+            return $decoded[$index]['days'];
+        }
+    }
+
     $durations = [
         '2_weeks' => 14,
         '1_month' => 30,
@@ -447,7 +483,15 @@ function get_duration_days($duration_key) {
 /**
  * تبدیل duration به برچسب فارسی
  */
-function get_duration_label($duration_key) {
+function get_duration_label($duration_key, $plan = null) {
+    if (str_starts_with($duration_key, 'dyn_') && $plan && !empty($plan['durations'])) {
+        $index = (int)str_replace('dyn_', '', $duration_key);
+        $decoded = json_decode($plan['durations'], true);
+        if (isset($decoded[$index])) {
+            return $decoded[$index]['label'];
+        }
+    }
+
     $labels = [
         '2_weeks' => '2 هفته',
         '1_month' => '1 ماه',
@@ -463,6 +507,14 @@ function get_duration_label($duration_key) {
  * دریافت قیمت بر اساس duration
  */
 function get_plan_price_by_duration($plan, $duration_key) {
+    if (str_starts_with($duration_key, 'dyn_') && !empty($plan['durations'])) {
+        $index = (int)str_replace('dyn_', '', $duration_key);
+        $decoded = json_decode($plan['durations'], true);
+        if (isset($decoded[$index])) {
+            return $decoded[$index]['price'];
+        }
+    }
+
     $price_keys = [
         '2_weeks' => 'price_2_weeks',
         '1_month' => 'price_1_month',
@@ -483,7 +535,13 @@ function get_plan_price_by_duration($plan, $duration_key) {
 /**
  * اعتبارسنجی duration
  */
-function validate_duration($duration_key) {
+function validate_duration($duration_key, $plan = null) {
+    if (str_starts_with($duration_key, 'dyn_') && $plan && !empty($plan['durations'])) {
+        $index = (int)str_replace('dyn_', '', $duration_key);
+        $decoded = json_decode($plan['durations'], true);
+        return isset($decoded[$index]);
+    }
+
     $valid_durations = ['2_weeks', '1_month', '3_months', '6_months', '1_year'];
     return in_array($duration_key, $valid_durations);
 }

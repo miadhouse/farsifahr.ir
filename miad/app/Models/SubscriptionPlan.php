@@ -15,6 +15,7 @@ class SubscriptionPlan extends Model
         'slug', 
         'description', 
         'features',
+        'durations',
         'price_2_weeks', 
         'price_1_month', 
         'price_3_months', 
@@ -27,5 +28,6 @@ class SubscriptionPlan extends Model
 
     protected $casts = [
         'features' => 'array',
+        'durations' => 'array',
     ];
 }

@@ -62,30 +62,49 @@ class SubscriptionPlanResource extends Resource
                             ->columnSpanFull(),
                     ]),
 
-                Section::make('قیمت‌گذاری (یورو)')
+                Section::make('قیمت‌گذاری و مدت زمان (یورو)')
                     ->schema([
+                        Forms\Components\Repeater::make('durations')
+                            ->label('لیست قیمت‌ها و زمان‌ها')
+                            ->schema([
+                                Forms\Components\TextInput::make('label')
+                                    ->label('عنوان (مثلا: ۱ ماه)')
+                                    ->required(),
+                                Forms\Components\TextInput::make('days')
+                                    ->label('تعداد روز')
+                                    ->numeric()
+                                    ->required(),
+                                Forms\Components\TextInput::make('price')
+                                    ->label('قیمت (یورو)')
+                                    ->numeric()
+                                    ->required(),
+                            ])
+                            ->columns(3)
+                            ->columnSpanFull()
+                            ->itemLabel(fn (array $state): ?string => $state['label'] ?? null),
+
                         Grid::make(3)->schema([
                             Forms\Components\TextInput::make('price_2_weeks')
-                                ->label('قیمت ۲ هفته (یورو)')
+                                ->label('قیمت ۲ هفته (یورو) - قدیمی')
                                 ->numeric()
-                                ->default(0.00),
+                                ->disabled(),
                             Forms\Components\TextInput::make('price_1_month')
-                                ->label('قیمت ۱ ماه (یورو)')
+                                ->label('قیمت ۱ ماه (یورو) - قدیمی')
                                 ->numeric()
-                                ->default(0.00),
+                                ->disabled(),
                             Forms\Components\TextInput::make('price_3_months')
-                                ->label('قیمت ۳ ماه (یورو)')
+                                ->label('قیمت ۳ ماه (یورو) - قدیمی')
                                 ->numeric()
-                                ->default(0.00),
+                                ->disabled(),
                             Forms\Components\TextInput::make('price_6_months')
-                                ->label('قیمت ۶ ماه (یورو)')
+                                ->label('قیمت ۶ ماه (یورو) - قدیمی')
                                 ->numeric()
-                                ->default(0.00),
+                                ->disabled(),
                             Forms\Components\TextInput::make('price_1_year')
-                                ->label('قیمت ۱ سال (یورو)')
+                                ->label('قیمت ۱ سال (یورو) - قدیمی')
                                 ->numeric()
-                                ->default(0.00),
-                        ]),
+                                ->disabled(),
+                        ])->hidden(fn (?SubscriptionPlan $record) => $record && !empty($record->durations)),
                     ]),
             ]);
     }
