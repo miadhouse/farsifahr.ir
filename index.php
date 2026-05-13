@@ -2041,7 +2041,7 @@ if (is_logged_in()) {
         <div class="container">
             <div class="footer-main footer-style-two">
                 <div class="row g-5">
-                    <div class="col-lg-3 col-md-4 col-sm-6">
+                    <div class="col-lg-4 col-md-4 col-sm-6">
                         <div class="single-footer-wrapper border-right mr--20">
                             <div class="logo"><a href="<?= SITE_URL ?>"> <img alt="Farsi - Fahr"
                                         src="assets/images/logo/logoAsset%201.svg"> </a></div>
@@ -2049,18 +2049,7 @@ if (is_logged_in()) {
                             <div class="social-link footer"><a target="_blank" href="<?= INSTAGRAM_URL ?>"><i class="fa-brands fa-instagram"></i></a> <a target="_blank" href="<?= TELEGRAM_CHANNEL_URL ?>"><i class="fa-brands fa-telegram"></i></a></div>
                         </div>
                     </div>
-                    <div class="col-lg-2 col-md-4 col-sm-6">
-                        <div class="quick-link-wrap">
-                            <h5 class="ft-title"><?= __('quick_links', 'لینک سریع') ?></h5>
-                            <ul
-                                class="ft-link tmp-scroll-trigger animation-order-1 tmp-link-animation tmp-scroll-trigger--offscreen">
-                                <li><a href="#about"><?= __('about_us', 'درباره ما') ?></a></li>
-                                <li><a href="#pricing"><?= __('subscription', 'اشتراک') ?></a></li>
-                                <li><a href="#contact"><?= __('contact_us', 'تماس با ما') ?></a></li>
-                            </ul>
-                        </div>
-                    </div>
-                    <div class="col-lg-3 col-md-4 col-sm-6">
+                    <div class="col-lg-4 col-md-4 col-sm-6">
                         <div class="single-footer-wrapper contact-wrap">
                             <h5 class="ft-title"><?= __('contact', 'تماس') ?></h5>
                             <ul
