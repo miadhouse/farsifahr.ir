@@ -559,7 +559,25 @@ if (is_logged_in()) {
             height: 300px;
         }
         .banner-two-main-wrapper .banner-right-content .main-img .benner-two-bg-red-img img {
-            max-width: 60%;
+            max-width: 100%;
+            width: 100%;
+        }
+
+        .banner-two-main-wrapper .banner-right-content .main-img .banner-big-text-1,
+        .banner-two-main-wrapper .banner-right-content .main-img .banner-big-text-2 {
+            display: block !important;
+            font-size: 40px !important;
+            line-height: 1.2 !important;
+            white-space: nowrap !important;
+            width: max-content !important;
+            left: 50% !important;
+            transform: translateX(-50%) !important;
+        }
+        .banner-two-main-wrapper .banner-right-content .main-img .banner-big-text-1 {
+            top: 20% !important;
+        }
+        .banner-two-main-wrapper .banner-right-content .main-img .banner-big-text-2 {
+            bottom: 20% !important;
         }
 
         /* Header Mobile Fixes */
