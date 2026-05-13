@@ -569,15 +569,16 @@ if (is_logged_in()) {
             font-size: 55px !important;
             line-height: 1 !important;
             white-space: nowrap !important;
-            width: max-content !important;
-            left: 50% !important;
-            transform: translateX(-50%) !important;
+            width: 100% !important;
+            left: 0 !important;
+            right: 0 !important;
+            text-align: center !important;
         }
         .banner-two-main-wrapper .banner-right-content .main-img .banner-big-text-1 {
-            top: 35% !important;
+            top: 55% !important;
         }
         .banner-two-main-wrapper .banner-right-content .main-img .banner-big-text-2 {
-            top: 45% !important;
+            top: 65% !important;
         }
 
         /* Header Mobile Fixes */
