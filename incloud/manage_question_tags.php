@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../config/config.php';
+require_once __DIR__ . '/functions.php';
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -14,7 +15,7 @@ if (!isset($_POST['csrf_token']) || empty($_POST['csrf_token'])) {
     exit;
 }
 
-$isAdmin = isset($_SESSION['role']) && $_SESSION['role'] === 'admin';
+$isAdmin = is_super_admin();
 if (!$isAdmin) {
     echo json_encode(['success' => false, 'message' => 'دسترسی غیرمجاز']);
     exit;

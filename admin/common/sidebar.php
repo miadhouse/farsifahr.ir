@@ -24,6 +24,14 @@
         <div><?= __('dashboard') ?></div>
       </a>
     </li>
+    <?php if (is_super_admin()): ?>
+    <li class="menu-item">
+      <a href="/panel" class="menu-link">
+        <i class="menu-icon tf-icons bx bx-shield-quarter"></i>
+        <div class="text-warning"><?= __('admin_panel', 'پنل مدیریت اصلی') ?></div>
+      </a>
+    </li>
+    <?php endif; ?>
     <li class="menu-item">
       <a href="javascript:void(0);" class="menu-link menu-toggle">
         <i class="menu-icon tf-icons bx bx-task"></i>
@@ -43,12 +51,6 @@
       </ul>
     </li>
     <li class="menu-item">
-      <a href="/#study-plan" class="menu-link">
-        <i class="menu-icon tf-icons bx bx-calendar-event"></i>
-        <div><?= __('my_study_plan') ?></div>
-      </a>
-    </li>
-    <li class="menu-item">
       <a href="subscription.php" class="menu-link">
         <i class="menu-icon tf-icons bx bx-wallet"></i>
         <div data-i18n="subscription"><?= __('subscription') ?></div>
@@ -56,8 +58,14 @@
     </li>
     <li class="menu-item">
       <a href="free-subscription.php" class="menu-link">
-        <i class="menu-icon tf-icons bx bx-gift"></i>
-        <div><?= __('free_subscription') ?></div>
+        <i class="menu-icon tf-icons bx bx-medal"></i>
+        <div><?= __('earn_points') ?></div>
+      </a>
+    </li>
+    <li class="menu-item">
+      <a href="exams.php" class="menu-link">
+        <i class="menu-icon tf-icons bx bx-collection"></i>
+        <div><?= __('exam_simulator') ?></div>
       </a>
     </li>
     <li class="menu-item">

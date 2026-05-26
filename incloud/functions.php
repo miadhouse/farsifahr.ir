@@ -98,6 +98,9 @@ function log_user_action($user_id, $email, $action, $status, $pdo)
 // بررسی ورود کاربر
 function is_logged_in()
 {
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
     return isset($_SESSION['user_id']) && isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true;
 }
 
@@ -105,6 +108,12 @@ function is_logged_in()
 function is_admin()
 {
     return isset($_SESSION['role']) && $_SESSION['role'] === 'admin';
+}
+
+// بررسی ادمین اصلی (Super Admin)
+function is_super_admin()
+{
+    return isset($_SESSION['email']) && $_SESSION['email'] === 'miadaleali@gmail.com';
 }
 
 // خروج از حساب
@@ -207,9 +216,17 @@ function generate_referral_code($pdo, $length = 8)
 // ذخیره سشن در دیتابیس
 function save_session($user_id, $pdo)
 {
-    // پاک کردن سشن‌های قبلی این کاربر برای جلوگیری از لاگین همزمان
-    $stmtDel = $pdo->prepare("DELETE FROM sessions WHERE user_id = ?");
-    $stmtDel->execute([$user_id]);
+    // دریافت اطلاعات کاربر برای بررسی ایمیل
+    $stmtUser = $pdo->prepare("SELECT email FROM users WHERE id = ?");
+    $stmtUser->execute([$user_id]);
+    $user = $stmtUser->fetch();
+    $is_super = ($user && $user['email'] === 'miadaleali@gmail.com');
+
+    // پاک کردن سشن‌های قبلی این کاربر برای جلوگیری از لاگین همزمان (به جز ادمین اصلی)
+    if (!$is_super) {
+        $stmtDel = $pdo->prepare("DELETE FROM sessions WHERE user_id = ?");
+        $stmtDel->execute([$user_id]);
+    }
 
     $session_id = session_id();
     $ip = $_SERVER['REMOTE_ADDR'];
@@ -241,11 +258,13 @@ function validate_session($pdo)
     $stmt->execute([$_SESSION['session_id'], $_SESSION['user_id'], SESSION_LIFETIME]);
 
     if ($stmt->rowCount() === 0) {
-        // چک کنیم آیا کاربر در دستگاه دیگری لاگین کرده است
-        $stmtCheck = $pdo->prepare("SELECT id FROM sessions WHERE user_id = ?");
-        $stmtCheck->execute([$_SESSION['user_id']]);
-        if ($stmtCheck->rowCount() > 0) {
-            setcookie('concurrent_login', '1', time() + 60, '/');
+        // چک کنیم آیا کاربر در دستگاه دیگری لاگین کرده است (به جز ادمین اصلی)
+        if (!is_super_admin()) {
+            $stmtCheck = $pdo->prepare("SELECT id FROM sessions WHERE user_id = ?");
+            $stmtCheck->execute([$_SESSION['user_id']]);
+            if ($stmtCheck->rowCount() > 0) {
+                setcookie('concurrent_login', '1', time() + 60, '/');
+            }
         }
         
         // فقط سشن آیدی را پاک می‌کنیم نه کل سشن را

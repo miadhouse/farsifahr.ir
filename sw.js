@@ -1,4 +1,4 @@
-const CACHE_NAME = 'farsifahr-pwa-cache-v3';
+const CACHE_NAME = 'farsifahr-pwa-cache-v4';
 const urlsToCache = [
   '/assets/css/style.rtl.css',
   '/assets/css/vendor/bootstrap.min.rtl.css',

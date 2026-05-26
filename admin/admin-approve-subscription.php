@@ -6,10 +6,11 @@
 
 session_start();
 require_once('../config/config.php');
+require_once('../incloud/functions.php');
 require_once('../incloud/subscription-functions.php');
 
-// بررسی دسترسی ادمین (این بخش را متناسب با سیستم خود تنظیم کنید)
-if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') {
+// بررسی دسترسی ادمین
+if (!is_super_admin()) {
     die('دسترسی غیرمجاز');
 }
 

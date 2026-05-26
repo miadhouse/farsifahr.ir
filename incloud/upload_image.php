@@ -17,7 +17,7 @@ if (!verify_csrf_token($token)) {
 }
 
 // Check if user is admin
-$isAdmin = isset($_SESSION['role']) && $_SESSION['role'] === 'admin';
+$isAdmin = is_super_admin();
 if (!$isAdmin) {
     echo json_encode(['success' => false, 'message' => 'دسترسی غیرمجاز']);
     exit;

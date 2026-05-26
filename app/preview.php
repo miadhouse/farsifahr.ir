@@ -110,50 +110,41 @@ $user_id = 0; // Anonymous
     <link href="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-lite.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-lite.min.js"></script>
     
-    <!-- Driver.js for Tour -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/driver.js@1.0.1/dist/driver.css"/>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
-        /* تور استایل */
-        .driver-popover {
-            direction: rtl !important;
-            text-align: right !important;
-            font-family: 'Tahoma', sans-serif !important;
+        /* استایل پرچم‌ها */
+        .lang-switcher {
+            position: fixed;
+            top: 85px; /* کمی پایین‌تر از هدر چسبنده */
+            right: 0;
+            z-index: 1001;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 5px;
+            border-top-left-radius: 10px;
+            border-bottom-left-radius: 10px;
+            box-shadow: -2px 0 10px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
         }
-        .driver-popover-title {
-            font-weight: bold !important;
-            font-size: 1.1rem !important;
+        .lang-flag {
+            width: 25px;
+            height: 18px;
+            cursor: pointer;
+            border-radius: 3px;
+            opacity: 0.6;
+            transition: all 0.2s ease;
+            object-fit: cover;
+            border: 1px solid #ddd;
         }
-        .driver-popover-description {
-            font-size: 0.95rem !important;
-            line-height: 1.6 !important;
+        .lang-flag.active {
+            opacity: 1;
+            transform: scale(1.1);
+            border-color: #5a8dee;
+            box-shadow: 0 0 5px rgba(90, 141, 238, 0.5);
         }
-        .driver-popover-footer {
-            display: flex !important;
-            align-items: center !important;
-            justify-content: space-between !important;
-            flex-wrap: wrap !important;
-            gap: 10px !important;
-        }
-        .driver-popover-progress-text {
-            order: 2 !important;
-            margin-right: auto !important;
-            margin-left: auto !important;
-        }
-        .driver-popover-navigation-btns {
-            order: 3 !important;
-        }
-        #dontShowTourContainer {
-            order: 1 !important;
-        }
-        .driver-popover-next-btn, .driver-popover-prev-btn {
-            background-color: #5a8dee !important;
-            text-shadow: none !important;
-            color: white !important;
-            border: none !important;
-        }
-    </style>
-    <style>
+        
         /* استایل تصاویر داخل توضیحات و ترجمه‌ها */
         .note-modal { z-index: 100001 !important; }
         .note-modal-backdrop { z-index: 100000 !important; }
@@ -796,6 +787,12 @@ $user_id = 0; // Anonymous
 </head>
 
 <body style="min-height: 100vh; background-color: #d3f5da;" class="<?= $mode === 'practice' ? 'practice-mode' : '' ?>">
+    <!-- Language Switcher -->
+    <div class="lang-switcher">
+        <img src="https://flagcdn.com/w40/de.png" class="lang-flag active" id="lang-de" onclick="switchLanguage('de')" title="Deutsch">
+        <img src="https://flagcdn.com/w40/gb.png" class="lang-flag" id="lang-en" onclick="switchLanguage('en')" title="English">
+    </div>
+
     <!-- Vocabulary Bottom Sheet -->
     <div id="sheet-overlay" class="sheet-overlay" onclick="closeVocabSheet()"></div>
     <div id="vocab-sheet" class="vocab-bottom-sheet">
@@ -1096,6 +1093,7 @@ $user_id = 0; // Anonymous
         let currentQuestionIndex = <?= $currentQuestionIndex ?>;
         let questionsPerPage;
         let currentQuestionData = null;
+        let displayLanguage = 'de'; // 'de' or 'en'
         let isVideoQuestion = false;
         let videoViewCount = 0;
         let maxVideoViews = 5;
@@ -1125,6 +1123,21 @@ $user_id = 0; // Anonymous
         let translationActive = false;
         let explanationActive = false;
 
+
+        function switchLanguage(lang) {
+            if (displayLanguage === lang) return;
+            
+            displayLanguage = lang;
+            
+            // Update UI
+            document.querySelectorAll('.lang-flag').forEach(el => el.classList.remove('active'));
+            document.getElementById('lang-' + lang).classList.add('active');
+            
+            // Re-render current question if data exists
+            if (currentQuestionData) {
+                updateQuestionDisplay(currentQuestionData);
+            }
+        }
 
         function createFormDataWithCSRF(data = {}) {
             const formData = new URLSearchParams();
@@ -2460,7 +2473,11 @@ function solveQuestion() {
                 showRegularQuestion(data);
             } else if (isVideoQuestion) {
                 videoUrl = 'https://www.theorie24.de/live_images/_current_ws_2024-10-01_2025-04-01/videos/' + fileName;
-                showVideoQuestion(data, fileNameWithoutExt);
+                if (showingAnswers) {
+                    showAnswers();
+                } else {
+                    showVideoQuestion(data, fileNameWithoutExt);
+                }
             } else {
                 document.getElementById("media").innerHTML = '';
                 showRegularQuestion(data);
@@ -2471,7 +2488,8 @@ function solveQuestion() {
         }
         
         function showVideoQuestion(data, fileNameWithoutExt) {
-            document.getElementById("text").innerText = "Bitte starten Sie den Film, um sich mit der Situation vertraut zu machen.";
+            const videoText = displayLanguage === 'en' ? "Please start the film to familiarize yourself with the situation." : "Bitte starten Sie den Film, um sich mit der Situation vertraut zu machen.";
+            document.getElementById("text").innerText = videoText;
             document.getElementById("asw_pretext").innerHTML = '';
             document.getElementById("asw_pretext").style.display = "none";
             document.getElementById("pretext-translation-container").style.display = "none";
@@ -2497,8 +2515,14 @@ function solveQuestion() {
         }
 
         function showRegularQuestion(data) {
-            document.getElementById("text").innerText = data['question']['text'];
-            document.getElementById("asw_pretext").innerHTML = data['question']['asw_pretext'] || '';
+            if (displayLanguage === 'en' && data['question']['en_text']) {
+                document.getElementById("text").innerText = data['question']['en_text'];
+                document.getElementById("asw_pretext").innerHTML = data['question']['asw_en'] || '';
+            } else {
+                document.getElementById("text").innerText = data['question']['text'];
+                document.getElementById("asw_pretext").innerHTML = data['question']['asw_pretext'] || '';
+            }
+            
             document.getElementById("asw_pretext").style.display = "block";
             document.getElementById("pretext-translation-container").style.display = "block";
             document.getElementById("pretext-explanation-container").style.display = "block";
@@ -2609,8 +2633,14 @@ function solveQuestion() {
 
             document.getElementById("answers").style.display = "block";
 
-            document.getElementById("text").innerText = currentQuestionData['question']['text'];
-            document.getElementById("asw_pretext").innerHTML = currentQuestionData['question']['asw_pretext'] || '';
+            if (displayLanguage === 'en' && currentQuestionData['question']['en_text']) {
+                document.getElementById("text").innerText = currentQuestionData['question']['en_text'];
+                document.getElementById("asw_pretext").innerHTML = currentQuestionData['question']['asw_en'] || '';
+            } else {
+                document.getElementById("text").innerText = currentQuestionData['question']['text'];
+                document.getElementById("asw_pretext").innerHTML = currentQuestionData['question']['asw_pretext'] || '';
+            }
+            
             document.getElementById("asw_pretext").style.display = "block";
             document.getElementById("pretext-translation-container").style.display = "block";
             document.getElementById("pretext-explanation-container").style.display = "block";
@@ -2709,7 +2739,7 @@ function answerBuilder(answers = null) {
                     let imageUrl = '';
                     let maxWidth = '';
                     if (isEtcImage || imageName.toLowerCase().startsWith('div')) {
-                        imageUrl = `https://t24.theorie24.de/2025-01-v400/data/img/etc/de/${imageName}`;
+                        imageUrl = `https://t24.theorie24.de/2025-01-v400/data/img/etc/${displayLanguage}/${imageName}`;
                         maxWidth = 300;
                     } else {
                         imageUrl = `https://t24.theorie24.de/2025-01-v400/data/img/answers/${imageName}`;
@@ -2718,7 +2748,7 @@ function answerBuilder(answers = null) {
 
                     answerContent = `<img src="${imageUrl}" alt="Answer ${index + 1}" class="img-fluid" style="max-width:${maxWidth}px; height: auto;">`;
                 } else {
-                    const decodedText = answer['text'];
+                    const decodedText = (displayLanguage === 'en' && answer['en_text']) ? answer['en_text'] : answer['text'];
                     answerContent = `
                         <div class="vocabulary-selection">
                             <span class="fw-bold" name="text" status="richtig">${decodedText}</span>
@@ -3449,142 +3479,6 @@ function answerBuilder(answers = null) {
         });
 </script>
 
-    <script src="https://cdn.jsdelivr.net/npm/driver.js@1.0.1/dist/driver.js.iife.js"></script>
-    <script>
-    function startGuidedTour() {
-        // بررسی اینکه آیا کاربر قبلاً تور را دیده یا خیر
-        if (localStorage.getItem('farsifahr_tour_shown') === 'true') {
-            return;
-        }
-
-        const driver = window.driver.js.driver;
-        const driverObj = driver({
-            showProgress: true,
-            nextBtnText: 'بعدی',
-            prevBtnText: 'قبلی',
-            doneBtnText: 'پایان',
-            allowClose: true,
-            overlayColor: 'rgba(0,0,0,0.8)',
-            onDestroyStarted: () => {
-                if (window.tourCheckboxChecked) {
-                    localStorage.setItem('farsifahr_tour_shown', 'true');
-                }
-                driverObj.destroy();
-            },
-            onPopoverRender: (popover) => {
-                const footer = popover.footer || document.querySelector('.driver-popover-footer');
-                if (footer && !document.getElementById('dontShowTourContainer')) {
-                    const container = document.createElement("div");
-                    container.id = "dontShowTourContainer";
-                    container.style.display = "flex";
-                    container.style.alignItems = "center";
-                    container.style.gap = "5px";
-                    container.style.marginRight = "auto";
-
-                    const checkbox = document.createElement("input");
-                    checkbox.type = "checkbox";
-                    checkbox.id = "dontShowTourCheckbox";
-                    checkbox.style.cursor = "pointer";
-                    if (window.tourCheckboxChecked) checkbox.checked = true;
-                    checkbox.addEventListener("change", (e) => {
-                        window.tourCheckboxChecked = e.target.checked;
-                        if (e.target.checked) {
-                            localStorage.setItem('farsifahr_tour_shown', 'true');
-                        } else {
-                            localStorage.removeItem('farsifahr_tour_shown');
-                        }
-                    });
-
-                    const label = document.createElement("label");
-                    label.htmlFor = "dontShowTourCheckbox";
-                    label.innerText = "دیگر نشان نده";
-                    label.style.fontSize = "12px";
-                    label.style.color = "#666";
-                    label.style.cursor = "pointer";
-                    label.style.margin = "0";
-
-                    const closeBtn = document.createElement("button");
-                    closeBtn.innerText = "بستن";
-                    closeBtn.style.fontSize = "12px";
-                    closeBtn.style.color = "#f56565";
-                    closeBtn.style.border = "1px solid #f56565";
-                    closeBtn.style.borderRadius = "4px";
-                    closeBtn.style.background = "transparent";
-                    closeBtn.style.padding = "2px 8px";
-                    closeBtn.style.cursor = "pointer";
-                    
-                    closeBtn.addEventListener("click", () => {
-                        if (checkbox.checked) {
-                            localStorage.setItem('farsifahr_tour_shown', 'true');
-                        }
-                        driverObj.destroy();
-                    });
-
-                    container.appendChild(closeBtn);
-                    container.appendChild(checkbox);
-                    container.appendChild(label);
-
-                    footer.appendChild(container);
-                }
-            },
-            steps: [
-                { 
-                    element: '#translateBtn', 
-                    popover: { 
-                        title: 'دکمه ترجمه', 
-                        description: 'با کلیک روی این دکمه، صورت سوال و تمام گزینه‌ها بلافاصله به فارسی ترجمه می‌شوند.',
-                        side: "bottom", align: 'start' 
-                    } 
-                },
-                { 
-                    element: '#explainBtn', 
-                    popover: { 
-                        title: 'دکمه توضیح و درک مطلب', 
-                        description: 'این دکمه علاوه بر ترجمه، توضیح کامل و منطق سوال را برای یادگیری بهتر به شما نمایش می‌دهد.',
-                        side: "bottom", align: 'start' 
-                    } 
-                },
-                { 
-                    element: '#next-btn', 
-                    popover: { 
-                        title: 'ناوبری سوالات', 
-                        description: 'برای رفتن به سوال بعدی از این دکمه استفاده کنید. همچنین می‌توانید از کلیدهای جهت‌نما استفاده کنید.',
-                        side: "top", align: 'start' 
-                    } 
-                },
-                { 
-                    element: '#bookmark-btn', 
-                    popover: { 
-                        title: 'علامت‌گذاری سوال', 
-                        description: 'سوالات مهم یا سخت را ستاره‌دار کنید تا بعداً در بخش سوالات نشان‌شده راحت‌تر آن‌ها را پیدا و مرور کنید.',
-                        side: "top", align: 'start' 
-                    } 
-                },
-                { 
-                    element: '#question-buttons', 
-                    popover: { 
-                        title: 'وضعیت یادگیری سوالات', 
-                        description: 'دایره‌های رنگی وضعیت شما را نشان می‌دهند:<br>🔘 <b>خاکستری:</b> پاسخ داده نشده<br>🔴 <b>قرمز:</b> بلد نیستید (۲ پاسخ غلط)<br>🔵 <b>آبی:</b> ۵۰-۵۰ هستید<br>🟢 <b>سبز:</b> این سوال را کاملاً بلدید',
-                        side: "top", align: 'center' 
-                    } 
-                },
-                { 
-                    element: '#text', 
-                    popover: { 
-                        title: 'ترجمه هوشمند کلمات', 
-                        description: 'روی هر کلمه آلمانی که کلیک کنید، ترجمه آن باز می‌شود. می‌توانید آن را ذخیره کنید تا در بخش "واژه آموزی" داشبورد به صورت فلش‌کارت تمرین کنید.',
-                        side: "bottom", align: 'center' 
-                    } 
-                }
-            ]
-        });
-
-        driverObj.drive();
-    }
-
-    // شروع تور با کمی تاخیر برای لود کامل سوال
-    setTimeout(startGuidedTour, 1500);
-    </script>
 </body>
 
 </html>

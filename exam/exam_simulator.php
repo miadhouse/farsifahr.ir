@@ -107,6 +107,7 @@ $allQuestions = array_merge($grundstoffIds, $zusatzstoffIds);
     <title>Prüfungssimulation</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.12.0/css/all.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
     <style>
         .custom-checkbox .checkmark:after {
             border: solid #fff;
@@ -323,32 +324,79 @@ $allQuestions = array_merge($grundstoffIds, $zusatzstoffIds);
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.8);
+            background: rgba(0, 0, 0, 0.85);
             display: none;
             align-items: center;
             justify-content: center;
             z-index: 9999;
+            backdrop-filter: blur(5px);
         }
 
         .results-content {
-            background: white;
-            border-radius: 20px;
-            padding: 40px;
-            max-width: 600px;
-            width: 90%;
+            background: #f8f9fa;
+            border-radius: 25px;
+            padding: 30px;
+            max-width: 700px;
+            width: 95%;
             text-align: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            direction: rtl;
+        }
+
+        .result-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+            transition: transform 0.3s;
+        }
+
+        .result-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .result-stat-box {
+            padding: 15px;
+            border-radius: 12px;
+            background: #f1f3f5;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .stat-icon {
+            font-size: 24px;
+            margin-bottom: 10px;
         }
 
         .result-passed {
             color: #198754;
-            font-size: 48px;
             font-weight: bold;
         }
 
         .result-failed {
             color: #dc3545;
-            font-size: 48px;
             font-weight: bold;
+        }
+
+        .result-title-text {
+            font-size: 32px;
+            margin-top: 10px;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: #6c757d;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 20px;
+            font-weight: bold;
+            color: #212529;
         }
     </style>
 </head>
@@ -469,24 +517,29 @@ $allQuestions = array_merge($grundstoffIds, $zusatzstoffIds);
     <!-- Results Modal -->
     <div class="results-modal" id="results-modal">
         <div class="results-content">
-            <div id="result-icon" class="mb-4"></div>
-            <h2 id="result-title" class="mb-3"></h2>
-            <div id="result-details" class="mb-4"></div>
-            <div class="d-flex gap-3 justify-content-center">
-                <button class="btn btn-primary" onclick="reviewAnswers()">
-                    Antworten überprüfen
+            <div id="result-icon"></div>
+            <h2 id="result-title" class="mb-4"></h2>
+            
+            <div class="result-card">
+                <div id="result-details"></div>
+            </div>
+
+            <div class="d-flex gap-2 gap-md-3 justify-content-center flex-wrap mt-4">
+                <button class="btn btn-primary px-4 py-2 rounded-pill" onclick="reviewAnswers()">
+                    <i class="fas fa-search me-1"></i> بررسی پاسخ‌ها
                 </button>
-                <button class="btn btn-success" onclick="location.reload()">
-                    Neue Prüfung
+                <button class="btn btn-success px-4 py-2 rounded-pill" onclick="location.reload()">
+                    <i class="fas fa-redo me-1"></i> امتحان مجدد
                 </button>
-                <button class="btn btn-secondary" onclick="location.href='../admin/'">
-                    Zurück
+                <button class="btn btn-secondary px-4 py-2 rounded-pill" onclick="location.href='../admin/'">
+                    <i class="fas fa-home me-1"></i> بازگشت
                 </button>
             </div>
         </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
         const csrfToken = '<?= $csrf_token ?>';
         const grundstoffQuestions = <?= json_encode($grundstoffIds) ?>;
@@ -1113,13 +1166,29 @@ $allQuestions = array_merge($grundstoffIds, $zusatzstoffIds);
         });
 
         function showResultsConfirm() {
+            const allQuestions = [...grundstoffQuestions, ...zusatzstoffQuestions];
+            const answeredCount = allQuestions.filter(id => userAnswers[id] && Object.keys(userAnswers[id]).length > 0).length;
+
+            if (answeredCount < allQuestions.length) {
+                Swal.fire({
+                    title: 'سوالات ناتمام',
+                    text: `شما به ${answeredCount} سوال از ${allQuestions.length} سوال پاسخ داده‌اید. برای مشاهده نتیجه باید به تمام سوالات پاسخ دهید.`,
+                    icon: 'warning',
+                    confirmButtonText: 'متوجه شدم',
+                    confirmButtonColor: '#ffc107',
+                });
+                return;
+            }
+
             Swal.fire({
-                title: 'توجه',
-                text: 'Möchten Sie die Prüfung jetzt beenden und das Ergebnis sehen?',
-                icon: 'warning',
+                title: 'پایان آزمون',
+                text: 'آیا مایلید آزمون را به پایان رسانده و نتیجه را مشاهده کنید؟',
+                icon: 'question',
                 showCancelButton: true,
-                confirmButtonText: 'بله',
-                cancelButtonText: 'خیر'
+                confirmButtonText: 'بله، مشاهده نتیجه',
+                cancelButtonText: 'خیر، ادامه آزمون',
+                confirmButtonColor: '#198754',
+                cancelButtonColor: '#6c757d',
             }).then((result) => {
                 if (result.isConfirmed) {
                     finishExam();
@@ -1138,7 +1207,8 @@ $allQuestions = array_merge($grundstoffIds, $zusatzstoffIds);
             let totalPoints = 0;
             let earnedPoints = 0;
             let errorPoints = 0;
-            let fivePointErrors = 0; // تعداد سوالات 5 امتیازی که اشتباه پاسخ داده شده
+            let fivePointErrors = 0;
+            let wrongQuestionsIds = [];
 
             const allQuestions = [...grundstoffQuestions, ...zusatzstoffQuestions];
             let processedCount = 0;
@@ -1165,22 +1235,50 @@ $allQuestions = array_merge($grundstoffIds, $zusatzstoffIds);
                                 earnedPoints += points;
                             } else {
                                 errorPoints += points;
-                                // شمارش سوالات 5 امتیازی اشتباه
+                                wrongQuestionsIds.push(questionId);
                                 if (points === 5) {
                                     fivePointErrors++;
                                 }
                             }
 
-                            // ذخیره وضعیت سوال در دیتابیس
                             saveQuestionStatus(questionId, isCorrect);
 
-                            // وقتی همه سوالات پردازش شدند
                             if (processedCount === allQuestions.length) {
+                                let passed = (errorPoints <= 10 && fivePointErrors < 2) ? 1 : 0;
+                                saveExamResults(earnedPoints, correctCount, errorPoints, fivePointErrors, passed, wrongQuestionsIds, allQuestions);
                                 displayResults(correctCount, earnedPoints, totalPoints, errorPoints, fivePointErrors);
                             }
                         }
                     });
             });
+        }
+
+        function saveExamResults(score, correctCount, errorPoints, fivePointErrors, passed, wrongQuestionsIds, allQuestionsIds) {
+            const formData = createFormDataWithCSRF({
+                score: score,
+                total_questions: allQuestionsIds.length,
+                correct_count: correctCount,
+                error_points: errorPoints,
+                five_point_errors: fivePointErrors,
+                passed: passed,
+                wrong_questions: JSON.stringify(wrongQuestionsIds),
+                all_questions: JSON.stringify(allQuestionsIds)
+            });
+
+            fetch("../incloud/save_exam_history.php", {
+                method: "POST",
+                headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    console.log("Exam history saved successfully.");
+                } else {
+                    console.error("Error saving exam history:", data.error);
+                }
+            })
+            .catch(error => console.error("Error saving exam history:", error));
         }
 
         // تابع جدید برای ذخیره وضعیت سوال در دیتابیس
@@ -1238,35 +1336,67 @@ $allQuestions = array_merge($grundstoffIds, $zusatzstoffIds);
 
             if (errorPoints > 10) {
                 passed = false;
-                failReason = 'Mehr als 10 Fehlerpunkte';
+                failReason = 'بیش از ۱۰ امتیاز منفی (نمره منفی شما: ' + errorPoints + ')';
             } else if (fivePointErrors >= 2) {
                 passed = false;
-                failReason = 'Zwei 5-Punkte-Fragen falsch beantwortet';
+                failReason = 'دو پاسخ اشتباه در سوالات ۵ امتیازی';
             }
 
             const modal = document.getElementById('results-modal');
 
             if (passed) {
-                document.getElementById('result-icon').innerHTML = '<i class="fas fa-check-circle result-passed"></i>';
-                document.getElementById('result-title').innerHTML = '<span class="result-passed">Bestanden!</span>';
+                document.getElementById('result-icon').innerHTML = '<i class="fas fa-check-circle text-success" style="font-size: 80px;"></i>';
+                document.getElementById('result-title').innerHTML = '<div class="result-passed result-title-text">تبریک! قبول شدید</div>';
             } else {
-                document.getElementById('result-icon').innerHTML = '<i class="fas fa-times-circle result-failed"></i>';
-                document.getElementById('result-title').innerHTML = '<span class="result-failed">Nicht bestanden</span>';
+                document.getElementById('result-icon').innerHTML = '<i class="fas fa-times-circle text-danger" style="font-size: 80px;"></i>';
+                document.getElementById('result-title').innerHTML = '<div class="result-failed result-title-text">متأسفانه قبول نشدید</div>';
             }
 
             let resultHTML = `
-            <h4>Ergebnis:</h4>
-            <p class="fs-5"><strong>${correctCount}</strong> von <strong>30</strong> Fragen richtig</p>
-            <p class="fs-5"><strong>${earnedPoints}</strong> von <strong>${totalPoints}</strong> Punkten</p>
-            <p class="fs-5">Fehlerpunkte: <strong>${errorPoints}</strong></p>
-        `;
-
-            if (fivePointErrors > 0) {
-                resultHTML += `<p class="fs-6 text-warning">⚠️ <strong>${fivePointErrors}</strong> Frage(n) mit 5 Punkten falsch beantwortet</p>`;
-            }
+                <div class="row g-3">
+                    <div class="col-6 col-md-3">
+                        <div class="result-stat-box">
+                            <div class="stat-icon text-primary"><i class="fas fa-question-circle"></i></div>
+                            <div class="stat-label">کل سوالات</div>
+                            <div class="stat-value">۳۰</div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="result-stat-box">
+                            <div class="stat-icon text-success"><i class="fas fa-check"></i></div>
+                            <div class="stat-label">پاسخ صحیح</div>
+                            <div class="stat-value">${correctCount}</div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="result-stat-box">
+                            <div class="stat-icon text-danger"><i class="fas fa-exclamation-triangle"></i></div>
+                            <div class="stat-label">نمره منفی</div>
+                            <div class="stat-value">${errorPoints}</div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="result-stat-box">
+                            <div class="stat-icon text-warning"><i class="fas fa-star"></i></div>
+                            <div class="stat-label">امتیاز کسب شده</div>
+                            <div class="stat-value">${earnedPoints}</div>
+                        </div>
+                    </div>
+                </div>
+            `;
 
             if (!passed && failReason) {
-                resultHTML += `<p class="text-danger"><strong>Grund:</strong> ${failReason}</p>`;
+                resultHTML += `
+                    <div class="alert alert-danger mt-4 border-0 rounded-4">
+                        <i class="fas fa-info-circle me-1"></i> <strong>علت مردودی:</strong> ${failReason}
+                    </div>
+                `;
+            } else if (passed && errorPoints > 0) {
+                 resultHTML += `
+                    <div class="alert alert-warning mt-4 border-0 rounded-4 text-dark">
+                        <i class="fas fa-exclamation-circle me-1"></i> شما با <strong>${errorPoints}</strong> امتیاز منفی قبول شدید.
+                    </div>
+                `;
             }
 
             document.getElementById('result-details').innerHTML = resultHTML;

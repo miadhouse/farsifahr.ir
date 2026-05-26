@@ -36,98 +36,10 @@ $stmtReports = $pdo->prepare("
 ");
 $stmtReports->execute([$_SESSION['user_id']]);
 $user_reports = $stmtReports->fetchAll();
-
-// بررسی وجود برنامه مطالعه
-$stmtPlanCheck = $pdo->prepare("SELECT * FROM study_plans WHERE user_id = ?");
-$stmtPlanCheck->execute([$_SESSION['user_id']]);
-$study_plan = $stmtPlanCheck->fetch();
-$hasStudyPlanDashboard = $study_plan ? true : false;
-
-$plan_info = null;
-if ($study_plan) {
-    $created_at = strtotime($study_plan['created_at']);
-    $days_passed = floor((time() - $created_at) / (60 * 60 * 24));
-    $current_day = $days_passed + 1;
-    $days_remaining = max(0, $study_plan['estimated_total_days'] - $days_passed);
-    
-    $today_name = date('D');
-    $study_days = explode(',', $study_plan['study_days']);
-    $is_study_day = in_array($today_name, $study_days);
-    $today_hours = $is_study_day ? $study_plan['daily_hours'] : 0;
-    
-    $day_map = [
-        'Sat' => 'شنبه',
-        'Sun' => 'یکشنبه',
-        'Mon' => 'دوشنبه',
-        'Tue' => 'سه‌شنبه',
-        'Wed' => 'چهارشنبه',
-        'Thu' => 'پنجشنبه',
-        'Fri' => 'جمعه'
-    ];
-    $persian_days = array_map(fn($d) => $day_map[$d] ?? $d, $study_days);
-    
-    $plan_info = [
-        'current_day' => $current_day,
-        'days_remaining' => $days_remaining,
-        'today_hours' => $today_hours,
-        'study_days' => implode('، ', $persian_days)
-    ];
-}
 ?>
-
-<script>
-    window.showStudyPlanModal = function() {
-        <?php if (!$hasStudyPlanDashboard): ?>
-        setTimeout(() => {
-            Swal.fire({
-                title: 'برنامه مطالعه اختصاصی',
-                text: 'آیا مایل هستید بدانید چقدر زمان برای آماده شدن نیاز دارید و برنامه مطالعه اختصاصی بگیرید؟',
-                icon: 'question',
-                showCancelButton: true,
-                confirmButtonText: 'بله، همین حالا',
-                cancelButtonText: 'فعلاً نه',
-                customClass: { confirmButton: 'btn btn-primary me-3', cancelButton: 'btn btn-label-secondary' },
-                buttonsStyling: false
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    window.location.href = '<?= SITE_URL ?>#open-study-plan';
-                }
-            });
-        }, 1000);
-        <?php endif; ?>
-    };
-</script>
 
 <div class="container-xxl flex-grow-1 container-p-y">
     
-    <?php if ($plan_info): ?>
-    <div class="card mb-4">
-        <div class="card-body py-3 d-flex justify-content-between align-items-center flex-wrap">
-            <div class="d-flex align-items-center flex-wrap gap-4">
-                <span>
-                    <i class="bx bx-calendar-check text-primary me-1"></i>
-                    <strong><?= __('program_day') ?>:</strong> <?php echo $plan_info['current_day']; ?>
-                </span>
-                <span>
-                    <i class="bx bx-time-five text-primary me-1"></i>
-                    <strong><?= __('today_study_hours') ?>:</strong> <?php echo $plan_info['today_hours']; ?> <?= __('hours') ?>
-                </span>
-                <span>
-                    <i class="bx bx-hourglass text-primary me-1"></i>
-                    <strong><?= __('remaining_days') ?>:</strong> <?php echo $plan_info['days_remaining']; ?>
-                </span>
-                <span>
-                    <i class="bx bx-calendar text-primary me-1"></i>
-                    <strong><?= __('study_days_label') ?>:</strong> <?php echo $plan_info['study_days']; ?>
-                </span>
-            </div>
-            <a href="<?= SITE_URL ?>#open-study-plan" class="btn btn-sm btn-outline-primary mt-2 mt-md-0">
-                <i class="bx bx-edit-alt me-1"></i> <?= __('edit_program') ?>
-            </a>
-        </div>
-    </div>
-    <?php endif; ?>
-
     <!-- کارت تنظیمات -->
     <div class="row mb-4">
         <div class="col ">
@@ -541,48 +453,60 @@ if ($study_plan) {
 
         const options = {
             chart: {
-                height: 240,
+                height: 265,
                 type: 'radialBar',
+                sparkline: {
+                    show: true
+                },
                 fontFamily: 'IRANSans, Tahoma, Arial'
+            },
+            grid: {
+                show: false,
+                padding: {
+                    top: -23,
+                    bottom: -2
+                }
             },
             plotOptions: {
                 radialBar: {
+                    size: 100,
+                    startAngle: -135,
+                    endAngle: 135,
+                    offsetY: 10,
                     hollow: {
-                        size: '65%'
+                        size: '55%'
+                    },
+                    track: {
+                        strokeWidth: '50%',
+                        background: cardColor,
+                        opacity: 0.05
                     },
                     dataLabels: {
-                        show: true,
-                        name: {
-                            offsetY: -10,
-                            show: true,
-                            color: labelColor,
-                            fontSize: '13px',
-                            fontWeight: 400
-                        },
                         value: {
+                            offsetY: -22,
                             color: headingColor,
-                            fontSize: '30px',
                             fontWeight: 500,
-                            show: true,
+                            fontSize: '26px',
                             formatter: function (val) {
                                 return parseInt(val) + '%';
                             }
+                        },
+                        name: {
+                            fontSize: '15px',
+                            color: legendColor,
+                            offsetY: 20
                         }
-                    },
-                    track: {
-                        background: cardColor,
-                        strokeWidth: '100%'
                     }
                 }
             },
-            colors: [config.colors.primary],
+            colors: [config.colors.danger],
             fill: {
                 type: 'gradient',
                 gradient: {
-                    shade: shadeColor,
+                    shade: 'dark',
                     type: 'horizontal',
                     shadeIntensity: 0.5,
-                    gradientToColors: [config.colors.success],
+                    gradientToColors: [config.colors.primary],
                     inverseColors: true,
                     opacityFrom: 1,
                     opacityTo: 1,
@@ -590,7 +514,8 @@ if ($study_plan) {
                 }
             },
             stroke: {
-                lineCap: 'round'
+                show: false,
+                width: 0
             },
             labels: ['آمادگی'],
             series: [percentage]
@@ -652,7 +577,7 @@ if ($study_plan) {
             const thisWeekProgress = items[0].querySelector('.progress-bar');
             if (thisWeekSmall) thisWeekSmall.textContent = data.this_week.toLocaleString('fa-IR') + ' سوال';
             if (thisWeekProgress) {
-                const thisWeekPercentage = Math.min(100, Math.round((data.this_week / 200) * 100));
+                const thisWeekPercentage = Math.min(100, Math.round((data.this_week / 500) * 100));
                 thisWeekProgress.style.width = thisWeekPercentage + '%';
             }
         }
@@ -662,7 +587,7 @@ if ($study_plan) {
             const lastWeekProgress = items[1].querySelector('.progress-bar');
             if (lastWeekSmall) lastWeekSmall.textContent = data.last_week.toLocaleString('fa-IR') + ' سوال';
             if (lastWeekProgress) {
-                const lastWeekPercentage = Math.min(100, Math.round((data.last_week / 200) * 100));
+                const lastWeekPercentage = Math.min(100, Math.round((data.last_week / 500) * 100));
                 lastWeekProgress.style.width = lastWeekPercentage + '%';
             }
         }
@@ -676,7 +601,7 @@ if ($study_plan) {
 
         const options = {
             chart: {
-                height: 265,
+                height: 255,
                 type: 'area',
                 toolbar: {
                     show: false
@@ -804,13 +729,7 @@ if ($study_plan) {
             // منتظر بمانید تا مودال تنظیمات بسته شود
             await openConfigModal();
         }
-        
-        // نمایش مودال برنامه مطالعه (اگر تابع تعریف شده باشد)
-        if (typeof window.showStudyPlanModal === 'function') {
-            window.showStudyPlanModal();
-        }
     });
-
     // تابع باز کردن مودال تنظیمات
     async function openConfigModal() {
         const { value: examDateType } = await Swal.fire({

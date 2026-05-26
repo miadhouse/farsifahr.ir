@@ -1,7 +1,7 @@
         <?php
         $user_initial = mb_substr($_SESSION['name'] ?? 'ک', 0, 1, 'utf-8');
         $user_display_name = $_SESSION['name'] ?? 'کاربر';
-        $user_display_role = ($_SESSION['role'] ?? 'user') == 'admin' ? __('admin') : __('user');
+        $user_display_role = is_super_admin() ? __('admin') : __('user');
         ?>
         <li class="nav-item navbar-dropdown dropdown-user dropdown">
           <a class="nav-link dropdown-toggle hide-arrow" href="javascript:void(0);" data-bs-toggle="dropdown">
@@ -47,6 +47,31 @@
               </a>
             </li>
             <li>
+              <div class="dropdown-divider"></div>
+            </li>
+            <!-- Mobile Language Switcher -->
+            <li class="d-xl-none">
+              <h6 class="dropdown-header"><?= __('language', 'تغییر زبان') ?></h6>
+            </li>
+            <li class="d-xl-none">
+              <a class="dropdown-item" href="?lang=fa">
+                <i class="fi fi-ir fis rounded-circle fs-4 me-1"></i>
+                <span class="align-middle">فارسی</span>
+              </a>
+            </li>
+            <li class="d-xl-none">
+              <a class="dropdown-item" href="?lang=de">
+                <i class="fi fi-de fis rounded-circle fs-4 me-1"></i>
+                <span class="align-middle">Deutsch</span>
+              </a>
+            </li>
+            <li class="d-xl-none">
+              <a class="dropdown-item" href="?lang=en">
+                <i class="fi fi-us fis rounded-circle fs-4 me-1"></i>
+                <span class="align-middle">English</span>
+              </a>
+            </li>
+            <li class="d-xl-none">
               <div class="dropdown-divider"></div>
             </li>
             <li>

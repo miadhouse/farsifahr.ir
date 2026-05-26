@@ -1,4 +1,4 @@
-     <div class="navbar-nav align-items-center">
+     <div class="navbar-nav align-items-center d-none d-xl-flex">
                   <div class="nav-item navbar-search-wrapper mb-0">
                     <a class="nav-item nav-link search-toggler px-0" href="javascript:void(0);">
                       <i class="bx bx-search-alt bx-sm"></i>

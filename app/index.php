@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../incloud/questions.php';
+require_once __DIR__ . '/../incloud/functions.php';
 // در ابتدای فایل PHP بعد از require_once
 // فقط token موجود در session را دریافت می‌کنیم (که موقع لاگین ساخته شده)
 $csrf_token = $_SESSION['csrf_token'] ?? '';
@@ -10,17 +11,20 @@ if (empty($csrf_token) || empty($user_id)) {
     header("Location: ../auth/auth.php");
     exit;
 }
-if (!isset($_POST['selected_questions'])) {
+if (!isset($_POST['selected_questions']) && !isset($_GET['questions'])) {
     die('پارامترهای لازم ارسال نشده‌اند');
 }
 
 // Get mode parameter (default to browse if not specified)
-$mode = $_POST['mode'] ?? 'browse';
+$mode = $_POST['mode'] ?? $_GET['mode'] ?? 'browse';
+
+// Get selected questions from POST or GET
+$rawQuestions = $_POST['selected_questions'] ?? $_GET['questions'] ?? '';
 
 // تبدیل به آرایه در صورت نیاز
-$selectedQuestions = is_array($_POST['selected_questions'])
-    ? $_POST['selected_questions']
-    : explode(',', $_POST['selected_questions']);
+$selectedQuestions = is_array($rawQuestions)
+    ? $rawQuestions
+    : explode(',', $rawQuestions);
 
 if (empty($selectedQuestions)) {
     echo '<div class="alert alert-warning">هیچ سوالی یافت نشد</div>';
@@ -43,6 +47,11 @@ $totalQuestions = count($selectedQuestions);
 $questionsPerPage = 10;
 $currentQuestionIndex = 0;
 $currentPage = 1;
+
+if (isset($_GET['questions'])) {
+    $firstQuestion = explode(',', $_GET['questions'])[0];
+    $_SESSION['current_question_id'] = $firstQuestion;
+}
 
 // بررسی وجود question_id در session
 if (isset($_SESSION['current_question_id']) && in_array($_SESSION['current_question_id'], $selectedQuestions)) {
@@ -89,7 +98,7 @@ if (!$isVip && $questionLimit !== null) {
     }
 }
 
-$isAdmin = isset($_SESSION['role']) && $_SESSION['role'] === 'admin';
+$isAdmin = is_super_admin();
 ?>
 <!DOCTYPE html>
 <html data-bs-theme="light" lang="en" style="height: 100%;">
@@ -1202,6 +1211,11 @@ $isAdmin = isset($_SESSION['role']) && $_SESSION['role'] === 'admin';
                 }
 
                 // فقط در بخش‌های مجاز (سوال و جواب) عمل کن
+                // دکمه‌های کیبورد عددی نباید باعث باز شدن پنل ترجمه شوند
+                if (event.target.closest('.keypad-btn') || event.target.closest('.btn-outline-danger')) {
+                    return;
+                }
+
                 if (event.target.closest('.vocabulary-selection') || 
                     event.target.closest('#text') || 
                     event.target.closest('#answers')) {
@@ -2283,6 +2297,12 @@ function hideTranslationContent() {
             const solveBtn = document.getElementById('solve-btn');
             const nextBtn = document.getElementById('next-btn');
 
+            if (mode === 'browse' || mode === 'review') {
+                solveBtn.style.display = 'none';
+                nextBtn.style.display = 'inline-block';
+                return;
+            }
+
             if (mode !== 'practice') return;
 
             if (questionSolved) {
@@ -2459,7 +2479,14 @@ function solveQuestion() {
                 showRegularQuestion(data);
             } else if (isVideoQuestion) {
                 videoUrl = 'https://www.theorie24.de/live_images/_current_ws_2024-10-01_2025-04-01/videos/' + fileName;
-                showVideoQuestion(data, fileNameWithoutExt);
+                if (mode === 'browse' || mode === 'review' || questionSolved) {
+                    showingAnswers = true;
+                    hasWatchedVideo = true; // برای نمایش تصویر پایان ویدیو
+                    showRegularQuestion(data);
+                    updateVideoPlaceholder(fileNameWithoutExt);
+                } else {
+                    showVideoQuestion(data, fileNameWithoutExt);
+                }
             } else {
                 document.getElementById("media").innerHTML = '';
                 showRegularQuestion(data);
@@ -2655,13 +2682,52 @@ function answerBuilder(answers = null) {
         const answerType = answers[0]['asw_type'] || 1;
 
         if (answerType == 2) {
-            // کد numeric answer بدون تغییر...
+            const answer = answers[0];
+            const hint = answer['asw_hint'] || '';
+            const savedAnswer = userAnswers.numeric_value || '';
+            const isReadOnly = (mode === 'browse' || questionSolved) ? 'readonly' : '';
+            const displayKeypad = (mode === 'browse' || questionSolved) ? 'display: none;' : '';
+
+            answersText = `
+                <div class="text-center">
+                    <div class="mb-4">
+                        <div class="d-flex justify-content-center align-items-center gap-2 mb-3">
+                            <input type="text" id="numeric-answer" value="${savedAnswer}" ${isReadOnly}
+                                   class="form-control text-center" style="width: 150px; font-size: 18px; font-weight: bold;">
+                            <span class="fw-bold fs-5">${hint}</span>
+                        </div>
+                    </div>
+                    <div class="numeric-keypad mx-auto" style="max-width: 300px; ${displayKeypad}">
+                        <div class="row g-2 mb-2">
+                            ${[0, 1, 2].map(n => `<div class="col-4"><button class="btn btn-outline-secondary w-100 keypad-btn" onclick="addNumber('${n}')">${n}</button></div>`).join('')}
+                        </div>
+                        <div class="row g-2 mb-2">
+                            ${[3, 4, 5].map(n => `<div class="col-4"><button class="btn btn-outline-secondary w-100 keypad-btn" onclick="addNumber('${n}')">${n}</button></div>`).join('')}
+                        </div>
+                        <div class="row g-2 mb-2">
+                            ${[6, 7, 8].map(n => `<div class="col-4"><button class="btn btn-outline-secondary w-100 keypad-btn" onclick="addNumber('${n}')">${n}</button></div>`).join('')}
+                        </div>
+                        <div class="row g-2 mb-3">
+                            <div class="col-4"><button class="btn btn-outline-secondary w-100 keypad-btn" onclick="addNumber('9')">9</button></div>
+                            <div class="col-4"><button class="btn btn-outline-secondary w-100 keypad-btn" onclick="addComma()">,</button></div>
+                            <div class="col-4"><button class="btn btn-outline-secondary w-100 keypad-btn" onclick="clearLastChar()">⌫</button></div>
+                        </div>
+                        <div class="row g-2">
+                            <div class="col-12"><button class="btn btn-outline-danger w-100" onclick="clearAnswer()">Löschen</button></div>
+                        </div>
+                    </div>
+                    <input type="hidden" id="correct-answer" value="${answer['text'] || ''}">
+                </div>
+            `;
+            if (mode === 'browse' || mode === 'review' || questionSolved) {
+                setTimeout(showNumericAnswerResult, 50);
+            }
         } else {
             answers.forEach((answer, index) => {
                 let status = "";
                 let disabled = "";
 
-                if (mode === 'browse') {
+                if (mode === 'browse' || mode === 'review') {
                     if (answer['asw_corr'] == 1) {
                         status = 'checked';
                     }

@@ -127,7 +127,7 @@ if ($user_sub !== false && $user_sub !== null) {
               <div class="mb-4">
                 <?php if ($user_sub['plan_slug'] == 'free'): ?>
                   <h6 class="fw-semibold mb-2 text-warning">دسترسی محدود</h6>
-                  <p>شما در حال حاضر به ۲۰۰ سوال اول دسترسی دارید.</p>
+                  <p>شما در حال حاضر به ۵۰۰ سوال اول دسترسی دارید.</p>
                 <?php else: ?>
                   <h6 class="fw-semibold mb-1">تاریخ انقضا:</h6>
                   <h5 class="fw-bold mb-2 text-primary">

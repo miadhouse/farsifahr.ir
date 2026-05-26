@@ -40,11 +40,6 @@
       </ul>
     </div>
 
-    <!-- Search Small Screens -->
-    <div class="navbar-search-wrapper search-input-wrapper d-none">
-      <input type="text" class="form-control search-input container-fluid border-0" placeholder="<?= __('search', 'جستجو ...') ?>"
-        aria-label="Search...">
-      <i class="bx bx-x bx-sm search-toggler cursor-pointer"></i>
-    </div>
+    <!-- Search Small Screens Removed -->
   </div>
 </nav>

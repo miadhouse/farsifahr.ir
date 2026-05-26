@@ -75,6 +75,7 @@ try {
         
         // اطمینان از وجود فیلد text و asw_pretext برای نمایش (طبق نیاز frontend)
         $answerData['text'] = $answer['text'] ?? ($answer['asw_de'] ?? '');
+        $answerData['en_text'] = $answer['en_text'] ?? '';
         
         // دریافت ترجمه و توضیح پاسخ از ستون‌های خود جدول
         $answerData['translation'] = $answer['farsi_text'] ?? '';
@@ -89,7 +90,9 @@ try {
             'id' => $question['id'],
             'number' => $question['number'],
             'text' => $question['text'] ?? ($question['qst_de'] ?? ''),
+            'en_text' => $question['en_text'] ?? '',
             'asw_pretext' => $question['asw_pretext'] ?? '',
+            'asw_en' => $question['asw_en'] ?? '',
             'farsi_text' => $question['farsi_text'] ?? '',
             'info' => $question['info'] ?? '',
             'translation' => $questionTranslation,

@@ -1,6 +1,3 @@
-@import url(font-ir.css);
-@import url(https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;500;600;700&display=swap);
-@import url(https://fonts.googleapis.com/css2?family=Rubik:ital,wght@0,300..900;1,300..900&display=swap);
 
 :root {
     --color-primary: #FF014F;
@@ -6756,7 +6753,7 @@ iframe {
 }
 
 .bg_image--3 {
-    background-image: url(../images/bg/bg-image-3.jpg)
+    background-image: url(../images/bg/bg-image-3.webp)
 }
 
 .bg_image--4 {
@@ -6780,7 +6777,7 @@ iframe {
 }
 
 .bg_image--9 {
-    background-image: url(../images/bg/bg-image-9.jpg)
+    background-image: url(../images/bg/bg-image-9.webp)
 }
 
 .bg_image--10 {
@@ -6796,7 +6793,7 @@ iframe {
 }
 
 .bg_image--13 {
-    background-image: url(../images/bg/bg-image-13.jpg)
+    background-image: url(../images/bg/bg-image-13.webp)
 }
 
 .bg_image--14 {
@@ -8096,7 +8093,7 @@ p.description {
 .tilt-card {
     width: 100%;
     height: 100%;
-    background-image: url("../images/banner/instructor.png");
+    background-image: url("../images/banner/instructor.webp");
     background-size: cover;
     background-position: center;
     border-radius: 10px;
@@ -13091,7 +13088,7 @@ header.header-full-width.header--sticky.sticky {
 }
 
 .tmp-banner-one-area.style-2 {
-    background-image: url(../images/bg/bg-image-3.jpg);
+    background-image: url(../images/bg/bg-image-3.webp);
     min-height: 950px;
     display: flex;
     align-items: center;
@@ -13149,7 +13146,7 @@ header.header-full-width.header--sticky.sticky {
     align-items: center;
     justify-content: center;
     padding-top: 0;
-    background-image: url(../images/banner/banner-background-02.jpg)
+    background-image: url(../images/banner/banner-background-02.webp)
 }
 
 @media only screen and (max-width: 767px) {
@@ -18767,7 +18764,7 @@ section.clients-testimonial-area {
 }
 
 .tmp-banner-one-area.style-2 {
-    background-image: url(../images/bg/bg-image-3.jpg);
+    background-image: url(../images/bg/bg-image-3.webp);
     min-height: 950px;
     display: flex;
     align-items: center;
@@ -18825,7 +18822,7 @@ section.clients-testimonial-area {
     align-items: center;
     justify-content: center;
     padding-top: 0;
-    background-image: url(../images/banner/banner-background-02.jpg)
+    background-image: url(../images/banner/banner-background-02.webp)
 }
 
 @media only screen and (max-width: 767px) {
@@ -29084,7 +29081,7 @@ body.color-pink {
 }
 
 body.color-pink .bg_image--2 {
-    background-image: url(../images/bg/bg-image-13.jpg)
+    background-image: url(../images/bg/bg-image-13.webp)
 }
 
 body.color-primary-3rd {
@@ -29267,7 +29264,7 @@ body.tmp-white-version .tmp-contact-about-inner .info-box {
 }
 
 body.tmp-white-version .tmp-banner-one-area.style-2 {
-    background-image: url(../images/bg/bg-image-9.jpg)
+    background-image: url(../images/bg/bg-image-9.webp)
 }
 
 body.tmp-white-version .bg_image--8 {

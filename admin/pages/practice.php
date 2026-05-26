@@ -1,16 +1,67 @@
 <?php
 $user_id = $_SESSION['user_id'];
 
+/**
+ * رندر بازگشتی دسته‌بندی‌ها
+ */
+function renderCategoriesRecursive($pdo, $categories, $all_subcategories, $is_root = true) {
+    foreach ($categories as $category): 
+        $has_subs = !empty($all_subcategories[$category['id']]);
+        $item_class = $is_root ? 'category-item' : 'subcategory-item';
+        if ($has_subs) $item_class .= ' expandable';
+        
+        $data_id_attr = $is_root ? 'data-category-id' : 'data-subcategory-id';
+        $data_title_attr = $is_root ? 'data-category-title' : 'data-subcategory-title';
+        $text_class = $is_root ? 'category-text' : 'subcategory-text';
+        $subtitle_class = $is_root ? 'category-subtitle' : 'subcategory-subtitle';
+        $badge_class = $is_root ? 'question-badge' : 'subcategory-badge';
+        $code_class = $is_root ? 'code-badge' : 'subcategory-code';
+        ?>
+        <div class="category-container">
+            <div class="<?php echo $item_class; ?>"
+                <?php echo $data_id_attr; ?>="<?php echo $category['id']; ?>"
+                <?php echo $data_title_attr; ?>="<?php echo htmlspecialchars(($category['title_en'] ?: $category['title']) . ' (' . $category['title'] . ')'); ?>"
+                data-question-count="<?php echo $category['question_count']; ?>">
+                <div class="<?php echo $text_class; ?>">
+                    <span><?php echo htmlspecialchars($category['title_en'] ?: $category['title']); ?></span>
+                    <span class="<?php echo $subtitle_class; ?>"><?php echo htmlspecialchars($category['title']); ?></span>
+                </div>
+                <div class="category-badges">
+                    <span class="<?php echo $badge_class; ?>"><?php echo $category['question_count']; ?></span>
+                    <span class="<?php echo $code_class; ?>"><?php echo $category['index_code']; ?></span>
+                    <?php if ($has_subs): ?>
+                        <i class="fas fa-chevron-left arrow"></i>
+                    <?php endif; ?>
+                </div>
+            </div>
+
+            <?php if ($has_subs): ?>
+                <div class="subcategories" id="sub-<?php echo $category['id']; ?>">
+                    <?php renderCategoriesRecursive($pdo, $all_subcategories[$category['id']], $all_subcategories, false); ?>
+                </div>
+            <?php endif; ?>
+        </div>
+    <?php endforeach;
+}
+
 // Get main categories
 $grundstoff_main = getCategories($pdo, 1, 0, $user_id);
 $zusatzstoff_main = getCategories($pdo, 2, 1, $user_id);
-// Get all subcategories for JavaScript
+
+// Get all subcategories recursively
 $all_subcategories = [];
-foreach (array_merge($grundstoff_main, $zusatzstoff_main) as $category) {
-    $subcats = getSubcategories($pdo, $category['id'], user_id: $user_id);
+function fetchSubcategoriesRecursive($pdo, $parent_id, $user_id, &$all_subcategories) {
+    $subcats = getSubcategories($pdo, $parent_id, user_id: $user_id);
     if (!empty($subcats)) {
-        $all_subcategories[$category['id']] = $subcats;
+        $all_subcategories[$parent_id] = $subcats;
+        foreach ($subcats as $sub) {
+            fetchSubcategoriesRecursive($pdo, $sub['id'], $user_id, $all_subcategories);
+        }
     }
+}
+
+foreach (array_merge($grundstoff_main, $zusatzstoff_main) as $category) {
+    fetchSubcategoriesRecursive($pdo, $category['id'], $user_id, $all_subcategories);
 }
 
 // Calculate totals
@@ -77,41 +128,7 @@ foreach ($tags as $tag) {
                         <i class="fas fa-book icon"></i>
                     </div>
 
-                    <?php foreach ($grundstoff_main as $category): ?>
-                        <div class="category-container">
-                            <div class="category-item <?php echo !empty($all_subcategories[$category['id']]) ? 'expandable' : ''; ?>"
-                                data-category-id="<?php echo $category['id']; ?>"
-                                data-category-title="<?php echo htmlspecialchars($category['title']); ?>"
-                                data-question-count="<?php echo $category['question_count']; ?>">
-                                <div class="category-text">
-                                    <?php echo htmlspecialchars($category['title']); ?>
-                                </div>
-                                <div class="category-badges">
-                                    <span class="question-badge"><?php echo $category['question_count']; ?></span>
-                                    <span class="code-badge"><?php echo $category['index_code']; ?></span>
-                                    <i class="fas fa-chevron-left arrow"></i>
-                                </div>
-                            </div>
-
-                            <?php if (!empty($all_subcategories[$category['id']])): ?>
-                                <div class="subcategories" id="sub-<?php echo $category['id']; ?>">
-                                    <?php foreach ($all_subcategories[$category['id']] as $subcategory): ?>
-                                        <div class="subcategory-item" data-subcategory-id="<?php echo $subcategory['id']; ?>"
-                                            data-subcategory-title="<?php echo htmlspecialchars($subcategory['title']); ?>"
-                                            data-question-count="<?php echo $subcategory['question_count']; ?>">
-                                            <div class="subcategory-text">
-                                                <?php echo htmlspecialchars($subcategory['title']); ?>
-                                            </div>
-                                            <div class="subcategory-badges">
-                                                <span class="subcategory-badge"><?php echo $subcategory['question_count']; ?></span>
-                                                <span class="subcategory-code"><?php echo $subcategory['index_code']; ?></span>
-                                            </div>
-                                        </div>
-                                    <?php endforeach; ?>
-                                </div>
-                            <?php endif; ?>
-                        </div>
-                    <?php endforeach; ?>
+                    <?php renderCategoriesRecursive($pdo, $grundstoff_main, $all_subcategories); ?>
                 </div>
             </div>
 
@@ -129,41 +146,7 @@ foreach ($tags as $tag) {
                         <i class="fas fa-clipboard-list icon"></i>
                     </div>
 
-                    <?php foreach ($zusatzstoff_main as $category): ?>
-                        <div class="category-container">
-                            <div class="category-item <?php echo !empty($all_subcategories[$category['id']]) ? 'expandable' : ''; ?>"
-                                data-category-id="<?php echo $category['id']; ?>"
-                                data-category-title="<?php echo htmlspecialchars($category['title']); ?>"
-                                data-question-count="<?php echo $category['question_count']; ?>">
-                                <div class="category-text">
-                                    <?php echo htmlspecialchars($category['title']); ?>
-                                </div>
-                                <div class="category-badges">
-                                    <span class="question-badge"><?php echo $category['question_count']; ?></span>
-                                    <span class="code-badge"><?php echo $category['index_code']; ?></span>
-                                    <i class="fas fa-chevron-left arrow"></i>
-                                </div>
-                            </div>
-
-                            <?php if (!empty($all_subcategories[$category['id']])): ?>
-                                <div class="subcategories" id="sub-<?php echo $category['id']; ?>">
-                                    <?php foreach ($all_subcategories[$category['id']] as $subcategory): ?>
-                                        <div class="subcategory-item" data-subcategory-id="<?php echo $subcategory['id']; ?>"
-                                            data-subcategory-title="<?php echo htmlspecialchars($subcategory['title']); ?>"
-                                            data-question-count="<?php echo $subcategory['question_count']; ?>">
-                                            <div class="subcategory-text">
-                                                <?php echo htmlspecialchars($subcategory['title']); ?>
-                                            </div>
-                                            <div class="subcategory-badges">
-                                                <span class="subcategory-badge"><?php echo $subcategory['question_count']; ?></span>
-                                                <span class="subcategory-code"><?php echo $subcategory['index_code']; ?></span>
-                                            </div>
-                                        </div>
-                                    <?php endforeach; ?>
-                                </div>
-                            <?php endif; ?>
-                        </div>
-                    <?php endforeach; ?>
+                    <?php renderCategoriesRecursive($pdo, $zusatzstoff_main, $all_subcategories); ?>
                 </div>
             </div>
         </div>
@@ -337,13 +320,21 @@ foreach ($tags as $tag) {
             transform: rotate(90deg);
         }
 
-        .category-text {
+        .category-text, .subcategory-text {
             flex-grow: 1;
             margin-right: 0.5rem;
             font-weight: 500;
             overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
+            display: flex;
+            flex-direction: column;
+            line-height: 1.2;
+        }
+
+        .category-subtitle, .subcategory-subtitle {
+            font-size: 0.75rem;
+            color: #6b7280;
+            font-weight: normal;
+            margin-top: 2px;
         }
 
         .category-badges {
@@ -423,15 +414,6 @@ foreach ($tags as $tag) {
             background-color: #dbeafe;
             border-color: #3b82f6;
             color: #1d4ed8;
-        }
-
-        .subcategory-text {
-            flex-grow: 1;
-            margin-right: 0.5rem;
-            font-weight: 500;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
         }
 
         .subcategory-badges {

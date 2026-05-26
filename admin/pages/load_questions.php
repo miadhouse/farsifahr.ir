@@ -1,9 +1,11 @@
 <?php
 require_once __DIR__ . '/../../incloud/questions.php';
+require_once __DIR__ . '/../../incloud/functions.php';
 
 // Set content type for AJAX response
 header('Content-Type: text/html; charset=utf-8');
 $user_id = $_SESSION['user_id'];
+$isSuperAdmin = is_super_admin();
 
 try {
     // Initialize questions array
@@ -65,6 +67,12 @@ try {
         echo '</div>';
         echo '</label>';
         echo '</div>';
+
+        if ($isSuperAdmin) {
+            echo '<button type="button" class="btn btn-sm btn-outline-info bot-fetch-btn" data-question-id="' . $questionId . '">';
+            echo '<i class="fas fa-robot"></i>';
+            echo '</button>';
+        }
 
         echo '</div>';
     }
@@ -204,9 +212,15 @@ try {
 <script>
     // Add some interactive behavior for the loaded questions
     $(document).ready(function () {
-        // Any other interactive behavior can go here
-    });
-</script>t: 'لطفا منتظر بمانید، ربات در حال جستجو در سایت Führerschein-bestehen است.',
+        <?php if ($isSuperAdmin): ?>
+        $('.bot-fetch-btn').on('click', function() {
+            const btn = $(this);
+            const questionId = btn.data('question-id');
+            const originalIcon = btn.html();
+
+            Swal.fire({
+                title: 'جستجو در سایت',
+                text: 'لطفا منتظر بمانید، ربات در حال جستجو در سایت Führerschein-bestehen است.',
                 allowOutsideClick: false,
                 didOpen: () => {
                     Swal.showLoading();
@@ -252,5 +266,6 @@ try {
                 }
             });
         });
+        <?php endif; ?>
     });
 </script>

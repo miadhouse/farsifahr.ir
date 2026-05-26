@@ -4,7 +4,7 @@ $curr = get_current_lang();
 $flag = $curr == 'fa' ? 'ir' : ($curr == 'en' ? 'us' : 'de');
 $lang_name = $curr == 'fa' ? 'فارسی' : ($curr == 'en' ? 'English' : 'Deutsch');
 ?>
-<li class="nav-item dropdown-language dropdown me-2 me-xl-0">
+<li class="nav-item dropdown-language dropdown me-2 me-xl-0 d-none d-xl-block">
     <a class="nav-link dropdown-toggle hide-arrow" href="javascript:void(0);" data-bs-toggle="dropdown">
         <i class="fi fi-<?= $flag ?> fis rounded-circle fs-3 me-1"></i>
     </a>

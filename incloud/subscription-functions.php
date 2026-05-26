@@ -68,14 +68,14 @@ function is_user_vip($user_id, $pdo) {
 
 /**
  * دریافت محدودیت سوالات کاربر
- * Free: 200 سوال
+ * Free: 500 سوال
  * VIP: نامحدود
  */
 function get_user_question_limit($user_id, $pdo) {
     if (is_user_vip($user_id, $pdo)) {
         return null; // نامحدود
     }
-    return 200; // پلن رایگان
+    return 500; // پلن رایگان
 }
 
 /**
@@ -440,7 +440,7 @@ function get_plan_features($plan_slug) {
     // Fallback features if database is empty or error occurs
     $fallbacks = [
         'free' => [
-            'دسترسی به 200 سوال اول',
+            'دسترسی به 500 سوال اول',
             'بدون محدودیت زمانی',
             'پشتیبانی عمومی'
         ],

@@ -150,7 +150,7 @@ function getUserAccessibleQuestions($pdo, $user_id = null)
         return $total; // VIP - همه سوالات
     }
     
-    return min($total, $limit); // Free - حداکثر 200
+    return min($total, $limit); // Free - حداکثر 500
 }
 
 /**

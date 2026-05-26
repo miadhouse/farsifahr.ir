@@ -77,6 +77,11 @@ if (isset($_POST['question_id']) && isset($_POST['action']) && $_POST['action'] 
         exit;
     }
     
+    if (!is_super_admin()) {
+        echo json_encode(['success' => false, 'message' => 'دسترسی غیرمجاز']);
+        exit;
+    }
+    
     $qId = intval($_POST['question_id']);
     
     // دریافت کد سوال از دیتابیس

@@ -48,30 +48,6 @@ $stmtReports = $pdo->prepare("
 ");
 $stmtReports->execute([$_SESSION['user_id']]);
 $user_reports = $stmtReports->fetchAll();
-
-// دریافت اطلاعات برنامه مطالعه
-$stmtPlan = $pdo->prepare("SELECT * FROM study_plans WHERE user_id = ?");
-$stmtPlan->execute([$_SESSION['user_id']]);
-$study_plan = $stmtPlan->fetch();
-
-$plan_info = null;
-if ($study_plan) {
-    $created_at = strtotime($study_plan['created_at']);
-    $days_passed = floor((time() - $created_at) / (60 * 60 * 24));
-    $current_day = $days_passed + 1;
-    $days_remaining = max(0, $study_plan['estimated_total_days'] - $days_passed);
-    
-    $today_name = date('D');
-    $study_days = explode(',', $study_plan['study_days']);
-    $is_study_day = in_array($today_name, $study_days);
-    $today_hours = $is_study_day ? $study_plan['daily_hours'] : 0;
-    
-    $plan_info = [
-        'current_day' => $current_day,
-        'days_remaining' => $days_remaining,
-        'today_hours' => $today_hours
-    ];
-}
 ?>
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
@@ -90,46 +66,8 @@ if ($study_plan) {
     
     <!-- Custom CSS -->
     <link rel="stylesheet" href="assets/css/style.css">
-    <style>
-        .study-plan-bar {
-            background: linear-gradient(90deg, #f8f9fa 0%, #e9ecef 100%);
-            border-bottom: 1px solid #dee2e6;
-            font-size: 0.9rem;
-        }
-        @media (max-width: 768px) {
-            .study-plan-bar .container {
-                flex-direction: column;
-                gap: 10px;
-                text-align: center;
-            }
-        }
-    </style>
 </head>
 <body>
-    <?php if ($plan_info): ?>
-    <div class="study-plan-bar py-2">
-        <div class="container d-flex justify-content-between align-items-center">
-            <div class="d-flex align-items-center flex-wrap">
-                <span class="me-4">
-                    <i class="bi bi-calendar-check text-primary me-1"></i>
-                    <strong>روز برنامه:</strong> <?php echo $plan_info['current_day']; ?>
-                </span>
-                <span class="me-4">
-                    <i class="bi bi-clock text-primary me-1"></i>
-                    <strong>ساعت مطالعه امروز:</strong> <?php echo $plan_info['today_hours']; ?> ساعت
-                </span>
-                <span class="me-4">
-                    <i class="bi bi-hourglass-split text-primary me-1"></i>
-                    <strong>روزهای باقیمانده:</strong> <?php echo $plan_info['days_remaining']; ?>
-                </span>
-            </div>
-            <a href="index.php#open-study-plan" class="btn btn-sm btn-outline-primary py-0 px-3">
-                <i class="bi bi-pencil-square"></i> ویرایش
-            </a>
-        </div>
-    </div>
-    <?php endif; ?>
-
     <!-- Navbar -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
         <div class="container">
@@ -137,7 +75,7 @@ if ($study_plan) {
             <div class="ms-auto d-flex align-items-center">
                 <span class="text-white me-3">
                     <i class="bi bi-person-circle"></i> <?php echo htmlspecialchars($user_name); ?>
-                    <?php if ($user_role === 'admin'): ?>
+                    <?php if (is_super_admin()): ?>
                         <span class="badge bg-warning">مدیر</span>
                     <?php endif; ?>
                     <?php echo $sub_text; ?>
@@ -172,7 +110,7 @@ if ($study_plan) {
                                     <i class="bi bi-shield-check text-primary me-2"></i>
                                     <strong>نقش:</strong>
                                     <span class="ms-2">
-                                        <?php echo $user_role === 'admin' ? 'مدیر سیستم' : 'کاربر عادی'; ?>
+                                        <?php echo is_super_admin() ? 'مدیر سیستم' : 'کاربر عادی'; ?>
                                     </span>
                                 </div>
                             </div>
@@ -289,7 +227,7 @@ if ($study_plan) {
                 </div>
 
                 <!-- Admin Panel Notice -->
-                <?php if ($user_role === 'admin'): ?>
+                <?php if (is_super_admin()): ?>
                     <div class="alert alert-info mt-4" role="alert">
                         <i class="bi bi-info-circle"></i>
                         شما به عنوان مدیر وارد شده‌اید. پنل مدیریت در حال توسعه است و به زودی در دسترس خواهد بود.
