@@ -112,6 +112,82 @@ if (is_logged_in()) {
             color: #fff;
             font-weight: 600;
         }
+
+        /* Responsive Blog Cards for 2-column mobile */
+        @media (max-width: 767px) {
+            .blog-card-style-two .blog-card-img img {
+                height: 150px !important;
+            }
+            .blog-card-style-two .blog-content-wrap {
+                padding: 15px !important;
+            }
+            .blog-card-style-two .blog-title {
+                font-size: 14px !important;
+                line-height: 1.4 !important;
+                margin-bottom: 10px !important;
+            }
+            .blog-card-style-two .blog-tags ul li {
+                font-size: 8px !important;
+                margin-right: 0 !important;
+                white-space: nowrap !important;
+                display: flex !important;
+                align-items: center !important;
+                letter-spacing: -0.1px !important;
+            }
+            .blog-card-style-two .blog-tags ul {
+                display: flex !important;
+                flex-wrap: nowrap !important;
+                gap: 5px !important;
+                padding: 0 !important;
+                margin-bottom: 5px !important;
+                justify-content: space-between !important;
+            }
+            .blog-card-style-two .blog-tags ul li i {
+                margin-left: 3px !important;
+                font-size: 8px !important;
+            }
+            .blog-card-style-two .blog-tags ul li a {
+                padding: 0 !important;
+                display: flex !important;
+                align-items: center !important;
+                font-size: 8px !important;
+            }
+            .blog-card-style-two .blog-card-img span {
+                font-size: 10px !important;
+                padding: 2px 8px !important;
+                min-width: auto !important;
+                width: max-content !important;
+                height: auto !important;
+                min-height: auto !important;
+                line-height: 1.5 !important;
+                bottom: 10px !important;
+                left: 10px !important;
+                top: auto !important;
+                right: auto !important;
+                position: absolute !important;
+                display: inline-block !important;
+                border-radius: 5px !important;
+                margin: 0 !important;
+            }
+            .blog-card-style-two .read-more-btn .tmp-btn {
+                padding: 5px 10px !important;
+                font-size: 11px !important;
+                min-height: auto !important;
+                height: 32px !important;
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+            }
+            .blog-card-style-two .read-more-btn .tmp-btn .icon-reverse-wrapper {
+                justify-content: center !important;
+                width: 100% !important;
+                display: flex !important;
+                align-items: center !important;
+            }
+            .blog-card-style-two .read-more-btn .tmp-btn .btn-icon {
+                display: none !important; /* Hide icons in 2-column mobile to save space and center text better */
+            }
+        }
     </style>
 </head>
 
@@ -505,7 +581,7 @@ if (is_logged_in()) {
             <div class="row" id="blog-posts-container">
                 <!-- Blog posts loaded from DB -->
                 <?php
-                $stmt = $pdo->query("SELECT * FROM posts WHERE published_at <= NOW() OR published_at IS NULL ORDER BY created_at DESC LIMIT 3");
+                $stmt = $pdo->query("SELECT * FROM posts WHERE published_at <= NOW() OR published_at IS NULL ORDER BY created_at DESC LIMIT 12");
                 $db_posts = $stmt->fetchAll();
 
                 if (empty($db_posts)) {
@@ -514,10 +590,24 @@ if (is_logged_in()) {
                 }
 
                 foreach($db_posts as $post):
-                    $post_img = $post['image'] ? SITE_URL . 'panel/storage/' . $post['image'] : 'assets/images/blog/blog-img-1.jpg';
-                    $post_date = date('d M', strtotime($post['published_at'] ?: $post['created_at']));
+                    $post_img = $post['image'] ? rtrim(SITE_URL, '/') . '/panel/storage/' . $post['image'] : 'assets/images/blog/blog-img-1.jpg';
+                    
+                    // Improved robust date formatting
+                    $timestamp = strtotime($post['published_at'] ?: $post['created_at']);
+                    $day = date('d', $timestamp);
+                    $month_num = date('n', $timestamp);
+                    $months = [
+                        1 => 'Jan', 2 => 'Feb', 3 => 'Mar', 4 => 'Apr', 5 => 'May', 6 => 'Jun',
+                        7 => 'Jul', 8 => 'Aug', 9 => 'Sep', 10 => 'Oct', 11 => 'Nov', 12 => 'Dec'
+                    ];
+                    $post_date = $day . ' ' . $months[$month_num];
+                    
+                    // Fetch real approved comment count
+                    $stmtCount = $pdo->prepare("SELECT COUNT(*) FROM comments WHERE post_id = ? AND status = 'approved'");
+                    $stmtCount->execute([$post['id']]);
+                    $comment_count = $stmtCount->fetchColumn();
                 ?>
-                <div class="col-lg-4 col-md-6 col-12">
+                <div class="col-lg-4 col-md-6 col-6">
                     <div
                         class="blog-card-style-two tmponhover image-box-hover tmp-scroll-trigger tmp-fade-in animation-order-3">
                         <div class="blog-card-img">
@@ -530,7 +620,7 @@ if (is_logged_in()) {
                             <div class="blog-tags">
                                 <ul>
                                     <li><a href="#"><i class="fa-regular fa-user"></i><?= htmlspecialchars($post['author_name']) ?></a></li>
-                                    <li><a href="#"><i class="fa-regular fa-comments"></i><?= __('comments_count', 'نظرات (0)') ?></a></li>
+                                    <li><a href="#"><i class="fa-regular fa-comments"></i> <?= __('comments_label', 'نظرات') ?> (<?= $comment_count ?>)</a></li>
                                 </ul>
                             </div>
                             <h3 class="blog-title"><a href="blog-details.php?id=<?= $post['id'] ?>"><?= htmlspecialchars($post['title']) ?></a>
