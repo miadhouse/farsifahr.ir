@@ -26,9 +26,34 @@ if (is_logged_in()) {
     <meta charset="utf-8">
     <meta content="IE=edge" http-equiv="X-UA-Compatible">
     <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport">
-    <meta content="<?= __('site_title', 'Farsi Fahr | آموزش و آمادگی آزمون تئوری گواهینامه آلمانی') ?>" name="description">
-    <link href="assets/images/favicon.svg" rel="shortcut icon" type="image/x-icon">
+    
+    <!-- SEO Meta Tags -->
     <title><?= __('site_title', 'Farsi Fahr | آموزش و آمادگی آزمون تئوری گواهینامه آلمانی') ?></title>
+    <meta name="description" content="<?= __('site_description', 'جامع‌ترین مرجع آموزش و آمادگی آزمون تئوری گواهینامه آلمانی به زبان فارسی. ترجمه سوالات، آزمون آزمایشی و آموزش‌های رایگان گواهینامه آلمانی به فارسی.') ?>">
+    <meta name="keywords" content="گواهینامه آلمانی, آموزش گواهینامه آلمانی, ترجمه سوالات گواهینامه آلمانی, گواهینامه آلمانی به فارسی, رایگان, آزمون تئوری گواهینامه آلمانی, farsi fahr, سوالات گواهینامه آلمان">
+    <link rel="canonical" href="<?= SITE_URL ?>">
+    
+    <!-- Language Alternates (Hreflang) -->
+    <link rel="alternate" hreflang="fa" href="<?= SITE_URL ?>?lang=fa" />
+    <link rel="alternate" hreflang="de" href="<?= SITE_URL ?>?lang=de" />
+    <link rel="alternate" hreflang="en" href="<?= SITE_URL ?>?lang=en" />
+    <link rel="alternate" hreflang="x-default" href="<?= SITE_URL ?>" />
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="<?= SITE_URL ?>">
+    <meta property="og:title" content="<?= __('site_title', 'Farsi Fahr | آموزش و آمادگی آزمون تئوری گواهینامه آلمانی') ?>">
+    <meta property="og:description" content="<?= __('site_description', 'جامع‌ترین مرجع آموزش و آمادگی آزمون تئوری گواهینامه آلمانی به زبان فارسی.') ?>">
+    <meta property="og:image" content="<?= SITE_URL ?>assets/images/logo/logoAsset%201.svg">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="<?= SITE_URL ?>">
+    <meta property="twitter:title" content="<?= __('site_title', 'Farsi Fahr | آموزش و آمادگی آزمون تئوری گواهینامه آلمانی') ?>">
+    <meta property="twitter:description" content="<?= __('site_description', 'جامع‌ترین مرجع آموزش و آمادگی آزمون تئوری گواهینامه آلمانی به زبان فارسی.') ?>">
+    <meta property="twitter:image" content="<?= SITE_URL ?>assets/images/logo/logoAsset%201.svg">
+
+    <link href="assets/images/favicon.svg" rel="shortcut icon" type="image/x-icon">
     <link href="assets/css/vendor/fontawesome.css" rel="preload" as="style" onload="this.onload=null;this.rel='stylesheet'"><noscript><link rel="stylesheet" href="assets/css/vendor/fontawesome.css"></noscript>
     <link href="assets/css/vendor/animate.min.css" rel="preload" as="style" onload="this.onload=null;this.rel='stylesheet'"><noscript><link rel="stylesheet" href="assets/css/vendor/animate.min.css"></noscript>
     <?php if (get_lang_dir() === 'rtl'): ?>
@@ -64,6 +89,31 @@ if (is_logged_in()) {
     </script>
     <?php unset($_SESSION['error']); endif; ?>
 
+
+    <style>
+        .seo-content-section {
+            background-color: #0f1113; /* Dark theme background */
+            padding: 80px 0;
+            border-top: 1px solid #1e2125;
+        }
+        .seo-text-content h2.title {
+            font-size: 2rem;
+            margin-bottom: 20px;
+            color: #fff;
+        }
+        .seo-text-content p {
+            font-size: 1.1rem;
+            color: #adb5bd; /* Light text for dark background */
+            margin-bottom: 0;
+            text-align: justify;
+            text-align-last: center;
+        }
+        .seo-text-content strong {
+            color: #fff;
+            font-weight: 600;
+        }
+    </style>
+</head>
 
 <body>
     <!-- PWA Install Banner -->
@@ -440,111 +490,84 @@ if (is_logged_in()) {
         </div>
     </section>
 
-    <!-- Blog Section Temporarily Hidden
     <section class="blog-and-news-are tmp-section-gap">
         <div class="container">
             <div class="section-head mb--50">
                 <div
-                    class="section-sub-title center-title tmp-scroll-trigger tmp-fade-in animation-order-1 tmp-scroll-trigger--offscreen">
+                    class="section-sub-title center-title tmp-scroll-trigger tmp-fade-in animation-order-1">
                     <span class="subtitle"><?= __('last_blog', 'آخرین وبلاگ') ?></span>
                 </div>
                 <h2
-                    class="title split-collab tmp-scroll-trigger tmp-fade-in animation-order-2 tmp-scroll-trigger--offscreen">
+                    class="title split-collab tmp-scroll-trigger tmp-fade-in animation-order-2">
                     <?= __('free_training_info', 'اطلاعات اولیه و آموزش های رایگان') ?>
                 </h2>
             </div>
+            <div class="row" id="blog-posts-container">
+                <!-- Blog posts loaded from DB -->
+                <?php
+                $stmt = $pdo->query("SELECT * FROM posts WHERE published_at <= NOW() OR published_at IS NULL ORDER BY created_at DESC LIMIT 3");
+                $db_posts = $stmt->fetchAll();
+
+                if (empty($db_posts)) {
+                    // Show a message if no posts exist
+                    echo '<div class="col-12 text-center text-muted">'.__('no_posts_yet', 'هنوز مطلبی منتشر نشده است.').'</div>';
+                }
+
+                foreach($db_posts as $post):
+                    $post_img = $post['image'] ? SITE_URL . 'panel/storage/' . $post['image'] : 'assets/images/blog/blog-img-1.jpg';
+                    $post_date = date('d M', strtotime($post['published_at'] ?: $post['created_at']));
+                ?>
+                <div class="col-lg-4 col-md-6 col-12">
+                    <div
+                        class="blog-card-style-two tmponhover image-box-hover tmp-scroll-trigger tmp-fade-in animation-order-3">
+                        <div class="blog-card-img">
+                            <div class="img-box"><a href="blog-details.php?id=<?= $post['id'] ?>"> <img alt="<?= htmlspecialchars($post['title']) ?>" class="w-100"
+                                        src="<?= $post_img ?>" style="height: 250px; object-fit: cover;">
+                                </a></div>
+                            <span><?= $post_date ?></span>
+                        </div>
+                        <div class="blog-content-wrap">
+                            <div class="blog-tags">
+                                <ul>
+                                    <li><a href="#"><i class="fa-regular fa-user"></i><?= htmlspecialchars($post['author_name']) ?></a></li>
+                                    <li><a href="#"><i class="fa-regular fa-comments"></i><?= __('comments_count', 'نظرات (0)') ?></a></li>
+                                </ul>
+                            </div>
+                            <h3 class="blog-title"><a href="blog-details.php?id=<?= $post['id'] ?>"><?= htmlspecialchars($post['title']) ?></a>
+                            </h3>
+                            <div class="read-more-btn"><a
+                                    class="tmp-btn hover-icon-reverse radius-round btn-border btn-md"
+                                    href="blog-details.php?id=<?= $post['id'] ?>"> <span class="icon-reverse-wrapper"> <span
+                                            class="btn-text"><?= __('read_more', 'بیشتر بخوانید') ?></span> <span class="btn-icon"><i
+                                                class="fa-sharp fa-regular fa-arrow-left"></i></span> <span
+                                            class="btn-icon"><i class="fa-sharp fa-regular fa-arrow-left"></i></span>
+                                    </span> </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <?php endforeach; ?>
+            </div>
+        </div>
+    </section>
+    <!-- SEO Content Section -->
+    <section class="seo-content-section tmp-section-gapBottom">
+        <div class="container">
             <div class="row">
-                <div class="col-lg-4 col-md-6 col-12">
-                    <div
-                        class="blog-card-style-two tmponhover image-box-hover tmp-scroll-trigger tmp-fade-in animation-order-3 tmp-scroll-trigger--offscreen">
-                        <div class="blog-card-img">
-                            <div class="img-box"><a href="blog-details.html"> <img alt="Blog Thumbnail" class="w-100"
-                                        src="assets/images/blog/blog-img-1.jpg">
-                                </a></div>
-                            <span><?= __('blog_date_12_dey', '12 دی') ?></span>
-                        </div>
-                        <div class="blog-content-wrap">
-                            <div class="blog-tags">
-                                <ul>
-                                    <li><a href="#"><i class="fa-regular fa-user"></i><?= __('author_name', 'مسبز') ?></a></li>
-                                    <li><a href="#"><i class="fa-regular fa-comments"></i><?= __('comments_count', 'نظرات (05)') ?></a></li>
-                                </ul>
-                            </div>
-                            <h3 class="blog-title"><a href="blog-details.html"><?= __('from_where_to_start', 'از کجا شروع کنم برای اخذ گواهینامه؟') ?></a>
-                            </h3>
-                            <div class="read-more-btn"><a
-                                    class="tmp-btn hover-icon-reverse radius-round btn-border btn-md"
-                                    href="blog-details.html"> <span class="icon-reverse-wrapper"> <span
-                                            class="btn-text"><?= __('read_more', 'بیشتر بخوانید') ?></span> <span class="btn-icon"><i
-                                                class="fa-sharp fa-regular fa-arrow-left"></i></span> <span
-                                            class="btn-icon"><i class="fa-sharp fa-regular fa-arrow-left"></i></span>
-                                    </span> </a>
-                            </div>
-                        </div>
+                <div class="col-lg-12">
+                    <div class="section-head text-center mb--50">
+                        <h2 class="title"><?= __('seo_section_title', 'مرجع تخصصی گواهینامه آلمانی به فارسی') ?></h2>
                     </div>
-                </div>
-                <div class="col-lg-4 col-md-6 col-12">
-                    <div
-                        class="blog-card-style-two tmponhover image-box-hover tmp-scroll-trigger tmp-fade-in animation-order-2 tmp-scroll-trigger--offscreen">
-                        <div class="blog-card-img">
-                            <div class="img-box"><a href="blog-details.html"> <img alt="Blog Thumbnail" class="w-100"
-                                        src="assets/images/blog/blog-img-2.jpg">
-                                </a></div>
-                            <span><?= __('blog_date_12_dey', '12 دی') ?></span>
-                        </div>
-                        <div class="blog-content-wrap">
-                            <div class="blog-tags">
-                                <ul>
-                                    <li><a href="#"><i class="fa-regular fa-user"></i><?= __('author_name', 'مسبز') ?></a></li>
-                                    <li><a href="#"><i class="fa-regular fa-comments"></i><?= __('comments_count', 'نظرات (05)') ?></a></li>
-                                </ul>
-                            </div>
-                            <h3 class="blog-title"><a href="blog-details.html"><?= __('translation_rules_iran', 'مراحل و قوانین ترجمه گواهینامه ایران') ?></a>
-                            </h3>
-                            <div class="read-more-btn"><a
-                                    class="tmp-btn hover-icon-reverse radius-round btn-border btn-md"
-                                    href="blog-details.html"> <span class="icon-reverse-wrapper"> <span
-                                            class="btn-text"><?= __('read_more', 'بیشتر بخوانید') ?></span> <span class="btn-icon"><i
-                                                class="fa-sharp fa-regular fa-arrow-left"></i></span> <span
-                                            class="btn-icon"><i class="fa-sharp fa-regular fa-arrow-left"></i></span>
-                                    </span> </a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-lg-4 col-md-6 col-12">
-                    <div
-                        class="blog-card-style-two tmponhover image-box-hover tmp-scroll-trigger tmp-fade-in animation-order-3 tmp-scroll-trigger--offscreen">
-                        <div class="blog-card-img">
-                            <div class="img-box"><a href="blog-details.html"> <img alt="Blog Thumbnail" class="w-100"
-                                        src="assets/images/blog/blog-img-3.jpg">
-                                </a></div>
-                            <span><?= __('blog_date_12_dey', '12 دی') ?></span>
-                        </div>
-                        <div class="blog-content-wrap">
-                            <div class="blog-tags">
-                                <ul>
-                                    <li><a href="#"><i class="fa-regular fa-user"></i><?= __('author_name', 'مسبز') ?></a></li>
-                                    <li><a href="#"><i class="fa-regular fa-comments"></i><?= __('comments_count', 'نظرات (05)') ?></a></li>
-                                </ul>
-                            </div>
-                            <h3 class="blog-title"><a href="blog-details.html"><?= __('reduce_stress_exam', 'راهکارهایی برای کاهش استرس در امتحان') ?></a>
-                            </h3>
-                            <div class="read-more-btn"><a
-                                    class="tmp-btn hover-icon-reverse radius-round btn-border btn-md"
-                                    href="blog-details.html"> <span class="icon-reverse-wrapper"> <span
-                                            class="btn-text"><?= __('read_more', 'بیشتر بخوانید') ?></span> <span class="btn-icon"><i
-                                                class="fa-sharp fa-regular fa-arrow-left"></i></span> <span
-                                            class="btn-icon"><i class="fa-sharp fa-regular fa-arrow-left"></i></span>
-                                    </span> </a>
-                            </div>
-                        </div>
+                    <div class="seo-text-content text-center" style="max-width: 800px; margin: 0 auto; line-height: 1.8;">
+                        <p>
+                            <?= __('seo_description_text', 'اگر به دنبال <strong>آموزش گواهینامه آلمانی</strong> هستید، سایت فارسی فهر (Farsi Fahr) جامع‌ترین ابزارها را برای شما فراهم کرده است. ما با ارائه <strong>ترجمه و آموزش سوالات گواهینامه آلمانی</strong> به صورت دقیق و روان، مسیر موفقیت در <strong>آزمون تئوری گواهینامه آلمانی</strong> را برای فارسی‌زبانان هموار کرده‌ایم. در این سامانه می‌توانید به <strong>گواهینامه آلمانی به فارسی</strong> دسترسی داشته باشید و از امکانات <strong>رایگان</strong> ما برای تست و تمرین استفاده کنید.') ?>
+                        </p>
                     </div>
                 </div>
             </div>
         </div>
     </section>
-    -->
+
     <footer id="contact" class="footer-area footer-style-two-wrapper bg-color-footer bg_images tmp-section-gap">
         <div class="container">
             <div class="footer-main footer-style-two">

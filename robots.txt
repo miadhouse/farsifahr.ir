@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /config/
+Disallow: /incloud/
+Disallow: /vendor/
+Disallow: /auth/
+Disallow: /test/
+
+Sitemap: https://farsifahr.com/sitemap.xml
