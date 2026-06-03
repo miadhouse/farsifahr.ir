@@ -1342,4 +1342,4 @@ header('X-LiteSpeed-Cache-Control: no-cache'); // LiteSpeed Server
     <?php endif; ?>
 </body>
 
-</html >
+</html>
