@@ -7,18 +7,18 @@
 require_once __DIR__ . '/incloud/functions.php';
 require_once __DIR__ . '/incloud/subscription-functions.php';
 
-// جلوگیری از کش شدن صفحه در حالت‌های مختلف لاگین (فقط برای کاربران لاگین شده)
+// Redirect to dashboard if already logged in (for PWA and direct access)
 if (is_logged_in()) {
-    header('Vary: Cookie');
-    header('Cache-Control: no-cache, no-store, must-revalidate'); // HTTP 1.1
-    header('Pragma: no-cache'); // HTTP 1.0
-    header('Expires: 0'); // Proxies
-    header('X-LiteSpeed-Cache-Control: no-cache'); // LiteSpeed Server
-} else {
-    // برای مهمان‌ها اجازه کش بده (LiteSpeed در htaccess تنظیم شده)
-    header('Vary: Cookie');
-    header('X-LiteSpeed-Cache-Control: public, max-age=3600');
+    header('Location: admin/');
+    exit();
 }
+
+// جلوگیری از کش شدن صفحه (هم برای مهمان‌ها به دلیل CSRF و هم برای جلوگیری از نمایش محتوای قدیمی)
+header('Vary: Cookie');
+header('Cache-Control: no-cache, no-store, must-revalidate'); // HTTP 1.1
+header('Pragma: no-cache'); // HTTP 1.0
+header('Expires: 0'); // Proxies
+header('X-LiteSpeed-Cache-Control: no-cache'); // LiteSpeed Server
 ?>
 <html lang="<?= get_current_lang() ?>" dir="<?= get_lang_dir() ?>">
 
@@ -74,6 +74,13 @@ if (is_logged_in()) {
 
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#667eea">
+    
+    <!-- Apple PWA Meta Tags -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Farsi Fahr">
+    <link rel="apple-touch-icon" href="/assets/imgT24Logo.png">
+
     <script src="https://www.google.com/recaptcha/api.js?hl=<?= get_current_lang() ?>" async defer></script>
 
     <?php if (isset($_SESSION['error'])): ?>
@@ -91,6 +98,40 @@ if (is_logged_in()) {
 
 
     <style>
+        .cursor-pointer {
+            cursor: pointer;
+            z-index: 10;
+            pointer-events: auto !important;
+        }
+        /* اصلاح ظاهر اینپوت‌های گروهی برای گرد شدن لبه‌ها */
+        .input-group .form-control:first-child {
+            border-top-left-radius: 0;
+            border-bottom-left-radius: 0;
+        }
+        .input-group-text {
+            background-color: transparent;
+            border-right: none;
+            border-top-right-radius: 0 !important;
+            border-bottom-right-radius: 0 !important;
+            color: #6c757d;
+            z-index: 10;
+        }
+        [dir="rtl"] .input-group .form-control:first-child {
+            border-top-right-radius: 0.375rem !important;
+            border-bottom-right-radius: 0.375rem !important;
+            border-top-left-radius: 0 !important;
+            border-bottom-left-radius: 0 !important;
+            border-left: none;
+        }
+        [dir="rtl"] .input-group-text {
+            border-top-left-radius: 0.375rem !important;
+            border-bottom-left-radius: 0.375rem !important;
+            border-top-right-radius: 0 !important;
+            border-bottom-right-radius: 0 !important;
+            border-left: 1px solid #ced4da;
+            border-right: none;
+            margin-right: -1px;
+        }
         .seo-content-section {
             background-color: #0f1113; /* Dark theme background */
             padding: 80px 0;
@@ -391,6 +432,15 @@ if (is_logged_in()) {
                 <ul class="tmp-mainmenu">
                     <li><a href="#"><?= __('home_title') ?></a></li>
                     <li><a href="#contact"><?= __('contact_us') ?></a></li>
+                    
+                    <!-- PWA Manual Install (Hidden if already standalone) -->
+                    <li id="menu-install-li" style="display: none;">
+                        <a href="javascript:void(0)" id="btn-manual-install">
+                            <i class="fa-regular fa-mobile-screen-button me-2"></i>
+                            <?= __('install_app', 'نصب اپلیکیشن') ?>
+                        </a>
+                    </li>
+
                     <li class="mt-4">
                         <?php if (is_logged_in()): ?>
                             <a href="admin" class="btn btn-primary w-100 text-white"><?= __('dashboard') ?></a>
@@ -804,7 +854,12 @@ if (is_logged_in()) {
 
                         <div class="mb-3">
                             <label class="form-label"><?= __('password_label', 'رمز عبور') ?></label>
-                            <input type="password" class="form-control" name="password" required>
+                            <div class="input-group">
+                                <input type="password" class="form-control" name="password" id="loginPassword" required>
+                                <span class="input-group-text cursor-pointer" onclick="togglePasswordVisibility('loginPassword', this)" style="z-index: 10; cursor: pointer;">
+                                    <i class="fa-solid fa-eye" style="pointer-events: none;"></i>
+                                </span>
+                            </div>
                         </div>
 
                         <div class="mb-3 d-flex justify-content-center">
@@ -861,13 +916,23 @@ if (is_logged_in()) {
 
                         <div class="mb-3">
                             <label class="form-label"><?= __('password_label', 'رمز عبور') ?></label>
-                            <input type="password" class="form-control" name="password" id="password" required>
+                            <div class="input-group">
+                                <input type="password" class="form-control" name="password" id="registerPassword" required>
+                                <span class="input-group-text cursor-pointer" onclick="togglePasswordVisibility('registerPassword', this)" style="z-index: 10; cursor: pointer;">
+                                    <i class="fa-solid fa-eye" style="pointer-events: none;"></i>
+                                </span>
+                            </div>
                             <small class="text-muted"><?= __('password_hint', 'حداقل 8 کاراکتر، شامل حروف بزرگ، کوچک و عدد') ?></small>
                         </div>
 
                         <div class="mb-3">
                             <label class="form-label"><?= __('confirm_password_label', 'تکرار رمز عبور') ?></label>
-                            <input type="password" class="form-control" name="password_confirm" required>
+                            <div class="input-group">
+                                <input type="password" class="form-control" name="password_confirm" id="registerPasswordConfirm" required>
+                                <span class="input-group-text cursor-pointer" onclick="togglePasswordVisibility('registerPasswordConfirm', this)" style="z-index: 10; cursor: pointer;">
+                                    <i class="fa-solid fa-eye" style="pointer-events: none;"></i>
+                                </span>
+                            </div>
                         </div>
 
                         <div class="mb-3 d-flex justify-content-center">
@@ -944,6 +1009,20 @@ if (is_logged_in()) {
     <script defer src="assets/js/plugins/text-type.js"></script>
     <script defer src="assets/js/main.js"></script>
     <script>
+        function togglePasswordVisibility(inputId, button) {
+            const input = document.getElementById(inputId);
+            const icon = button.querySelector('i');
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                input.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        }
+        
         const authTranslations = {
             logging_in: '<?= __("logging_in", "در حال ورود...") ?>',
             success: '<?= __("success", "موفقیت‌آمیز") ?>',
@@ -1015,8 +1094,34 @@ if (is_logged_in()) {
 
         // PWA Install Prompt Logic
         let deferredPrompt;
-        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
         const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+
+        function showIOSInstructions() {
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    title: '<?= __('install_on_ios', 'نصب در آیفون') ?>',
+                    html: `
+                        <div class="text-<?= get_lang_dir() === 'rtl' ? 'end' : 'start' ?>" style="direction: <?= get_lang_dir() ?>;">
+                            <p><?= __('ios_install_instruction', 'برای نصب اپلیکیشن در آیفون، مراحل زیر را دنبال کنید:') ?></p>
+                            <ol class="ps-3" style="margin-bottom: 0;">
+                                <li class="mb-2"><?= __('ios_step_1', 'در نوار پایین مرورگر دکمه <b>Share</b> <i class="fas fa-share-square"></i> را بزنید.') ?></li>
+                                <li class="mb-2"><?= __('ios_step_2', 'در منوی باز شده، گزینه <b>Add to Home Screen</b> را انتخاب کنید.') ?></li>
+                                <li><?= __('ios_step_3', 'در بالا سمت راست، دکمه <b>Add</b> را بزنید.') ?></li>
+                            </ol>
+                        </div>
+                    `,
+                    icon: 'info',
+                    confirmButtonText: '<?= __('got_it', 'متوجه شدم') ?>',
+                    customClass: {
+                        confirmButton: 'btn btn-primary'
+                    },
+                    buttonsStyling: false
+                });
+            } else {
+                alert('<?= __('ios_install_instruction', 'برای نصب در آیفون: دکمه Share را زده و Add to Home Screen را انتخاب کنید.') ?>');
+            }
+        }
 
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
@@ -1029,9 +1134,40 @@ if (is_logged_in()) {
         });
 
         document.addEventListener('DOMContentLoaded', function() {
+            // Show manual install in menu if not installed
+            if (!isStandalone) {
+                const menuInstallLi = document.getElementById('menu-install-li');
+                if (menuInstallLi) menuInstallLi.style.display = 'block';
+            }
+
             if (isIOS && !isStandalone && !sessionStorage.getItem('pwaPromptShown')) {
                 showInstallPrompt('ios');
                 sessionStorage.setItem('pwaPromptShown', 'true');
+            }
+            
+            // Add listener to manual install button in menu
+            const manualInstallBtn = document.getElementById('btn-manual-install');
+            if (manualInstallBtn) {
+                const handleInstall = (e) => {
+                    e.preventDefault();
+                    if (isIOS) {
+                        showIOSInstructions();
+                    } else if (deferredPrompt) {
+                        deferredPrompt.prompt();
+                    } else {
+                        if (typeof Swal !== 'undefined') {
+                            Swal.fire({
+                                title: '<?= __('install', 'نصب') ?>',
+                                text: '<?= __('pwa_manual_install_info', 'برای نصب اپلیکیشن، از منوی مرورگر خود گزینه Install یا Add to Home Screen را انتخاب کنید.') ?>',
+                                icon: 'info'
+                            });
+                        } else {
+                            alert('<?= __('pwa_manual_install_info', 'برای نصب اپلیکیشن، از منوی مرورگر خود گزینه Install یا Add to Home Screen را انتخاب کنید.') ?>');
+                        }
+                    }
+                };
+                manualInstallBtn.addEventListener('click', handleInstall);
+                manualInstallBtn.addEventListener('touchstart', handleInstall, {passive: false});
             }
         });
 
@@ -1041,50 +1177,44 @@ if (is_logged_in()) {
 
             banner.style.display = 'flex';
 
-            document.getElementById('btn-pwa-close').addEventListener('click', () => {
-                banner.style.display = 'none';
-            });
+            const closeBtn = document.getElementById('btn-pwa-close');
+            if (closeBtn) {
+                closeBtn.addEventListener('click', () => {
+                    banner.style.display = 'none';
+                });
+            }
 
-            document.getElementById('btn-pwa-install').addEventListener('click', () => {
-                banner.style.display = 'none';
-                if (platform === 'android' && deferredPrompt) {
-                    deferredPrompt.prompt();
-                    deferredPrompt.userChoice.then((choiceResult) => {
-                        deferredPrompt = null;
-                    });
-                } else if (platform === 'ios') {
-                    Swal.fire({
-                        title: '<?= __('install_on_ios', 'نصب در آیفون') ?>',
-                        html: `
-                            <div class="text-<?= get_lang_dir() === 'rtl' ? 'end' : 'start' ?>" style="direction: <?= get_lang_dir() ?>;">
-                                <p><?= __('ios_install_instruction', 'برای نصب اپلیکیشن در آیفون، مراحل زیر را دنبال کنید:') ?></p>
-                                <ol class="ps-3">
-                                    <li><?= __('ios_step_1', 'در نوار پایین مرورگر دکمه <b>Share</b> <i class="fas fa-share-square"></i> را بزنید.') ?></li>
-                                    <li><?= __('ios_step_2', 'در منوی باز شده، گزینه <b>Add to Home Screen</b> را انتخاب کنید.') ?></li>
-                                    <li><?= __('ios_step_3', 'در بالا سمت راست، دکمه <b>Add</b> را بزنید.') ?></li>
-                                </ol>
-                            </div>
-                        `,
-                        icon: 'info',
-                        confirmButtonText: '<?= __('got_it', 'متوجه شدم') ?>',
-                        customClass: {
-                            confirmButton: 'btn btn-primary'
-                        },
-                        buttonsStyling: false
-                    });
-                }
-            });
+            const installBtn = document.getElementById('btn-pwa-install');
+            if (installBtn) {
+                const triggerInstall = (e) => {
+                    e.preventDefault();
+                    banner.style.display = 'none';
+                    if (platform === 'android' && deferredPrompt) {
+                        deferredPrompt.prompt();
+                        deferredPrompt.userChoice.then((choiceResult) => {
+                            deferredPrompt = null;
+                        });
+                    } else if (platform === 'ios') {
+                        showIOSInstructions();
+                    }
+                };
+                installBtn.addEventListener('click', triggerInstall);
+                installBtn.addEventListener('touchstart', triggerInstall, {passive: false});
+            }
         }
     </script>
 <script>
     $(document).ready(function() {
-        // Odometer initialization
+        // Odometer initialization - optimized for performance
+        let odometerTriggered = false;
         function triggerOdometer() {
+            if (odometerTriggered) return;
+            
             $('.odometer').each(function() {
                 const element = this;
                 const count = $(element).attr('data-count');
                 const rect = element.getBoundingClientRect();
-                const isVisible = rect.top >= 0 && rect.bottom <= (window.innerHeight || document.documentElement.clientHeight);
+                const isVisible = rect.top < window.innerHeight && rect.bottom >= 0;
 
                 if (isVisible && !$(element).hasClass('odometer-triggered')) {
                     $(element).html(count);
@@ -1093,9 +1223,24 @@ if (is_logged_in()) {
             });
         }
 
-        // Run on load and scroll
-        triggerOdometer();
-        $(window).on('scroll', triggerOdometer);
+        // Use IntersectionObserver if available for better performance
+        if ('IntersectionObserver' in window) {
+            const odoObserver = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        const el = $(entry.target);
+                        if (!el.hasClass('odometer-triggered')) {
+                            el.html(el.attr('data-count'));
+                            el.addClass('odometer-triggered');
+                        }
+                    }
+                });
+            }, { threshold: 0.1 });
+            $('.odometer').each(function() { odoObserver.observe(this); });
+        } else {
+            triggerOdometer();
+            $(window).on('scroll', triggerOdometer);
+        }
     });
 
     // جلوگیری از مشکل کش شدن مرورگر هنگام استفاده از دکمه Back
@@ -1109,6 +1254,7 @@ if (is_logged_in()) {
     <?php if (get_lang_dir() === 'ltr'): ?>
     (function() {
         function toLatin(str) {
+            if (!str || typeof str !== 'string') return str;
             return str.replace(/[۰-۹٠-٩]/g, function(d) {
                 const charCode = d.charCodeAt(0);
                 if (charCode >= 0x06F0 && charCode <= 0x06F9) return charCode - 0x06F0; // Persian
@@ -1126,39 +1272,37 @@ if (is_logged_in()) {
                 for (let i = 0; i < node.childNodes.length; i++) {
                     convertDigits(node.childNodes[i]);
                 }
-                // Also handle input placeholders and values
                 if (node.placeholder) node.placeholder = toLatin(node.placeholder);
-                if (node.value && (node.tagName === 'INPUT' || node.tagName === 'TEXTAREA')) {
-                   // node.value = toLatin(node.value); // Usually we don't want to auto-convert user input as they type, but maybe for display
-                }
             }
         }
 
-        // Run once on load
-        const runConversion = () => convertDigits(document.body);
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', runConversion);
-        } else {
+        // Run conversion with a small delay and only once if possible
+        const runConversion = () => {
+            requestAnimationFrame(() => convertDigits(document.body));
+        };
+        
+        if (document.readyState === 'complete') {
             runConversion();
+        } else {
+            window.addEventListener('load', runConversion);
         }
         
-        // Observe for changes (like Odometer updates, dynamic modals, etc)
+        // Use a more conservative observer for dynamic content
+        let timeout;
         const observer = new MutationObserver((mutations) => {
-            mutations.forEach((mutation) => {
-                if (mutation.type === 'childList') {
-                    mutation.addedNodes.forEach((node) => convertDigits(node));
-                } else if (mutation.type === 'characterData') {
-                    const original = mutation.target.nodeValue;
-                    const converted = toLatin(original);
-                    if (original !== converted) mutation.target.nodeValue = converted;
-                }
-            });
+            if (timeout) clearTimeout(timeout);
+            timeout = setTimeout(() => {
+                mutations.forEach((mutation) => {
+                    if (mutation.type === 'childList') {
+                        mutation.addedNodes.forEach((node) => convertDigits(node));
+                    }
+                });
+            }, 250);
         });
         
-        observer.observe(document.documentElement, {
+        observer.observe(document.body, {
             childList: true,
-            subtree: true,
-            characterData: true
+            subtree: true
         });
     })();
     <?php endif; ?>

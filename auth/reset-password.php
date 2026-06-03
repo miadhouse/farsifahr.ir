@@ -37,8 +37,29 @@ if (empty($token)) {
     <!-- Bootstrap Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    
     <!-- SweetAlert2 -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    <style>
+        .cursor-pointer { cursor: pointer; }
+        [dir="rtl"] .input-group .form-control:first-child {
+            border-top-right-radius: 0.375rem !important;
+            border-bottom-right-radius: 0.375rem !important;
+            border-top-left-radius: 0 !important;
+            border-bottom-left-radius: 0 !important;
+            border-left: none;
+        }
+        [dir="rtl"] .input-group-text {
+            border-top-left-radius: 0.375rem !important;
+            border-bottom-left-radius: 0.375rem !important;
+            border-top-right-radius: 0 !important;
+            border-bottom-right-radius: 0 !important;
+            border-left: 1px solid #ced4da;
+            background-color: transparent;
+        }
+    </style>
 </head>
 <body class="bg-light">
     <div class="container">
@@ -66,13 +87,23 @@ if (empty($token)) {
                                 
                                 <div class="mb-3">
                                     <label class="form-label">رمز عبور جدید</label>
-                                    <input type="password" class="form-control" name="password" id="newPassword" required>
+                                    <div class="input-group">
+                                        <input type="password" class="form-control" name="password" id="newPassword" required>
+                                        <span class="input-group-text cursor-pointer" onclick="togglePasswordVisibility('newPassword', this)">
+                                            <i class="fa-regular fa-eye"></i>
+                                        </span>
+                                    </div>
                                     <small class="text-muted">حداقل 8 کاراکتر، شامل حروف بزرگ، کوچک و عدد</small>
                                 </div>
                                 
                                 <div class="mb-3">
                                     <label class="form-label">تکرار رمز عبور جدید</label>
-                                    <input type="password" class="form-control" name="password_confirm" required>
+                                    <div class="input-group">
+                                        <input type="password" class="form-control" name="password_confirm" id="confirmPassword" required>
+                                        <span class="input-group-text cursor-pointer" onclick="togglePasswordVisibility('confirmPassword', this)">
+                                            <i class="fa-regular fa-eye"></i>
+                                        </span>
+                                    </div>
                                 </div>
                                 
                                 <div class="d-grid">
@@ -94,6 +125,21 @@ if (empty($token)) {
     
     <?php if ($valid_token): ?>
     <script>
+        function togglePasswordVisibility(inputId, button) {
+            const input = document.getElementById(inputId);
+            const icon = button.querySelector('i');
+            
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                input.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        }
+
         document.getElementById('newPasswordForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             

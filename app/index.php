@@ -1118,6 +1118,7 @@ $isAdmin = is_super_admin();
         let selectedRange = null;
         let currentTranslation = '';
         let currentWord = '';
+        let currentWordContext = ""; // کانتکست کلمه برای ترجمه دقیق‌تر
 
         let vocabularyState = {
             translated: false,
@@ -1249,9 +1250,9 @@ $isAdmin = is_super_admin();
                     touchStartY = touch.clientY;
 
                     longPressTimer = setTimeout(() => {
-                        const word = getWordAtPoint(touch.clientX, touch.clientY);
-                        if (word && isValidWord(word)) {
-                            showVocabSheet(word);
+                        const data = getWordAndContextAtPoint(touch.clientX, touch.clientY);
+                        if (data && isValidWord(data.word)) {
+                            showVocabSheet(data.word, data.context);
                             if (navigator.vibrate) navigator.vibrate(50);
                         }
                     }, 500);
@@ -1276,18 +1277,22 @@ $isAdmin = is_super_admin();
                 const text = selection.toString().trim();
                 
                 if (text && isValidWord(text)) {
-                    showVocabSheet(text);
+                    let context = "";
+                    if (selection.rangeCount > 0) {
+                        context = selection.getRangeAt(0).startContainer.textContent;
+                    }
+                    showVocabSheet(text, context);
                 } else {
                     // اگر متنی انتخاب نشده، کلمه‌ای که روی آن کلیک شده را پیدا کن
-                    const word = getWordAtPoint(event.clientX, event.clientY);
-                    if (word && isValidWord(word)) {
-                        showVocabSheet(word);
+                    const data = getWordAndContextAtPoint(event.clientX, event.clientY);
+                    if (data && isValidWord(data.word)) {
+                        showVocabSheet(data.word, data.context);
                     }
                 }
             }, 200);
         }
 
-        function getWordAtPoint(x, y) {
+        function getWordAndContextAtPoint(x, y) {
             let range = document.caretRangeFromPoint ? document.caretRangeFromPoint(x, y) : null;
             if (!range || range.startContainer.nodeType !== Node.TEXT_NODE) return null;
             const text = range.startContainer.textContent;
@@ -1295,7 +1300,7 @@ $isAdmin = is_super_admin();
             while (start > 0 && /[a-zA-ZäöüßÄÖÜ]/.test(text[start - 1])) start--;
             while (end < text.length && /[a-zA-ZäöüßÄÖÜ]/.test(text[end])) end++;
             const word = text.substring(start, end);
-            return word.length >= 2 ? word : null;
+            return word.length >= 2 ? { word: word, context: text } : null;
         }
 
         function isValidWord(text) {
@@ -1303,9 +1308,10 @@ $isAdmin = is_super_admin();
             return trimmed.split(/\s+/).length === 1 && trimmed.length >= 2 && /[a-zA-ZäöüßÄÖÜ]/.test(trimmed);
         }
 
-        function showVocabSheet(word) {
+        function showVocabSheet(word, context = "") {
             selectedText = word;
             currentWord = word;
+            currentWordContext = context;
             const originalWordEl = document.getElementById('sheet-original-word');
             const translationBoxEl = document.getElementById('sheet-translation-box');
             const saveBtnEl = document.getElementById('sheet-save-btn');
@@ -1349,6 +1355,34 @@ $isAdmin = is_super_admin();
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
             btn.disabled = true;
 
+            const formData = createFormDataWithCSRF({ 
+                word: word,
+                context: currentWordContext
+            });
+            
+            // ابتدا از جمینای برای ترجمه با کانتکست استفاده می‌کنیم
+            fetch('../incloud/gemini_translate.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: formData
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success && data.translation) {
+                    displaySheetTranslation(word, data.translation, data.in_user_collection);
+                } else {
+                    // اگر جمینای خطا داد، از سیستم قدیمی استفاده کن
+                    fallbackTranslation(word);
+                }
+            })
+            .catch(() => fallbackTranslation(word))
+            .finally(() => {
+                btn.innerHTML = original;
+                btn.disabled = false;
+            });
+        }
+
+        function fallbackTranslation(word) {
             const formData = createFormDataWithCSRF({ word: word });
             fetch('../incloud/get_translation.php', {
                 method: 'POST',
@@ -1363,11 +1397,7 @@ $isAdmin = is_super_admin();
                     googleTranslate(word);
                 }
             })
-            .catch(() => googleTranslate(word))
-            .finally(() => {
-                btn.innerHTML = original;
-                btn.disabled = false;
-            });
+            .catch(() => googleTranslate(word));
         }
 
         function googleTranslate(text) {

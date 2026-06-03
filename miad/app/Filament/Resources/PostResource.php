@@ -49,6 +49,7 @@ class PostResource extends Resource
                         FileUpload::make('image')
                             ->label('تصویر شاخص')
                             ->image()
+                            ->disk('public')
                             ->directory('blog'),
                         TextInput::make('author_name')
                             ->label('نام نویسنده')

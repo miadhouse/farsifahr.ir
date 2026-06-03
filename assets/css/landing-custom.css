@@ -32,13 +32,16 @@
 
 /* تم تاریک برای modal */
 .modal.slidedown .modal-content {
-    background: rgba(15, 23, 42, 0.7) !important;
+    background: rgba(15, 23, 42, 0.85) !important;
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 20px;
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
     color: #e2e8f0;
-    backdrop-filter: blur(15px) saturate(180%);
-    -webkit-backdrop-filter: blur(15px) saturate(180%);
+    /* Optimize backdrop-filter for Safari */
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    /* Improve rendering performance */
+    will-change: transform, opacity;
 }
 
 /* هدر modal */
@@ -1042,6 +1045,7 @@ html[dir="ltr"] .banner-two-main-wrapper .banner-right-content .main-img .banner
     font-size: 13px !important;
     cursor: pointer !important;
     margin: 0 !important;
+    -webkit-appearance: none;
 }
 #pwa-install-banner .btn-close-banner {
     background: transparent !important;
@@ -1049,9 +1053,8 @@ html[dir="ltr"] .banner-two-main-wrapper .banner-right-content .main-img .banner
     border: none !important;
     font-size: 24px !important;
     cursor: pointer !important;
-    padding: 0 5px !important;
     line-height: 1 !important;
-    margin: 0 !important;
+    padding: 0 5px !important;
 }
 
 /* Study Plan Estimator Styles */

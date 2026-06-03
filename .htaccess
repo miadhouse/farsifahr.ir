@@ -63,20 +63,17 @@ RewriteBase /
     Header set Expires "0"
 </Files>
 
-# 3. LiteSpeed Cache Configuration (Guest Cache)
+# 3. Disable LiteSpeed Cache for debugging/development
 <IfModule LiteSpeed>
-    CacheLookup on
-    # Cache everything for guests (no session/auth cookies)
-    RewriteCond %{HTTP_COOKIE} !PHPSESSID [NC]
-    RewriteCond %{HTTP_COOKIE} !wordpress_logged_in [NC]
-    RewriteCond %{REQUEST_METHOD} GET [NC]
-    RewriteCond %{QUERY_STRING} !.*s=.*
-    RewriteRule .* - [E=Cache-Control:max-age=120]
-
-    # Bypass cache for logged-in users
-    RewriteCond %{HTTP_COOKIE} PHPSESSID [NC]
-    RewriteRule .* - [E=Cache-Control:no-cache]
+    CacheLookup off
 </IfModule>
+
+# Prevent caching for dynamic PHP files
+<FilesMatch "\.(php)$">
+    Header set Cache-Control "no-cache, no-store, must-revalidate"
+    Header set Pragma "no-cache"
+    Header set Expires "0"
+</FilesMatch>
 
 # 4. Redirect HTTP to HTTPS & non-www
 RewriteCond %{HTTPS} !=on
@@ -110,11 +107,12 @@ RewriteCond %{REQUEST_FILENAME} -d [OR]
 RewriteCond %{REQUEST_FILENAME} -f
 RewriteRule ^ - [L]
 
-# Route /panel to Laravel
-RewriteRule ^panel/?(.*)$ miad/index.php [L,QSA]
-
 # Handle Livewire & Filament Assets directly for speed
+RewriteRule ^panel/storage/(.*)$ miad/public/storage/$1 [L]
 RewriteRule ^livewire/(.*)$ miad/public/livewire/$1 [L]
 RewriteRule ^vendor/filament/(.*)$ miad/public/vendor/filament/$1 [L]
 RewriteRule ^js/filament/(.*)$ miad/public/js/filament/$1 [L]
 RewriteRule ^css/filament/(.*)$ miad/public/css/filament/$1 [L]
+
+# Route /panel to Laravel
+RewriteRule ^panel/?(.*)$ miad/index.php [L,QSA]
