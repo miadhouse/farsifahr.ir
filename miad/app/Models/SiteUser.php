@@ -34,4 +34,14 @@ class SiteUser extends Model
     {
         return $this->hasMany(Subscription::class, 'user_id');
     }
+
+    public function questionStats()
+    {
+        return $this->hasMany(UserQuestionStat::class, 'user_id');
+    }
+
+    public function config()
+    {
+        return $this->hasOne(UserConfig::class, 'user_id');
+    }
 }

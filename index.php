@@ -28,7 +28,7 @@ header('X-LiteSpeed-Cache-Control: no-cache'); // LiteSpeed Server
     <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport">
     
     <!-- SEO Meta Tags -->
-    <title><?= __('site_title', 'Farsi Fahr | آموزش و آمادگی آزمون تئوری گواهینامه آلمانی') ?></title>
+    <title><?= __('site_title', 'farsifahr | آموزش و آمادگی آزمون تئوری گواهینامه آلمانی') ?></title>
     <meta name="description" content="<?= __('site_description', 'جامع‌ترین مرجع آموزش و آمادگی آزمون تئوری گواهینامه آلمانی به زبان فارسی. ترجمه سوالات، آزمون آزمایشی و آموزش‌های رایگان گواهینامه آلمانی به فارسی.') ?>">
     <meta name="keywords" content="گواهینامه آلمانی, آموزش گواهینامه آلمانی, ترجمه سوالات گواهینامه آلمانی, گواهینامه آلمانی به فارسی, رایگان, آزمون تئوری گواهینامه آلمانی, farsi fahr, سوالات گواهینامه آلمان">
     <link rel="canonical" href="<?= SITE_URL ?>">
@@ -42,14 +42,14 @@ header('X-LiteSpeed-Cache-Control: no-cache'); // LiteSpeed Server
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
     <meta property="og:url" content="<?= SITE_URL ?>">
-    <meta property="og:title" content="<?= __('site_title', 'Farsi Fahr | آموزش و آمادگی آزمون تئوری گواهینامه آلمانی') ?>">
+    <meta property="og:title" content="<?= __('site_title', 'farsifahr | آموزش و آمادگی آزمون تئوری گواهینامه آلمانی') ?>">
     <meta property="og:description" content="<?= __('site_description', 'جامع‌ترین مرجع آموزش و آمادگی آزمون تئوری گواهینامه آلمانی به زبان فارسی.') ?>">
     <meta property="og:image" content="<?= SITE_URL ?>assets/images/logo/logoAsset%201.svg">
 
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image">
     <meta property="twitter:url" content="<?= SITE_URL ?>">
-    <meta property="twitter:title" content="<?= __('site_title', 'Farsi Fahr | آموزش و آمادگی آزمون تئوری گواهینامه آلمانی') ?>">
+    <meta property="twitter:title" content="<?= __('site_title', 'farsifahr | آموزش و آمادگی آزمون تئوری گواهینامه آلمانی') ?>">
     <meta property="twitter:description" content="<?= __('site_description', 'جامع‌ترین مرجع آموزش و آمادگی آزمون تئوری گواهینامه آلمانی به زبان فارسی.') ?>">
     <meta property="twitter:image" content="<?= SITE_URL ?>assets/images/logo/logoAsset%201.svg">
 
@@ -70,7 +70,7 @@ header('X-LiteSpeed-Cache-Control: no-cache'); // LiteSpeed Server
     <link rel="preload" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'"><noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css"></noscript>
     <link rel="preload" href="https://cdn.jsdelivr.net/gh/lipis/flag-icons@7.2.3/css/flag-icons.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'"><noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/lipis/flag-icons@7.2.3/css/flag-icons.min.css"></noscript>
     <link href="assets/css/font-ir.css" rel="stylesheet">
-    <link rel="stylesheet" href="/chat/widget.css">
+    <link rel="stylesheet" href="/chat/widget.css?v=1.2">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Rajdhani:wght@300;400;500;600;700&family=Rubik:ital,wght@0,300..900;1,300..900&display=swap" rel="stylesheet">
 
     <link rel="manifest" href="/manifest.json">
@@ -79,7 +79,7 @@ header('X-LiteSpeed-Cache-Control: no-cache'); // LiteSpeed Server
     <!-- Apple PWA Meta Tags -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Farsi Fahr">
+    <meta name="apple-mobile-web-app-title" content="farsifahr">
     <link rel="apple-touch-icon" href="/assets/imgT24Logo.png">
 
     <script src="https://www.google.com/recaptcha/api.js?hl=<?= get_current_lang() ?>" async defer></script>
@@ -238,7 +238,7 @@ header('X-LiteSpeed-Cache-Control: no-cache'); // LiteSpeed Server
     <div id="pwa-install-banner">
         <div class="banner-content">
             <i class="fas fa-mobile-alt"></i>
-            <span><?= __('pwa_install_text', 'نصب اپلیکیشن فارسی‌فهر برای دسترسی سریع‌تر') ?></span>
+            <span><?= __('pwa_install_text', 'نصب اپلیکیشن farsifahr برای دسترسی سریع‌تر') ?></span>
         </div>
         <div class="banner-actions">
             <button class="btn-install" id="btn-pwa-install"><?= __('install', 'نصب') ?></button>
@@ -258,8 +258,8 @@ header('X-LiteSpeed-Cache-Control: no-cache'); // LiteSpeed Server
 
                         <div class="logo">
                             <a href="<?= SITE_URL ?>/index.php">
-                                <img alt="Farsi Fahr" class="logo-dark" src="assets/images/logo/logoAsset%201.svg">
-                                <img alt="Farsi Fahr" class="logo-white" src="assets/images/logo/logoAsset%201.svg">
+                                <img alt="farsifahr" class="logo-dark" src="assets/images/logo/logoAsset%201.svg">
+                                <img alt="farsifahr" class="logo-white" src="assets/images/logo/logoAsset%201.svg">
                             </a>
                         </div>
                         <nav class="tmp-mainmenu-nav d-none d-xl-block">
@@ -701,7 +701,7 @@ header('X-LiteSpeed-Cache-Control: no-cache'); // LiteSpeed Server
                     </div>
                     <div class="seo-text-content text-center" style="max-width: 800px; margin: 0 auto; line-height: 1.8;">
                         <p>
-                            <?= __('seo_description_text', 'اگر به دنبال <strong>آموزش گواهینامه آلمانی</strong> هستید، سایت فارسی فهر (Farsi Fahr) جامع‌ترین ابزارها را برای شما فراهم کرده است. ما با ارائه <strong>ترجمه و آموزش سوالات گواهینامه آلمانی</strong> به صورت دقیق و روان، مسیر موفقیت در <strong>آزمون تئوری گواهینامه آلمانی</strong> را برای فارسی‌زبانان هموار کرده‌ایم. در این سامانه می‌توانید به <strong>گواهینامه آلمانی به فارسی</strong> دسترسی داشته باشید و از امکانات <strong>رایگان</strong> ما برای تست و تمرین استفاده کنید.') ?>
+                            <?= __('seo_description_text', 'اگر به دنبال <strong>آموزش گواهینامه آلمانی</strong> هستید، سایت farsifahr (farsifahr) جامع‌ترین ابزارها را برای شما فراهم کرده است. ما با ارائه <strong>ترجمه و آموزش سوالات گواهینامه آلمانی</strong> به صورت دقیق و روان، مسیر موفقیت در <strong>آزمون تئوری گواهینامه آلمانی</strong> را برای فارسی‌زبانان هموار کرده‌ایم. در این سامانه می‌توانید به <strong>گواهینامه آلمانی به فارسی</strong> دسترسی داشته باشید و از امکانات <strong>رایگان</strong> ما برای تست و تمرین استفاده کنید.') ?>
                         </p>
                     </div>
                 </div>
@@ -1068,7 +1068,7 @@ header('X-LiteSpeed-Cache-Control: no-cache'); // LiteSpeed Server
             }
         });
 </script>
-<script src="/chat/widget.js" async></script>
+<script src="/chat/widget.js?v=1.2" async></script>
 
     <?php if (isset($_COOKIE['concurrent_login']) && $_COOKIE['concurrent_login'] === '1'): ?>
     <script>

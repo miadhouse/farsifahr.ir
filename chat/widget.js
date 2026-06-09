@@ -1,17 +1,16 @@
 /**
- * FarsiFahr Live Chat Widget JS
+ * farsifahr Live Chat Widget JS
  * Place at: /chat/widget.js
  */
 (function() {
     'use strict';
 
     const CHAT_API = '/chat/api/handler.php';
-    const POLL_INTERVAL = 3000; // 3 seconds
     const HEARTBEAT_INTERVAL = 30000; // 30 seconds
     const STORAGE_KEY = 'ff_chat_token';
     const WELCOME_KEY = 'ff_chat_welcomed';
 
-    const EMOJIS = ['😊','👋','🙏','✅','❓','😅','🎉','💯','🔥','👍','❤️','😢'];
+    const EMOJIS = ['😊','👋','🙏','✅','❓','😅','🎉','💯','🔥','👍','❤️','😢','👌','🤔','💪'];
 
     let chatToken = localStorage.getItem(STORAGE_KEY) || null;
     let isOpen = false;
@@ -20,6 +19,7 @@
     let heartbeatTimer = null;
     let needsGuestInfo = false;
     let isClosed = false;
+    let isPolling = false;
 
     // ========= BUILD HTML =========
     function buildWidget() {
@@ -42,19 +42,20 @@
             <div id="chat-header">
                 <div class="chat-header-avatar">🎧</div>
                 <div class="chat-header-info">
-                    <h4>پشتیبانی فارسی‌فهر</h4>
+                    <h4>پشتیبانی farsifahr</h4>
                     <p id="chat-status-text">آنلاین • معمولاً در چند دقیقه پاسخ می‌دهیم</p>
                 </div>
                 <button class="chat-header-close" id="chat-close-btn" aria-label="بستن">×</button>
             </div>
             <div id="chat-messages"></div>
             <div id="chat-footer">
-                <div class="chat-emoji-bar" id="chat-emoji-bar"></div>
+                <div class="chat-emoji-bar" id="chat-emoji-bar" style="display:none !important"></div>
                 <div class="chat-input-row">
                     <button id="chat-send-btn" aria-label="ارسال">
                         <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
                     </button>
                     <textarea id="chat-input" placeholder="پیام خود را بنویسید..." rows="1" maxlength="2000"></textarea>
+                    <button class="chat-emoji-toggle" id="chat-emoji-toggle" title="انتخاب ایموجی" type="button">😊</button>
                 </div>
             </div>
         `;
@@ -67,8 +68,8 @@
             <button class="chat-welcome-close" id="chat-popup-close">×</button>
             <div class="avatar">👋</div>
             <h5>سلام! چطور می‌توانیم کمک کنیم؟</h5>
-            <p>تیم پشتیبانی فارسی‌فهر آماده پاسخگویی است.</p>
-            <button class="open-btn" id="chat-popup-open">شروع چت</button>
+            <p>تیم پشتیبانی farsifahr آماده پاسخگویی است.</p>
+            <button class="open-btn" id="chat-popup-open">شروع گفتگو</button>
         `;
 
         document.body.appendChild(popup);
@@ -97,10 +98,22 @@
         win.classList.toggle('is-open', isOpen);
         popup.style.display = 'none';
 
+        if (window.innerWidth <= 480) {
+            document.body.classList.toggle('chat-open-lock', isOpen);
+        }
+
         if (isOpen) {
             clearBadge();
             initSession();
             document.getElementById('chat-input')?.focus();
+        } else {
+            // Close emoji bar when chat closes
+            const bar = document.getElementById('chat-emoji-bar');
+            if (bar) {
+                bar.style.setProperty('display', 'none', 'important');
+                bar.classList.remove('is-open');
+            }
+            document.getElementById('chat-emoji-toggle')?.classList.remove('is-active');
         }
     }
 
@@ -108,12 +121,33 @@
         isOpen = false;
         document.getElementById('chat-toggle-btn')?.classList.remove('is-open');
         document.getElementById('chat-window')?.classList.remove('is-open');
+        document.getElementById('chat-emoji-bar')?.classList.remove('is-open');
+        document.getElementById('chat-emoji-toggle')?.classList.remove('is-active');
+        document.body.classList.remove('chat-open-lock');
+    }
+
+    function toggleEmojiBar() {
+        const bar = document.getElementById('chat-emoji-bar');
+        const btn = document.getElementById('chat-emoji-toggle');
+        const isHidden = bar.style.display === 'none' || !bar.classList.contains('is-open');
+        
+        if (isHidden) {
+            bar.style.setProperty('display', 'flex', 'important');
+            bar.classList.add('is-open');
+            btn.classList.add('is-active');
+        } else {
+            bar.style.setProperty('display', 'none', 'important');
+            bar.classList.remove('is-open');
+            btn.classList.remove('is-active');
+        }
     }
 
     // ========= SESSION INIT =========
     function initSession() {
         const messagesEl = document.getElementById('chat-messages');
-        messagesEl.innerHTML = '<div class="chat-typing"><span></span><span></span><span></span></div>';
+        if (messagesEl.children.length === 0) {
+            messagesEl.innerHTML = '<div class="chat-typing"><span></span><span></span><span></span></div>';
+        }
 
         fetch(CHAT_API, {
             method: 'POST',
@@ -128,21 +162,27 @@
             localStorage.setItem(STORAGE_KEY, chatToken);
             isClosed = data.session.status === 'closed';
 
-            messagesEl.innerHTML = '';
-
-            // Show guest form if needed
+            // Check if we need to show/remove guest form
             needsGuestInfo = data.session.needs_info;
-            if (needsGuestInfo) {
-                messagesEl.appendChild(buildGuestForm());
+            
+            // Only clear and re-render if it's the first init or session changed significantly
+            if (messagesEl.querySelector('.chat-typing') || lastMessageId === 0) {
+                messagesEl.innerHTML = '';
+                
+                if (needsGuestInfo) {
+                    messagesEl.appendChild(buildGuestForm());
+                    disableInput('ابتدا اطلاعات خود را وارد کنید');
+                } else {
+                    enableInput();
+                }
+
+                // Render existing messages
+                data.messages.forEach(m => {
+                    lastMessageId = Math.max(lastMessageId, m.id);
+                    messagesEl.appendChild(buildMessage(m));
+                });
+                scrollToBottom();
             }
-
-            // Render existing messages
-            data.messages.forEach(m => {
-                lastMessageId = Math.max(lastMessageId, m.id);
-                messagesEl.appendChild(buildMessage(m));
-            });
-
-            scrollToBottom();
 
             if (isClosed) {
                 disableInput('این چت بسته شده است.');
@@ -153,7 +193,9 @@
             startHeartbeat();
         })
         .catch(() => {
-            messagesEl.innerHTML = '<p style="color:#f56565;text-align:center;font-size:13px">خطا در اتصال. لطفاً دوباره تلاش کنید.</p>';
+            if (lastMessageId === 0) {
+                messagesEl.innerHTML = '<p style="color:#f56565;text-align:center;font-size:13px">خطا در اتصال. لطفاً دوباره تلاش کنید.</p>';
+            }
         });
     }
 
@@ -182,6 +224,10 @@
             return;
         }
 
+        const btn = document.getElementById('guest-submit-btn');
+        btn.disabled = true;
+        btn.textContent = 'در حال ثبت...';
+
         fetch(CHAT_API, {
             method: 'POST',
             headers: {'Content-Type': 'application/x-www-form-urlencoded'},
@@ -192,10 +238,16 @@
             if (data.success) {
                 needsGuestInfo = false;
                 document.getElementById('chat-guest-form')?.remove();
+                enableInput();
                 // Reload messages
-                document.getElementById('chat-messages').innerHTML = '';
+                const messagesEl = document.getElementById('chat-messages');
+                messagesEl.innerHTML = '';
                 lastMessageId = 0;
                 initSession();
+            } else {
+                alert(data.message || 'خطا در ثبت اطلاعات');
+                btn.disabled = false;
+                btn.textContent = 'شروع چت 🚀';
             }
         });
     }
@@ -205,7 +257,6 @@
         if (m.type === 'system') {
             const d = document.createElement('div');
             d.className = 'chat-status-msg';
-            d.textContent = m.message.replace(/</g, '&lt;');
             d.innerHTML = m.message;
             return d;
         }
@@ -250,8 +301,7 @@
 
     // ========= SEND =========
     function sendMessage() {
-        if (needsGuestInfo) return;
-        if (isClosed) return;
+        if (needsGuestInfo || isClosed) return;
 
         const input = document.getElementById('chat-input');
         const message = input?.value.trim();
@@ -260,6 +310,14 @@
         input.value = '';
         input.style.height = 'auto';
 
+        // Close emoji bar after send
+        const bar = document.getElementById('chat-emoji-bar');
+        if (bar) {
+            bar.style.setProperty('display', 'none', 'important');
+            bar.classList.remove('is-open');
+        }
+        document.getElementById('chat-emoji-toggle')?.classList.remove('is-active');
+
         // Optimistic UI
         addMessage({ type: 'user', message, time: new Date().toLocaleTimeString('fa-IR', {hour:'2-digit',minute:'2-digit'}) });
 
@@ -267,10 +325,18 @@
             method: 'POST',
             headers: {'Content-Type': 'application/x-www-form-urlencoded'},
             body: `action=send&token=${encodeURIComponent(chatToken)}&message=${encodeURIComponent(message)}`
-        }).catch(() => {});
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                // We'll get confirmation through polling or next poll
+            }
+        })
+        .catch(() => {});
     }
 
     function insertEmoji(e) {
+        if (needsGuestInfo || isClosed) return;
         const input = document.getElementById('chat-input');
         if (input) {
             const pos = input.selectionStart;
@@ -282,13 +348,17 @@
 
     // ========= POLLING =========
     function startPolling() {
-        clearInterval(pollTimer);
-        pollTimer = setInterval(pollMessages, POLL_INTERVAL);
+        if (isPolling) return;
+        pollMessages();
     }
 
     function pollMessages() {
-        if (!chatToken || isClosed) return;
+        if (!chatToken || isClosed) {
+            isPolling = false;
+            return;
+        }
 
+        isPolling = true;
         fetch(CHAT_API, {
             method: 'POST',
             headers: {'Content-Type': 'application/x-www-form-urlencoded'},
@@ -296,14 +366,19 @@
         })
         .then(r => r.json())
         .then(data => {
-            if (!data.success) return;
-            data.messages.forEach(m => {
-                lastMessageId = Math.max(lastMessageId, m.id);
-                addMessage(m);
-                if (!isOpen && m.type !== 'user') showBadge();
-            });
+            if (data.success && data.messages.length > 0) {
+                data.messages.forEach(m => {
+                    lastMessageId = Math.max(lastMessageId, m.id);
+                    addMessage(m);
+                    if (!isOpen && m.type !== 'user') showBadge();
+                });
+            }
+            // Wait a bit then poll again. Server-side long poll handles the delay.
+            setTimeout(pollMessages, 1000);
         })
-        .catch(() => {});
+        .catch(() => {
+            setTimeout(pollMessages, 5000);
+        });
     }
 
     // ========= HEARTBEAT =========
@@ -336,12 +411,23 @@
         if (badge) badge.style.display = 'none';
     }
 
-    // ========= DISABLE INPUT =========
+    // ========= DISABLE/ENABLE INPUT =========
     function disableInput(msg) {
         const input = document.getElementById('chat-input');
         const btn = document.getElementById('chat-send-btn');
+        const emo = document.getElementById('chat-emoji-toggle');
         if (input) { input.disabled = true; input.placeholder = msg; }
         if (btn) btn.disabled = true;
+        if (emo) emo.style.display = 'none';
+    }
+
+    function enableInput() {
+        const input = document.getElementById('chat-input');
+        const btn = document.getElementById('chat-send-btn');
+        const emo = document.getElementById('chat-emoji-toggle');
+        if (input) { input.disabled = false; input.placeholder = 'پیام خود را بنویسید...'; }
+        if (btn) btn.disabled = false;
+        if (emo) emo.style.display = 'flex';
     }
 
     // ========= WELCOME POPUP =========
@@ -365,6 +451,7 @@
         // Events
         document.getElementById('chat-toggle-btn')?.addEventListener('click', toggleChat);
         document.getElementById('chat-close-btn')?.addEventListener('click', closeChat);
+        document.getElementById('chat-emoji-toggle')?.addEventListener('click', toggleEmojiBar);
         document.getElementById('chat-popup-close')?.addEventListener('click', () => {
             document.getElementById('chat-welcome-popup').style.display = 'none';
         });

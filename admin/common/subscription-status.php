@@ -62,7 +62,7 @@ if ($navbar_active_sub && $navbar_active_sub['plan_slug'] !== 'free') {
 
         <?php if ($navbar_pending_sub): ?>
             <?php 
-                $nav_wa_msg = "سلام، من درخواست اشتراک " . $navbar_pending_sub['plan_name'] . " با مبلغ " . number_format($navbar_pending_sub['amount_paid']) . " تومان را در سایت فارسی‌فهر ثبت کردم.\nایمیل من: " . ($_SESSION['email'] ?? 'نامشخص') . "\nلطفا فعال کنید.";
+                $nav_wa_msg = "سلام، من درخواست اشتراک " . $navbar_pending_sub['plan_name'] . " با مبلغ " . number_format($navbar_pending_sub['amount_paid']) . " تومان را در سایت farsifahr ثبت کردم.\nایمیل من: " . ($_SESSION['email'] ?? 'نامشخص') . "\nلطفا فعال کنید.";
             ?>
             <div class="d-flex align-items-center ms-2 border-start ps-2">
                 <a href="https://wa.me/989177876760?text=<?= urlencode($nav_wa_msg) ?>" 

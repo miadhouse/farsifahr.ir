@@ -87,11 +87,19 @@ class QuestionScraperService
         $xpath = new DOMXPath($dom);
 
         // ── 1. Question-level explanation ──────────────────────────────
+        // We look for an explanation that is NOT inside an answer item
         $questionInfoNodes = $xpath->query(
             '//*[@id="fsb-fragentexte"]'
             . '/div[contains(@class,"fsb-erklaerung")]'
             . '//div[contains(@class,"fsb-erklaerung__text")]'
         );
+
+        // Fallback: search anywhere inside fsb-fragentexte but take the first one
+        if (!$questionInfoNodes || $questionInfoNodes->length === 0) {
+            $questionInfoNodes = $xpath->query(
+                '//*[@id="fsb-fragentexte"]//div[contains(@class,"fsb-erklaerung")]//div[contains(@class,"fsb-erklaerung__text")]'
+            );
+        }
 
         if ($questionInfoNodes && $questionInfoNodes->length > 0) {
             $text = $this->cleanText($questionInfoNodes->item(0)->textContent);
@@ -158,7 +166,7 @@ class QuestionScraperService
 
         try {
             $url = "https://translate.googleapis.com/translate_a/single?client=gtx&sl={$from}&tl={$to}&dt=t&q=" . urlencode($text);
-            $response = Http::timeout(10)->get($url);
+            $response = Http::timeout(20)->get($url);
 
             if ($response->successful()) {
                 $result = $response->json();
@@ -192,6 +200,7 @@ class QuestionScraperService
 
     private function normalizeForMatch(string $text): string
     {
+        $text = strip_tags($text);
         $text = $this->cleanText($text);
         $text = mb_strtolower($text, 'UTF-8');
         return preg_replace('/[^\p{L}\p{N}\s]/u', '', $text);

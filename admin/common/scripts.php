@@ -34,7 +34,7 @@
         }
     });
     </script>
-    <script src="/chat/widget.js" async></script>
+    <script src="/chat/widget.js?v=1.2" async></script>
     
     
     

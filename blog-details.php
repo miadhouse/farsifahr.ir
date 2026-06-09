@@ -24,7 +24,7 @@ function get_replies($parent_id, $pdo) {
     return $stmt->fetchAll();
 }
 
-$title = $post['title'] . ' | ' . __('site_title', 'Farsi Fahr');
+$title = $post['title'] . ' | ' . __('site_title', 'farsifahr');
 ?>
 <!DOCTYPE html>
 <html lang="<?= get_current_lang() ?>" dir="<?= get_lang_dir() ?>">

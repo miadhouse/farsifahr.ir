@@ -1,6 +1,6 @@
 <?php
 /**
- * FarsiFahr Live Chat - API Handler
+ * farsifahr Live Chat - API Handler
  * Place at: /chat/api/handler.php
  */
 
@@ -50,12 +50,29 @@ switch ($action) {
     // --- User: Start or resume session ---
     case 'init':
         $token = $_POST['token'] ?? null;
-        $session = $token ? get_or_create_session($pdo, $token) : null;
+        $user_id = $_SESSION['user_id'] ?? null;
+        $session = null;
+
+        // 1. Try by token
+        if ($token) {
+            $session = get_or_create_session($pdo, $token);
+        }
+
+        // 2. If not found by token but user is logged in, try by user_id
+        if (!$session && $user_id) {
+            $stmt = $pdo->prepare("SELECT * FROM chat_sessions WHERE user_id = ? AND status != 'closed' ORDER BY updated_at DESC LIMIT 1");
+            $stmt->execute([$user_id]);
+            $session = $stmt->fetch();
+            if ($session) {
+                // Update last seen
+                $pdo->prepare("UPDATE chat_sessions SET last_seen = NOW(), is_online = 1 WHERE id = ?")
+                    ->execute([$session['id']]);
+            }
+        }
 
         if (!$session) {
             // Create new session
             $new_token = bin2hex(random_bytes(24));
-            $user_id = $_SESSION['user_id'] ?? null;
             $guest_name = null;
             $guest_email = null;
 
@@ -84,9 +101,9 @@ switch ($action) {
             $session_id = $pdo->lastInsertId();
 
             // Insert welcome bot message
-            $welcome = 'سلام! 👋 به پشتیبانی فارسی‌فهر خوش آمدید. پیام خود را بنویسید تا در اولین فرصت پاسخ دهیم.';
+            $welcome = 'سلام! 👋 به پشتیبانی farsifahr خوش آمدید. پیام خود را بنویسید تا در اولین فرصت پاسخ دهیم.';
             if (!$user_id) {
-                $welcome = 'سلام! 👋 برای شروع چت، لطفاً ایمیل و نامتان را وارد کنید.';
+                $welcome = 'سلام! 👋 برای شروع چت، لطفاً ابتدا نام و ایمیل خود را وارد کنید.';
             }
 
             $pdo->prepare("INSERT INTO chat_messages (session_id, sender_type, message) VALUES (?, 'system', ?)")
@@ -95,6 +112,20 @@ switch ($action) {
             $stmt = $pdo->prepare("SELECT * FROM chat_sessions WHERE id = ?");
             $stmt->execute([$session_id]);
             $session = $stmt->fetch();
+        } else {
+            // Session exists, but maybe guest just logged in?
+            if ($user_id && !$session['user_id']) {
+                $stmt = $pdo->prepare("SELECT name, email FROM users WHERE id = ?");
+                $stmt->execute([$user_id]);
+                $user = $stmt->fetch();
+                $pdo->prepare("UPDATE chat_sessions SET user_id = ?, guest_name = ?, guest_email = ? WHERE id = ?")
+                    ->execute([$user_id, $user['name'], $user['email'], $session['id']]);
+                
+                // Refresh session data
+                $stmt = $pdo->prepare("SELECT * FROM chat_sessions WHERE id = ?");
+                $stmt->execute([$session['id']]);
+                $session = $stmt->fetch();
+            }
         }
 
         // Get messages
@@ -118,7 +149,7 @@ switch ($action) {
                 'status' => $session['status'],
                 'guest_name' => $session['guest_name'],
                 'guest_email' => $session['guest_email'],
-                'needs_info' => !$_SESSION['user_id'] && !$session['guest_email'],
+                'needs_info' => !$session['user_id'] && !$session['guest_email'],
             ],
             'messages' => array_map(fn($m) => [
                 'id' => $m['id'],
@@ -150,7 +181,7 @@ switch ($action) {
         $pdo->prepare("DELETE FROM chat_messages WHERE session_id = ? AND sender_type = 'system'")
             ->execute([$session['id']]);
         $pdo->prepare("INSERT INTO chat_messages (session_id, sender_type, message) VALUES (?, 'system', ?)")
-            ->execute([$session['id'], "سلام {$name} عزیز! 👋 به پشتیبانی فارسی‌فهر خوش آمدید. پیامتان را بنویسید."]);
+            ->execute([$session['id'], "سلام {$name} عزیز! 👋 به پشتیبانی farsifahr خوش آمدید. پیامتان را بنویسید."]);
 
         echo json_encode(['success' => true]);
         break;
@@ -189,6 +220,17 @@ switch ($action) {
                 ->execute([$session['id'], $user_id, $message]);
             $pdo->prepare("UPDATE chat_sessions SET unread_admin = unread_admin + 1, updated_at = NOW() WHERE id = ?")
                 ->execute([$session['id']]);
+
+            // Notify Admin via Telegram
+            $tg_name = $session['guest_name'] ?? 'مهمان';
+            $tg_email = $session['guest_email'] ?? 'بدون ایمیل';
+            $tg_msg = "💬 <b>پیام چت جدید</b>\n\n";
+            $tg_msg .= "👤 فرستنده: {$tg_name} ({$tg_email})\n";
+            $tg_msg .= "📝 پیام: {$message}\n\n";
+            $tg_msg .= "🆔 Session: #S{$session['id']}\n";
+            $tg_msg .= "<i>برای پاسخ، روی این پیام ریپلای کنید.</i>";
+            
+            send_telegram_admin_message($tg_msg);
         }
 
         echo json_encode(['success' => true]);
@@ -199,31 +241,51 @@ switch ($action) {
         $token = $_POST['token'] ?? '';
         $last_id = intval($_POST['last_id'] ?? 0);
         $session_id = intval($_POST['session_id'] ?? 0);
-
-        if (is_chat_admin() && $session_id) {
-            $stmt = $pdo->prepare("SELECT * FROM chat_messages WHERE session_id = ? AND id > ? ORDER BY created_at ASC");
-            $stmt->execute([$session_id, $last_id]);
-
-            // Mark admin unread as read
-            $pdo->prepare("UPDATE chat_messages SET is_read = 1 WHERE session_id = ? AND sender_type = 'user' AND id > ?")
-                ->execute([$session_id, $last_id]);
-            $pdo->prepare("UPDATE chat_sessions SET unread_admin = 0 WHERE id = ?")
-                ->execute([$session_id]);
-        } else {
-            $session = get_or_create_session($pdo, $token);
-            if (!$session) { echo json_encode(['success' => false, 'messages' => []]); break; }
-
-            $stmt = $pdo->prepare("SELECT * FROM chat_messages WHERE session_id = ? AND id > ? AND sender_type IN ('admin','system') ORDER BY created_at ASC");
-            $stmt->execute([$session['id'], $last_id]);
-
-            // Mark user messages as read
-            $pdo->prepare("UPDATE chat_messages SET is_read = 1 WHERE session_id = ? AND sender_type IN ('admin','system')")
-                ->execute([$session['id']]);
-            $pdo->prepare("UPDATE chat_sessions SET unread_user = 0 WHERE id = ?")
-                ->execute([$session['id']]);
+        
+        // Close session to prevent blocking other requests during long poll
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            session_write_close();
         }
 
-        $messages = $stmt->fetchAll();
+        $messages = [];
+        $startTime = time();
+        $timeout = 15; // 15 seconds max wait
+
+        while (empty($messages) && (time() - $startTime) < $timeout) {
+            if (is_chat_admin() && $session_id) {
+                $stmt = $pdo->prepare("SELECT * FROM chat_messages WHERE session_id = ? AND id > ? ORDER BY created_at ASC");
+                $stmt->execute([$session_id, $last_id]);
+                $messages = $stmt->fetchAll();
+
+                if (!empty($messages)) {
+                    // Mark admin unread as read
+                    $pdo->prepare("UPDATE chat_messages SET is_read = 1 WHERE session_id = ? AND sender_type = 'user' AND id > ?")
+                        ->execute([$session_id, $last_id]);
+                    $pdo->prepare("UPDATE chat_sessions SET unread_admin = 0 WHERE id = ?")
+                        ->execute([$session_id]);
+                }
+            } else {
+                $session = get_or_create_session($pdo, $token);
+                if (!$session) break;
+
+                $stmt = $pdo->prepare("SELECT * FROM chat_messages WHERE session_id = ? AND id > ? AND sender_type IN ('admin','system') ORDER BY created_at ASC");
+                $stmt->execute([$session['id'], $last_id]);
+                $messages = $stmt->fetchAll();
+
+                if (!empty($messages)) {
+                    // Mark user messages as read
+                    $pdo->prepare("UPDATE chat_messages SET is_read = 1 WHERE session_id = ? AND sender_type IN ('admin','system')")
+                        ->execute([$session['id']]);
+                    $pdo->prepare("UPDATE chat_sessions SET unread_user = 0 WHERE id = ?")
+                        ->execute([$session['id']]);
+                }
+            }
+
+            if (empty($messages)) {
+                usleep(500000); // 0.5 seconds sleep
+            }
+        }
+
         echo json_encode([
             'success' => true,
             'messages' => array_map(fn($m) => [

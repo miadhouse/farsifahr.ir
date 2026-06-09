@@ -1,6 +1,6 @@
 <?php
 /**
- * FarsiFahr Live Chat - Admin Panel
+ * farsifahr Live Chat - Admin Panel
  * Place at: /chat/admin/index.php
  * Access: Only super admin
  */
@@ -19,7 +19,7 @@ if (!isset($_SESSION['email']) || $_SESSION['email'] !== 'miadaleali@gmail.com')
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>پنل چت - فارسی‌فهر</title>
+<title>پنل چت - farsifahr</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
 <style>
@@ -416,29 +416,58 @@ body {
     0%,100% { opacity: 1; }
     50% { opacity: 0.3; }
 }
+
+/* ---- RESPONSIVE ---- */
+@media (max-width: 768px) {
+    .sidebar {
+        width: 100% !important;
+        position: absolute;
+        inset: 0;
+        z-index: 10;
+        transition: transform 0.3s ease;
+    }
+    .sidebar.hidden {
+        transform: translateX(100%);
+    }
+    .chat-area {
+        width: 100%;
+    }
+    #chat-detail-view {
+        position: fixed;
+        inset: 0;
+        background: var(--c-bg);
+        z-index: 20;
+    }
+    #btn-back-to-list {
+        display: flex !important;
+    }
+}
+
+#btn-back-to-list {
+    display: none;
+}
 </style>
 </head>
 <body>
 
 <!-- TOP BAR -->
 <div class="topbar">
-    <div class="topbar-title">پنل چت <span>فارسی‌فهر</span></div>
+    <div class="topbar-title">پنل چت <span>farsifahr</span></div>
     <div class="topbar-stats" id="topbar-stats">
-        <div class="stat-chip"><div class="dot" style="background:#43e97b"></div><span id="stat-online">0</span> آنلاین</div>
-        <div class="stat-chip"><div class="dot" style="background:#f6ad55"></div><span id="stat-waiting">0</span> در انتظار</div>
-        <div class="stat-chip"><div class="dot" style="background:#667eea"></div><span id="stat-active">0</span> فعال</div>
+        <div class="stat-chip"><div class="dot" style="background:#43e97b"></div><span id="stat-online">0</span> <span class="d-none d-sm-inline">آنلاین</span></div>
+        <div class="stat-chip"><div class="dot" style="background:#f6ad55"></div><span id="stat-waiting">0</span> <span class="d-none d-sm-inline">در انتظار</span></div>
     </div>
-    <a href="/admin/" class="btn btn-sm" style="background:rgba(255,255,255,0.08);color:#fff;font-size:12px;border-radius:8px;padding:6px 14px;">بازگشت به پنل</a>
+    <a href="/admin/" class="btn btn-sm" style="background:rgba(255,255,255,0.08);color:#fff;font-size:12px;border-radius:8px;padding:6px 14px;">بازگشت</a>
 </div>
 
 <!-- MAIN LAYOUT -->
 <div class="main-layout">
 
     <!-- SIDEBAR -->
-    <div class="sidebar">
+    <div class="sidebar" id="sidebar">
         <div class="sidebar-tabs">
             <button class="sidebar-tab active" onclick="filterSessions('all', this)">همه</button>
-            <button class="sidebar-tab" onclick="filterSessions('waiting', this)">در انتظار <span class="notif-dot" id="waiting-notif" style="display:none;"></span></button>
+            <button class="sidebar-tab" onclick="filterSessions('waiting', this)">انتظار <span class="notif-dot" id="waiting-notif" style="display:none;"></span></button>
             <button class="sidebar-tab" onclick="filterSessions('active', this)">فعال</button>
             <button class="sidebar-tab" onclick="filterSessions('online', this)">آنلاین</button>
         </div>
@@ -456,12 +485,15 @@ body {
         <!-- No session selected -->
         <div class="empty-state" id="no-session-selected">
             <div class="icon">💬</div>
-            <p>یک چت را از سمت راست انتخاب کنید</p>
+            <p>یک چت را انتخاب کنید</p>
         </div>
 
         <!-- Chat detail -->
         <div id="chat-detail-view">
             <div class="chat-area-header" id="chat-area-header">
+                <button class="icon-btn me-2" id="btn-back-to-list" onclick="backToList()">
+                    <i class="bi bi-arrow-right"></i>
+                </button>
                 <div class="session-avatar" id="detail-avatar">👤</div>
                 <div class="chat-area-user-info">
                     <h4 id="detail-name">-</h4>
@@ -483,7 +515,7 @@ body {
                 <div class="admin-emoji-bar" id="admin-emoji-bar"></div>
                 <div class="quick-replies-bar" id="quick-replies-bar"></div>
                 <div class="admin-input-row">
-                    <button class="admin-send-btn" onclick="adminSend()">ارسال <i class="bi bi-send"></i></button>
+                    <button class="admin-send-btn" onclick="adminSend()">ارسال</button>
                     <textarea id="admin-msg-input" placeholder="پاسخ خود را بنویسید..." rows="1"></textarea>
                 </div>
             </div>
@@ -500,15 +532,14 @@ let currentSessionId = null;
 let currentFilter = 'all';
 let allSessions = [];
 let lastAdminMsgId = 0;
-let pollTimer = null;
-let sessionsPollTimer = null;
+let isPolling = false;
 
 // ========= INIT =========
 document.addEventListener('DOMContentLoaded', () => {
     buildEmojiBar();
     loadQuickReplies();
     loadSessions();
-    startSessionsPolling();
+    setInterval(() => loadSessions(), 10000); // Slower background refresh
 
     // Input events
     const input = document.getElementById('admin-msg-input');
@@ -530,13 +561,12 @@ function loadSessions(filter = currentFilter) {
         allSessions = data.sessions;
         renderSessions(allSessions);
 
-        // Update stats
         document.getElementById('stat-online').textContent = data.stats.total_online;
         document.getElementById('stat-waiting').textContent = data.stats.waiting;
         document.getElementById('stat-active').textContent = data.stats.active;
 
         const notif = document.getElementById('waiting-notif');
-        notif.style.display = data.stats.waiting > 0 ? 'inline-block' : 'none';
+        if (notif) notif.style.display = data.stats.waiting > 0 ? 'inline-block' : 'none';
     }).catch(() => {});
 }
 
@@ -584,27 +614,58 @@ function filterByName(val) {
     renderSessions(allSessions);
 }
 
-function startSessionsPolling() {
-    sessionsPollTimer = setInterval(() => loadSessions(), 5000);
-}
-
-// ========= SELECT SESSION =========
 function selectSession(id) {
     currentSessionId = id;
     lastAdminMsgId = 0;
-    clearInterval(pollTimer);
-
+    
     document.getElementById('no-session-selected').style.display = 'none';
-    const detail = document.getElementById('chat-detail-view');
-    detail.style.display = 'flex';
+    document.getElementById('chat-detail-view').style.display = 'flex';
+    document.getElementById('sidebar').classList.add('hidden');
 
     loadSessionMessages(id);
-
-    // Re-render sessions to update active state
     renderSessions(allSessions);
+    startPolling();
+}
 
-    // Start polling for this session
-    pollTimer = setInterval(() => pollAdminMessages(), 3000);
+function backToList() {
+    document.getElementById('chat-detail-view').style.display = 'none';
+    document.getElementById('no-session-selected').style.display = 'flex';
+    document.getElementById('sidebar').classList.remove('hidden');
+    currentSessionId = null;
+}
+
+function startPolling() {
+    if (isPolling || !currentSessionId) return;
+    pollAdminMessages();
+}
+
+function pollAdminMessages() {
+    if (!currentSessionId) {
+        isPolling = false;
+        return;
+    }
+
+    isPolling = true;
+    fetch(API, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: `action=poll&session_id=${currentSessionId}&last_id=${lastAdminMsgId}`
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success && data.messages.length > 0) {
+            const container = document.getElementById('admin-messages');
+            data.messages.forEach(m => {
+                container.appendChild(buildAdminMessage(m));
+                lastAdminMsgId = Math.max(lastAdminMsgId, m.id);
+            });
+            scrollAdminToBottom();
+        }
+        setTimeout(pollAdminMessages, 1000);
+    })
+    .catch(() => {
+        setTimeout(pollAdminMessages, 5000);
+    });
 }
 
 function loadSessionMessages(id) {
@@ -620,7 +681,7 @@ function loadSessionMessages(id) {
         document.getElementById('detail-avatar').className = `session-avatar ${s.is_online ? 'online' : ''}`;
         document.getElementById('detail-meta').innerHTML =
             `${s.email || 'بدون ایمیل'} • ${s.is_member ? 'کاربر عضو' : 'مهمان'} • ${s.created_at}
-            <span class="status-chip ${s.status} me-2">${statusLabel(s.status)}</span>`;
+            <span class="status-chip ${s.status} ms-2">${statusLabel(s.status)}</span>`;
 
         // Render messages
         const container = document.getElementById('admin-messages');
@@ -642,7 +703,6 @@ function loadSessionMessages(id) {
         scrollAdminToBottom();
 
         // Disable input if closed
-        const inputArea = document.getElementById('admin-input-area');
         if (s.status === 'closed') {
             document.getElementById('admin-msg-input').disabled = true;
             document.getElementById('admin-msg-input').placeholder = 'این چت بسته شده است';
@@ -685,26 +745,6 @@ function buildAdminMessage(m) {
     div.appendChild(avatar);
     div.appendChild(inner);
     return div;
-}
-
-function pollAdminMessages() {
-    if (!currentSessionId) return;
-
-    fetch(API, {
-        method: 'POST',
-        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-        body: `action=poll&session_id=${currentSessionId}&last_id=${lastAdminMsgId}`
-    })
-    .then(r => r.json())
-    .then(data => {
-        if (!data.success || !data.messages.length) return;
-        const container = document.getElementById('admin-messages');
-        data.messages.forEach(m => {
-            container.appendChild(buildAdminMessage(m));
-            lastAdminMsgId = Math.max(lastAdminMsgId, m.id);
-        });
-        scrollAdminToBottom();
-    }).catch(() => {});
 }
 
 function scrollAdminToBottom() {

@@ -84,6 +84,57 @@ class UserResource extends Resource
                     ->label('تایید')
                     ->boolean()
                     ->sortable(),
+                Tables\Columns\TextColumn::make('progress')
+                    ->label('پیشرفت')
+                    ->getStateUsing(function ($record) {
+                        static $totalQuestionsCache = [];
+                        
+                        $config = $record->config;
+                        if (!$config) return 'N/A';
+                        
+                        $availableFilter = ($config->exam_date_type === 'before') ? 1 : 2;
+                        
+                        if (!isset($totalQuestionsCache[$availableFilter])) {
+                            $totalQuestionsCache[$availableFilter] = \App\Models\Question::whereIn('available', [0, $availableFilter])->count();
+                        }
+                        
+                        $totalQuestions = $totalQuestionsCache[$availableFilter];
+                        if ($totalQuestions === 0) return '0%';
+
+                        $stats = $record->questionStats()
+                            ->whereHas('question', function($query) use ($availableFilter) {
+                                $query->whereIn('available', [0, $availableFilter]);
+                            })
+                            ->get();
+
+                        $green = $stats->filter(fn($s) => $s->correct >= 2 && $s->incorrect == 0)->count();
+                        $blue = $stats->filter(fn($s) => $s->correct == 1 && $s->incorrect == 0)->count();
+                        $yellow = $stats->filter(fn($s) => ($s->correct > 0 && $s->incorrect > 0) || ($s->correct == 1 && $s->incorrect >= 1))->count();
+
+                        $readyScore = ($green * 100) + ($blue * 50) + ($yellow * 25);
+                        $readinessPercentage = round(($readyScore / ($totalQuestions * 100)) * 100);
+
+                        return $readinessPercentage . '%';
+                    })
+                    ->badge()
+                    ->color(fn ($state) => (int)$state >= 70 ? 'success' : ((int)$state >= 30 ? 'warning' : 'danger')),
+                Tables\Columns\TextColumn::make('practiced_count')
+                    ->label('تمرین شده')
+                    ->getStateUsing(function ($record) {
+                        return $record->questionStats()->count();
+                    }),
+                Tables\Columns\TextColumn::make('correct_count')
+                    ->label('صحیح')
+                    ->getStateUsing(function ($record) {
+                        return $record->questionStats()->where('correct', '>', 0)->where('incorrect', 0)->count();
+                    })
+                    ->color('success'),
+                Tables\Columns\TextColumn::make('incorrect_count')
+                    ->label('غلط')
+                    ->getStateUsing(function ($record) {
+                        return $record->questionStats()->where('incorrect', '>', 0)->count();
+                    })
+                    ->color('danger'),
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('تاریخ عضویت')
                     ->dateTime()

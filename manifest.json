@@ -1,7 +1,7 @@
 {
   "id": "/",
-  "name": "Farsi Fahr",
-  "short_name": "FarsiFahr",
+  "name": "farsifahr",
+  "short_name": "farsifahr",
   "description": "آموزش و آمادگی آزمون تئوری گواهینامه آلمانی",
   "start_url": "/",
   "scope": "/",

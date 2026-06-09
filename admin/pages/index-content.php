@@ -116,9 +116,8 @@ $user_reports = $stmtReports->fetchAll();
                         <img class="nav-img" src="assets/img/backgrounds/about-4-1.png" alt="...">
                         <div class="card-img-overlay d-flex align-items-center h-100 px-5"><img class="nav-icons"
                                 src="assets/img/illustrations/4.png" alt="icon">
-                            <span class="text-white fs-3 fs-xl-2 fs-xxl-3 items fw-bold ps-4" style="opacity: 0.6; cursor: not-allowed;">
-                                کارگاه آموزش <small style="font-size: 0.6em; font-weight: normal;">(به زودی)</small>
-                            </span>
+                            <a class="text-white fs-3 fs-xl-2 fs-xxl-3 stretched-link items fw-bold ps-4"
+                                href="workshop.php">کارگاه آموزش</a>
                         </div>
                     </div>
                 </div>

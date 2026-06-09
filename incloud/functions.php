@@ -267,8 +267,8 @@ function validate_session($pdo)
             }
         }
         
-        // فقط سشن آیدی را پاک می‌کنیم نه کل سشن را
-        unset($_SESSION['session_id']);
+        // برای جلوگیری از حلقه ریدایرکت، باید وضعیت لاگین را کاملا پاک کنیم
+        $_SESSION = array();
         return false;
     }
 
@@ -331,4 +331,95 @@ function send_telegram_admin_message($message)
 
     return ($http_code == 200);
 }
+
+/**
+ * دریافت موقعیت مکانی بر اساس آی‌پی
+ */
+function get_visitor_location($ip)
+{
+    if ($ip === '127.0.0.1' || $ip === '::1') return 'Localhost';
+    
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, "http://ip-api.com/json/{$ip}?fields=status,message,country,city");
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 3);
+    $response = curl_exec($ch);
+    curl_close($ch);
+    
+    if ($response) {
+        $data = json_decode($response, true);
+        if ($data && $data['status'] === 'success') {
+            return ($data['city'] ?? 'Unknown') . ', ' . ($data['country'] ?? 'Unknown');
+        }
+    }
+    return 'Unknown';
+}
+
+/**
+ * اطلاع‌رسانی بازدیدکننده به تلگرام
+ */
+function log_visitor_to_telegram()
+{
+    // فقط برای درخواست‌های عادی (نه AJAX و نه CLI)
+    if (php_sapi_name() === 'cli') return;
+    if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') return;
+
+    $is_logged = is_logged_in();
+    $uri = $_SERVER['REQUEST_URI'] ?? '/';
+    $is_important_page = (strpos($uri, 'dashboard') !== false || strpos($uri, '/admin/') !== false);
+
+    // منطق هوشمند ارسال نوتیفیکیشن:
+    // ۱. اگر ۳۰ دقیقه از آخرین نوتیف گذشته باشد
+    // ۲. یا اگر کاربر قبلاً مهمان بوده و حالا لاگین کرده است
+    // ۳. یا اگر کاربر برای اولین بار در این نشست وارد بخش داشبورد/ادمین شده است
+    
+    $should_notify = false;
+    if (!isset($_SESSION['last_tg_notif'])) {
+        $should_notify = true;
+    } elseif ((time() - $_SESSION['last_tg_notif']) > 1800) {
+        $should_notify = true;
+    } elseif ($is_logged && !($_SESSION['last_tg_was_logged'] ?? false)) {
+        $should_notify = true;
+    } elseif ($is_important_page && !($_SESSION['last_tg_was_important'] ?? false)) {
+        $should_notify = true;
+    }
+
+    if (!$should_notify) return;
+
+    // تشخیص بات‌ها
+    $ua = $_SERVER['HTTP_USER_AGENT'] ?? '';
+    if (empty($ua) || preg_match('/bot|crawl|slurp|spider|mediapartners|google|bing|yandex|duckduckgo|whatsapp|telegram|facebook|twitter/i', $ua)) {
+        return;
+    }
+
+    $ip = get_user_ip();
+    $location = get_visitor_location($ip);
+    $host = $_SERVER['HTTP_HOST'] ?? 'farsifahr.com';
+    $url = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://{$host}{$uri}";
+    
+    $status = "👤 <b>مهمان</b>";
+    if ($is_logged) {
+        $name = $_SESSION['name'] ?? 'نامشخص';
+        $email = $_SESSION['email'] ?? 'بدون ایمیل';
+        $status = "✅ <b>کاربر لاگین شده</b>\n👤 نام: {$name}\n📧 ایمیل: {$email}";
+    }
+
+    $message = "👀 <b>بازدید جدید از سایت</b>\n\n";
+    $message .= "{$status}\n\n";
+    $message .= "🌐 آی‌پی: <code>{$ip}</code>\n";
+    $message .= "📍 موقعیت: {$location}\n";
+    $message .= "📄 صفحه: {$url}\n";
+    $message .= "🕒 زمان: " . date('Y-m-d H:i:s');
+
+    if (send_telegram_admin_message($message)) {
+        $_SESSION['last_tg_notif'] = time();
+        $_SESSION['last_tg_was_logged'] = $is_logged;
+        if ($is_important_page) {
+            $_SESSION['last_tg_was_important'] = true;
+        }
+    }
+}
+
+// اجرای خودکار لاگ بازدیدکننده
+log_visitor_to_telegram();
 

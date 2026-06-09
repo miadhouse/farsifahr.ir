@@ -44,7 +44,7 @@ try {
     $scraper = app(\App\Services\QuestionScraperService::class);
     
     // Get question details
-    $stmt = $pdo->prepare("SELECT id, number, text, asw_pretext FROM questions WHERE id = ?");
+    $stmt = $pdo->prepare("SELECT id, number, text, asw_pretext, farsi_text, asw_farsi, info FROM questions WHERE id = ?");
     $stmt->execute([$id]);
     $question = $stmt->fetch();
 
@@ -61,7 +61,7 @@ try {
         // Ignore if scraping fails
     }
     
-    $stmtAns = $pdo->prepare("SELECT id, text FROM answers WHERE question_number = ?");
+    $stmtAns = $pdo->prepare("SELECT id, text, farsi_text, info FROM answers WHERE question_number = ?");
     $stmtAns->execute([$question['number']]);
     $dbAnswers = $stmtAns->fetchAll();
 
@@ -103,7 +103,7 @@ try {
                 . "Here is the JSON to translate:\n" . json_encode($promptData, JSON_UNESCAPED_UNICODE);
 
     $apiKey = "AIzaSyADjcpet-WVDpeMlZtIoXo2BZsjDPRfuh8";
-    $model = "gemini-2.5-flash";
+    $model = "gemini-1.5-flash";
     $url = "https://generativelanguage.googleapis.com/v1beta/models/{$model}:generateContent?key={$apiKey}";
 
     $payload = [
@@ -155,29 +155,35 @@ try {
 
     // Update Question
     $q = $translatedData['question'];
-    $finalInfo = !empty($q['info']) ? "<div dir='rtl'>{$q['info']}</div>" : null;
     
-    if ($finalInfo !== null) {
-        $updateQ = $pdo->prepare("UPDATE questions SET info = ?, farsi_text = ?, asw_farsi = ? WHERE id = ?");
-        $updateQ->execute([$finalInfo, $q['text'] ?? '', $q['asw_pretext'] ?? '', $id]);
-    } else {
-        $updateQ = $pdo->prepare("UPDATE questions SET farsi_text = ?, asw_farsi = ? WHERE id = ?");
-        $updateQ->execute([$q['text'] ?? '', $q['asw_pretext'] ?? '', $id]);
-    }
+    // Use existing translations as fallback if Gemini returns empty
+    $newQText = !empty($q['text']) ? $q['text'] : $question['farsi_text'];
+    $newQAsw = !empty($q['asw_pretext']) ? $q['asw_pretext'] : $question['asw_farsi'];
+    
+    $finalInfo = !empty($q['info']) ? "<div dir='rtl'>{$q['info']}</div>" : $question['info'];
+    
+    $updateQ = $pdo->prepare("UPDATE questions SET info = ?, farsi_text = ?, asw_farsi = ? WHERE id = ?");
+    $updateQ->execute([$finalInfo, $newQText, $newQAsw, $id]);
 
     // Update Answers
     if (isset($translatedData['answers']) && is_array($translatedData['answers'])) {
         foreach ($translatedData['answers'] as $ans) {
             $ansId = $ans['id'];
-            $finalAnsInfo = !empty($ans['info']) ? "<div dir='rtl'>{$ans['info']}</div>" : null;
             
-            if ($finalAnsInfo !== null) {
-                $updateA = $pdo->prepare("UPDATE answers SET info = ?, farsi_text = ? WHERE id = ?");
-                $updateA->execute([$finalAnsInfo, $ans['text'] ?? '', $ansId]);
-            } else {
-                $updateA = $pdo->prepare("UPDATE answers SET farsi_text = ? WHERE id = ?");
-                $updateA->execute([$ans['text'] ?? '', $ansId]);
+            // Find existing answer data
+            $existingAns = null;
+            foreach ($dbAnswers as $dbAns) {
+                if ($dbAns['id'] == $ansId) {
+                    $existingAns = $dbAns;
+                    break;
+                }
             }
+            
+            $newAnsText = !empty($ans['text']) ? $ans['text'] : ($existingAns['farsi_text'] ?? '');
+            $finalAnsInfo = !empty($ans['info']) ? "<div dir='rtl'>{$ans['info']}</div>" : ($existingAns['info'] ?? null);
+            
+            $updateA = $pdo->prepare("UPDATE answers SET info = ?, farsi_text = ? WHERE id = ?");
+            $updateA->execute([$finalAnsInfo, $newAnsText, $ansId]);
         }
     }
 
@@ -185,7 +191,7 @@ try {
 
     echo json_encode([
         'success' => true, 
-        'message' => 'اطلاعات واکشی شد و ترجمه با درک مطلب (Gemini 2.5) با موفقیت انجام شد.'
+        'message' => 'اطلاعات واکشی شد و ترجمه با درک مطلب (Gemini 1.5) با موفقیت انجام شد.'
     ]);
 } catch (\Throwable $e) {
     if (isset($pdo) && $pdo->inTransaction()) {
@@ -193,3 +199,4 @@ try {
     }
     echo json_encode(['success' => false, 'message' => 'خطای سیستمی: ' . $e->getMessage()]);
 }
+

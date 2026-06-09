@@ -189,7 +189,7 @@ if ($user_sub !== false && $user_sub !== null) {
         <p class="mb-4">جهت فعال‌سازی اشتراک، الزامی است از طریق دکمه‌های زیر به پشتیبانی اطلاع‌رسانی کنید:</p>
         <div class="d-flex gap-3 flex-wrap justify-content-center">
           <?php 
-            $wa_msg = "سلام، من درخواست اشتراک " . $pending_sub['plan_name'] . " با مبلغ " . number_format($pending_sub['amount_paid']) . " تومان را در سایت فارسی‌فهر ثبت کردم.\nایمیل من: " . ($_SESSION['email'] ?? 'نامشخص') . "\nلطفا فعال کنید.";
+            $wa_msg = "سلام، من درخواست اشتراک " . $pending_sub['plan_name'] . " با مبلغ " . number_format($pending_sub['amount_paid']) . " تومان را در سایت farsifahr ثبت کردم.\nایمیل من: " . ($_SESSION['email'] ?? 'نامشخص') . "\nلطفا فعال کنید.";
           ?>
           <a href="https://wa.me/989177876760?text=<?= urlencode($wa_msg) ?>" target="_blank" class="btn btn-success btn-lg shadow">
             <i class="bx bxl-whatsapp me-2 fs-4"></i> اطلاع‌رسانی در واتس‌اپ
