@@ -3,7 +3,7 @@
   "name": "farsifahr",
   "short_name": "farsifahr",
   "description": "آموزش و آمادگی آزمون تئوری گواهینامه آلمانی",
-  "start_url": "/",
+  "start_url": "/admin/",
   "scope": "/",
   "display": "standalone",
   "background_color": "#ffffff",
