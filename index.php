@@ -67,7 +67,7 @@ header('X-LiteSpeed-Cache-Control: no-cache'); // LiteSpeed Server
     <?php endif; ?>
     <link href="assets/css/style.rtl.css" rel="stylesheet">
     <link href="assets/css/landing-custom.css" rel="stylesheet">
-    <link href="assets/css/pwa-section.css" rel="stylesheet">
+    <link href="assets/css/pwa-section.css?v=1.2" rel="stylesheet">
     <link rel="preload" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'"><noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css"></noscript>
     <link rel="preload" href="https://cdn.jsdelivr.net/gh/lipis/flag-icons@7.2.3/css/flag-icons.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'"><noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/lipis/flag-icons@7.2.3/css/flag-icons.min.css"></noscript>
     <link href="assets/css/font-ir.css" rel="stylesheet">
