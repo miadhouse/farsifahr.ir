@@ -112,7 +112,7 @@
 @media (max-width: 768px) {
     .pwa-install-section {
         margin-top: 0;
-        padding: 15px 0;
+        padding: 130px 0 15px 0; /* Increased to 130px for mobile */
     }
     .pwa-item {
         min-width: 100%;
