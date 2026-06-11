@@ -76,26 +76,22 @@ if (empty($token)) {
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
     
     <!-- Custom CSS -->
-    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="../assets/css/auth-dark.css">
     
     <style>
-        body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        
         .verification-card {
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
             padding: 40px;
             max-width: 500px;
             width: 100%;
             text-align: center;
             animation: slideIn 0.5s ease;
+            color: var(--text-main);
         }
         
         @keyframes slideIn {
@@ -113,7 +109,7 @@ if (empty($token)) {
             width: 100px;
             height: 100px;
             margin: 0 auto 30px;
-            background: #f8f9fa;
+            background: rgba(255, 255, 255, 0.05);
             border-radius: 50%;
             display: flex;
             align-items: center;
@@ -122,29 +118,43 @@ if (empty($token)) {
         }
         
         .icon-success {
-            background: #d4edda;
+            background: rgba(40, 167, 69, 0.2);
             color: #28a745;
         }
         
         .icon-danger {
-            background: #f8d7da;
+            background: rgba(220, 53, 69, 0.2);
             color: #dc3545;
         }
         
         .icon-info {
-            background: #d1ecf1;
+            background: rgba(23, 162, 184, 0.2);
             color: #17a2b8;
         }
         
         .countdown {
             font-size: 18px;
             margin-top: 20px;
-            color: #6c757d;
+            color: var(--text-muted);
         }
+
+        .alert {
+            border: none;
+            border-radius: 12px;
+        }
+
+        .alert-success { background: rgba(40, 167, 69, 0.2); color: #28a745; }
+        .alert-danger { background: rgba(220, 53, 69, 0.2); color: #dc3545; }
+        .alert-info { background: rgba(23, 162, 184, 0.2); color: #17a2b8; }
     </style>
 </head>
 <body>
-    <div class="container">
+    <div class="auth-bg">
+        <div class="blob"></div>
+        <div class="blob"></div>
+        <div class="blob"></div>
+    </div>
+    <div class="container d-flex align-items-center justify-content-center min-vh-100">
         <div class="verification-card">
             <!-- Icon -->
             <div class="icon-wrapper icon-<?php echo $messageType; ?>">
