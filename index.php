@@ -1224,30 +1224,3 @@ header('X-LiteSpeed-Cache-Control: no-cache'); // LiteSpeed Server
 </body>
 
 </html>
-);
-        }
-
-        (function() {
-            const isDesktop = localStorage.getItem('adminDesktopMode') === 'true';
-            const viewport = document.querySelector('meta[name="viewport"]');
-            const icon = document.querySelector('.admin-desktop-toggle i');
-            
-            if (isDesktop) {
-                document.body.classList.add('admin-desktop-active');
-                if (viewport) {
-                    viewport.setAttribute('content', 'width=1200, initial-scale=0.3, maximum-scale=5.0, user-scalable=yes');
-                }
-                if (icon) icon.className = 'fas fa-mobile-alt';
-            } else {
-                document.body.classList.remove('admin-desktop-active');
-                if (viewport) {
-                    viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
-                }
-                if (icon) icon.className = 'fas fa-desktop';
-            }
-        })();
-    </script>
-    <?php endif; ?>
-</body>
-
-</html>
