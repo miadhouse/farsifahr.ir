@@ -67,6 +67,7 @@ header('X-LiteSpeed-Cache-Control: no-cache'); // LiteSpeed Server
     <?php endif; ?>
     <link href="assets/css/style.rtl.css" rel="stylesheet">
     <link href="assets/css/landing-custom.css" rel="stylesheet">
+    <link href="assets/css/pwa-section.css" rel="stylesheet">
     <link rel="preload" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'"><noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css"></noscript>
     <link rel="preload" href="https://cdn.jsdelivr.net/gh/lipis/flag-icons@7.2.3/css/flag-icons.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'"><noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/lipis/flag-icons@7.2.3/css/flag-icons.min.css"></noscript>
     <link href="assets/css/font-ir.css" rel="stylesheet">
@@ -373,6 +374,41 @@ header('X-LiteSpeed-Cache-Control: no-cache'); // LiteSpeed Server
             </div>
         </div>
     </header>
+
+    <!-- PWA Install Section -->
+    <section class="pwa-install-section">
+        <div class="container">
+            <div class="pwa-install-wrapper">
+                <!-- Android Item -->
+                <div class="pwa-item android">
+                    <div class="icon-box">
+                        <i class="fa-brands fa-android"></i>
+                    </div>
+                    <div class="content-box">
+                        <h3>نصب نسخه اندروید</h3>
+                        <div class="actions">
+                            <button class="btn-pwa btn-install" id="btn-pwa-android-hero">نصب مستقیم</button>
+                            <button class="btn-pwa btn-tutorial" onclick="showTutorial('android')">آموزش نصب</button>
+                        </div>
+                    </div>
+                </div>
+                <!-- iOS Item -->
+                <div class="pwa-item ios">
+                    <div class="icon-box">
+                        <i class="fa-brands fa-apple"></i>
+                    </div>
+                    <div class="content-box">
+                        <h3>نصب نسخه آیفون (iOS)</h3>
+                        <div class="actions">
+                            <button class="btn-pwa btn-install" onclick="showTutorial('ios')">نصب اپلیکیشن</button>
+                            <button class="btn-pwa btn-tutorial" onclick="showTutorial('ios')">آموزش نصب</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <!-- Subscription Status Banner (for logged in users) -->
 
     <!-- Main Content -->
@@ -970,6 +1006,28 @@ header('X-LiteSpeed-Cache-Control: no-cache'); // LiteSpeed Server
             }
         }
 
+        function showTutorial(platform) {
+            const title = platform === 'android' ? 'آموزش نصب در اندروید' : 'آموزش نصب در آیفون';
+            const gif = platform === 'android' ? 'android.gif' : 'iphon.gif';
+            const desc = platform === 'android' 
+                ? 'برای نصب در اندروید، روی دکمه "نصب مستقیم" کلیک کنید یا از منوی مرورگر گزینه Install را انتخاب کنید.' 
+                : 'برای نصب در آیفون، در مرورگر Safari دکمه Share را زده و گزینه Add to Home Screen را انتخاب کنید.';
+            
+            Swal.fire({
+                title: title,
+                html: `
+                    <div class="text-center">
+                        <p class="mb-3">${desc}</p>
+                        <img src="/${gif}" class="tutorial-gif" alt="${title}" onerror="this.src='assets/images/logo/logoAsset%201.svg'; this.style.width='100px';">
+                    </div>
+                `,
+                confirmButtonText: 'متوجه شدم',
+                customClass: {
+                    confirmButton: 'btn btn-primary'
+                }
+            });
+        }
+
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
             deferredPrompt = e;
@@ -981,6 +1039,20 @@ header('X-LiteSpeed-Cache-Control: no-cache'); // LiteSpeed Server
         });
 
         document.addEventListener('DOMContentLoaded', function() {
+            // Hero Android Install Button
+            const heroAndroidBtn = document.getElementById('btn-pwa-android-hero');
+            if (heroAndroidBtn) {
+                heroAndroidBtn.addEventListener('click', function() {
+                    if (deferredPrompt) {
+                        deferredPrompt.prompt();
+                        deferredPrompt.userChoice.then((choiceResult) => {
+                            deferredPrompt = null;
+                        });
+                    } else {
+                        showTutorial('android');
+                    }
+                });
+            }
             // Show manual install in menu if not installed
             if (!isStandalone) {
                 const menuInstallLi = document.getElementById('menu-install-li');

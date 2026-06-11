@@ -1,0 +1,138 @@
+/* PWA Install Section Styles */
+.pwa-install-section {
+    padding: 30px 0;
+    position: relative;
+    z-index: 100;
+    margin-top: -30px;
+    margin-bottom: 20px;
+}
+
+.pwa-install-wrapper {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.pwa-item {
+    background: rgba(30, 41, 59, 0.4);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 24px;
+    padding: 20px 25px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    min-width: 320px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+}
+
+.pwa-item:hover {
+    transform: translateY(-5px);
+    background: rgba(30, 41, 59, 0.6);
+    border-color: rgba(99, 102, 241, 0.4);
+    box-shadow: 0 20px 30px -10px rgba(0, 0, 0, 0.5);
+}
+
+.pwa-item .icon-box {
+    width: 60px;
+    height: 60px;
+    border-radius: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.2rem;
+    flex-shrink: 0;
+}
+
+.pwa-item.android .icon-box {
+    background: rgba(61, 220, 132, 0.1);
+    color: #3DDC84;
+}
+
+.pwa-item.ios .icon-box {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+}
+
+.pwa-item .content-box {
+    flex-grow: 1;
+}
+
+.pwa-item h3 {
+    color: #fff;
+    margin: 0 0 10px 0;
+    font-size: 1.15rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+}
+
+.pwa-item .actions {
+    display: flex;
+    gap: 8px;
+}
+
+.pwa-item .btn-pwa {
+    border: none;
+    border-radius: 10px;
+    padding: 8px 16px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    text-decoration: none !important;
+}
+
+.pwa-item .btn-install {
+    background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+    color: white !important;
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+
+.pwa-item .btn-install:hover {
+    filter: brightness(1.1);
+    transform: scale(1.02);
+}
+
+.pwa-item .btn-tutorial {
+    background: rgba(255, 255, 255, 0.05);
+    color: #f8fafc !important;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.pwa-item .btn-tutorial:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+@media (max-width: 768px) {
+    .pwa-install-section {
+        margin-top: 0;
+        padding: 15px 0;
+    }
+    .pwa-item {
+        min-width: 100%;
+        padding: 15px 20px;
+    }
+    .pwa-item .icon-box {
+        width: 50px;
+        height: 50px;
+        font-size: 1.8rem;
+    }
+}
+
+/* Tutorial Modal Specifics */
+.tutorial-gif {
+    width: 100%;
+    max-width: 300px;
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    margin: 20px auto;
+    display: block;
+    border: 5px solid #334155;
+}
