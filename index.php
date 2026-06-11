@@ -341,13 +341,11 @@ header('X-LiteSpeed-Cache-Control: no-cache'); // LiteSpeed Server
                             <?php else: ?>
                                 <!-- Guest Actions + Language Wrapper -->
                                 <div class="d-flex align-items-center nav-actions-wrapper">
-                                    <a href="javascript:void(0)" class="btn btn-outline-light btn-sm nav-action-item" data-bs-toggle="modal"
-                                        data-bs-target="#loginModal">
+                                    <a href="login.php" class="btn btn-outline-light btn-sm nav-action-item">
                                         <i class="fa-regular fa-arrow-right-to-bracket"></i>
                                         <span class="d-none d-sm-inline"><?= __('login') ?></span>
                                     </a>
-                                    <a href="javascript:void(0)" class="btn btn-outline-primary btn-sm text-white nav-action-item" data-bs-toggle="modal"
-                                        data-bs-target="#registerModal">
+                                    <a href="register.php" class="btn btn-outline-primary btn-sm text-white nav-action-item">
                                         <i class="fa-regular fa-user-plus"></i>
                                         <span class="d-none d-sm-inline"><?= __('register') ?></span>
                                     </a>
@@ -447,8 +445,8 @@ header('X-LiteSpeed-Cache-Control: no-cache'); // LiteSpeed Server
                             <a href="admin" class="btn btn-primary w-100 text-white"><?= __('dashboard') ?></a>
                         <?php else: ?>
                             <div class="d-grid gap-2">
-                                <a href="javascript:void(0)" class="btn btn-outline-light" data-bs-toggle="modal" data-bs-target="#loginModal"><?= __('login') ?></a>
-                                <a href="javascript:void(0)" class="btn btn-primary text-white" style="background-color: #5a8dee;" data-bs-toggle="modal" data-bs-target="#registerModal"><?= __('register') ?></a>
+                                <a href="login.php" class="btn btn-outline-light"><?= __('login') ?></a>
+                                <a href="register.php" class="btn btn-primary text-white" style="background-color: #5a8dee;"><?= __('register') ?></a>
                             </div>
                         <?php endif; ?>
                     </li>
@@ -501,7 +499,7 @@ header('X-LiteSpeed-Cache-Control: no-cache'); // LiteSpeed Server
                                 <?= __('banner_desc_part4') ?>
                             </p>
                             <div class="button-area-banner-two tmp-scroll-trigger tmp-fade-in animation-order-4"><a
-                                    class="tmp-btn hover-icon-reverse radius-round" href="javascript:void(0)" data-bs-toggle="modal" data-bs-target="#loginModal"> <span
+                                    class="tmp-btn hover-icon-reverse radius-round" href="login.php"> <span
                                         class="icon-reverse-wrapper"> <span class="btn-text"><?= __('start_now') ?></span> <span class="btn-icon"><i
                                                 class="fa-sharp fa-regular fa-arrow-left"></i></span> <span
                                             class="btn-icon"><i class="fa-sharp fa-regular fa-arrow-left"></i></span>
@@ -605,7 +603,7 @@ header('X-LiteSpeed-Cache-Control: no-cache'); // LiteSpeed Server
                         </div>
                         <div
                             class="about-btn mt--40 mb--80 tmp-scroll-trigger tmp-fade-in animation-order-6 tmp-scroll-trigger--offscreen">
-                            <a class="tmp-btn hover-icon-reverse radius-round" href="javascript:void(0)" data-bs-toggle="modal" data-bs-target="#loginModal"> <span
+                            <a class="tmp-btn hover-icon-reverse radius-round" href="login.php"> <span
                                     class="icon-reverse-wrapper"> <span class="btn-text"><?= __('start_now') ?></span> <span class="btn-icon"><i
                                             class="fa-sharp fa-regular fa-arrow-left"></i></span> <span
                                         class="btn-icon"><i class="fa-sharp fa-regular fa-arrow-left"></i></span>
@@ -832,158 +830,6 @@ header('X-LiteSpeed-Cache-Control: no-cache'); // LiteSpeed Server
                         fill="#FF014F"></path>
                 </symbol>
             </svg>
-        </div>
-    </div>
-
-    <!-- Login Modal -->
-    <div class="modal fade slidedown" aria-hidden="true" id="loginModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title"><?= __('login_title', 'ورود به حساب کاربری') ?></h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <form id="loginForm">
-                        <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
-                        <input type="hidden" name="action" value="login">
-
-                        <div class="mb-3">
-                            <label class="form-label"><?= __('email_label', 'ایمیل') ?></label>
-                            <input type="email" class="form-control" name="email" required>
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label"><?= __('password_label', 'رمز عبور') ?></label>
-                            <div class="input-group">
-                                <input type="password" class="form-control" name="password" id="loginPassword" required>
-                                <span class="input-group-text cursor-pointer" onclick="togglePasswordVisibility('loginPassword', this)" style="z-index: 10; cursor: pointer;">
-                                    <i class="fa-solid fa-eye" style="pointer-events: none;"></i>
-                                </span>
-                            </div>
-                        </div>
-
-                        <div class="mb-3 d-flex justify-content-center">
-                            <div class="g-recaptcha" data-sitekey="<?php echo RECAPTCHA_SITE_KEY; ?>"></div>
-                        </div>
-
-                        <div class="mb-3 form-check">
-                            <input type="checkbox" class="form-check-input" name="remember" id="remember">
-                            <label class="form-check-label" for="remember"><?= __('remember_me', 'مرا به خاطر بسپار') ?></label>
-                        </div>
-
-                        <div class="d-grid gap-2">
-                            <button type="submit" class="btn btn-primary">
-                                <i class="bi bi-box-arrow-in-left"></i> <?= __('login_button', 'ورود') ?>
-                            </button>
-                            <div class="text-center text-muted small mt-2"><?= __('quick_google_auth', 'ورود سریع با گوگل یا ثبت نام سریع با گوگل') ?></div>
-                            <button type="button" class="btn btn-outline-danger d-flex align-items-center justify-content-center gap-2" onclick="googleLogin()" style="border: 2px solid #f56565; color: #fff; background: rgba(245, 101, 101, 0.1);">
-                                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20">
-                                <?= __('google_login_button', 'ورود سریع با گوگل') ?>
-                            </button>
-                        </div>
-
-                        <div class="text-center mt-3">
-                            <a href="#" onclick="showResetModal()"><?= __('forgot_password', 'رمز عبور خود را فراموش کرده‌اید؟') ?></a>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Register Modal -->
-    <div class="modal fade slidedown" aria-hidden="true" id="registerModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title"><?= __('register_title', 'ثبت نام') ?></h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <form id="registerForm">
-                        <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
-                        <input type="hidden" name="action" value="register">
-
-                        <div class="mb-3">
-                            <label class="form-label"><?= __('full_name_label', 'نام و نام خانوادگی') ?></label>
-                            <input type="text" class="form-control" name="name" required>
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label"><?= __('email_label', 'ایمیل') ?></label>
-                            <input type="email" class="form-control" name="email" required>
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label"><?= __('password_label', 'رمز عبور') ?></label>
-                            <div class="input-group">
-                                <input type="password" class="form-control" name="password" id="registerPassword" required>
-                                <span class="input-group-text cursor-pointer" onclick="togglePasswordVisibility('registerPassword', this)" style="z-index: 10; cursor: pointer;">
-                                    <i class="fa-solid fa-eye" style="pointer-events: none;"></i>
-                                </span>
-                            </div>
-                            <small class="text-muted"><?= __('password_hint', 'حداقل 8 کاراکتر، شامل حروف بزرگ، کوچک و عدد') ?></small>
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label"><?= __('confirm_password_label', 'تکرار رمز عبور') ?></label>
-                            <div class="input-group">
-                                <input type="password" class="form-control" name="password_confirm" id="registerPasswordConfirm" required>
-                                <span class="input-group-text cursor-pointer" onclick="togglePasswordVisibility('registerPasswordConfirm', this)" style="z-index: 10; cursor: pointer;">
-                                    <i class="fa-solid fa-eye" style="pointer-events: none;"></i>
-                                </span>
-                            </div>
-                        </div>
-
-                        <div class="mb-3 d-flex justify-content-center">
-                            <div class="g-recaptcha" data-sitekey="<?php echo RECAPTCHA_SITE_KEY; ?>"></div>
-                        </div>
-
-                        <div class="d-grid gap-2">
-                            <button type="submit" class="btn btn-success">
-                                <i class="bi bi-person-plus"></i> <?= __('register_title', 'ثبت نام') ?>
-                            </button>
-
-                            <div class="text-center text-muted small mt-2"><?= __('quick_google_auth', 'ورود سریع با گوگل یا ثبت نام سریع با گوگل') ?></div>
-                            <button type="button" class="btn btn-outline-danger d-flex align-items-center justify-content-center gap-2" onclick="googleLogin()" style="border: 2px solid #f56565; color: #fff; background: rgba(245, 101, 101, 0.1);">
-                                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20">
-                                <?= __('google_register_button', 'ثبت نام سریع با گوگل') ?>
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Reset Password Modal -->
-    <div class="modal fade slidedown" aria-hidden="true" id="resetModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title"><?= __('reset_password_title', 'بازیابی رمز عبور') ?></h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <form id="resetForm">
-                        <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
-                        <input type="hidden" name="action" value="reset">
-
-                        <div class="mb-3">
-                            <label class="form-label"><?= __('account_email_label', 'ایمیل حساب کاربری') ?></label>
-                            <input type="email" class="form-control" name="email" required>
-                            <small class="text-muted"><?= __('reset_link_desc', 'لینک بازیابی رمز عبور به این ایمیل ارسال خواهد شد') ?></small>
-                        </div>
-
-                        <div class="d-grid">
-                            <button type="submit" class="btn btn-warning">
-                                <i class="bi bi-envelope"></i> <?= __('send_reset_link', 'ارسال لینک بازیابی') ?>
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
         </div>
     </div>
 
