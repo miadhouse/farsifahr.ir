@@ -1,9 +1,8 @@
 /* PWA Install Section Styles */
 .pwa-install-section {
-    padding: 30px 0;
+    padding: 110px 0 30px 0; /* Added 110px top padding for sticky header */
     position: relative;
     z-index: 100;
-    margin-top: -30px;
     margin-bottom: 20px;
 }
 
