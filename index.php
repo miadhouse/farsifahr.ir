@@ -969,7 +969,7 @@ header('X-LiteSpeed-Cache-Control: no-cache'); // LiteSpeed Server
         // Service Worker Registration
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/sw.js?v=4')
+                navigator.serviceWorker.register('/sw.js?v=5')
                     .then(reg => console.log('Service Worker registered'))
                     .catch(err => console.log('Service Worker registration failed: ', err));
             });
@@ -1031,11 +1031,6 @@ header('X-LiteSpeed-Cache-Control: no-cache'); // LiteSpeed Server
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
             deferredPrompt = e;
-            
-            if (!sessionStorage.getItem('pwaPromptShown')) {
-                showInstallPrompt('android');
-                sessionStorage.setItem('pwaPromptShown', 'true');
-            }
         });
 
         document.addEventListener('DOMContentLoaded', function() {
@@ -1057,11 +1052,6 @@ header('X-LiteSpeed-Cache-Control: no-cache'); // LiteSpeed Server
             if (!isStandalone) {
                 const menuInstallLi = document.getElementById('menu-install-li');
                 if (menuInstallLi) menuInstallLi.style.display = 'block';
-            }
-
-            if (isIOS && !isStandalone && !sessionStorage.getItem('pwaPromptShown')) {
-                showInstallPrompt('ios');
-                sessionStorage.setItem('pwaPromptShown', 'true');
             }
             
             // Add listener to manual install button in menu
@@ -1091,35 +1081,7 @@ header('X-LiteSpeed-Cache-Control: no-cache'); // LiteSpeed Server
         });
 
         function showInstallPrompt(platform) {
-            const banner = document.getElementById('pwa-install-banner');
-            if (!banner) return;
-
-            banner.style.display = 'flex';
-
-            const closeBtn = document.getElementById('btn-pwa-close');
-            if (closeBtn) {
-                closeBtn.addEventListener('click', () => {
-                    banner.style.display = 'none';
-                });
-            }
-
-            const installBtn = document.getElementById('btn-pwa-install');
-            if (installBtn) {
-                const triggerInstall = (e) => {
-                    e.preventDefault();
-                    banner.style.display = 'none';
-                    if (platform === 'android' && deferredPrompt) {
-                        deferredPrompt.prompt();
-                        deferredPrompt.userChoice.then((choiceResult) => {
-                            deferredPrompt = null;
-                        });
-                    } else if (platform === 'ios') {
-                        showIOSInstructions();
-                    }
-                };
-                installBtn.addEventListener('click', triggerInstall);
-                installBtn.addEventListener('touchstart', triggerInstall, {passive: false});
-            }
+            // Function no longer needed for automatic prompt
         }
     </script>
 <script>
@@ -1236,6 +1198,33 @@ header('X-LiteSpeed-Cache-Control: no-cache'); // LiteSpeed Server
             const isDesktop = localStorage.getItem('adminDesktopMode') === 'true';
             localStorage.setItem('adminDesktopMode', isDesktop ? 'false' : 'true');
             window.location.reload();
+        }
+
+        (function() {
+            const isDesktop = localStorage.getItem('adminDesktopMode') === 'true';
+            const viewport = document.querySelector('meta[name="viewport"]');
+            const icon = document.querySelector('.admin-desktop-toggle i');
+            
+            if (isDesktop) {
+                document.body.classList.add('admin-desktop-active');
+                if (viewport) {
+                    viewport.setAttribute('content', 'width=1200, initial-scale=0.3, maximum-scale=5.0, user-scalable=yes');
+                }
+                if (icon) icon.className = 'fas fa-mobile-alt';
+            } else {
+                document.body.classList.remove('admin-desktop-active');
+                if (viewport) {
+                    viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
+                }
+                if (icon) icon.className = 'fas fa-desktop';
+            }
+        })();
+    </script>
+    <?php endif; ?>
+</body>
+
+</html>
+);
         }
 
         (function() {

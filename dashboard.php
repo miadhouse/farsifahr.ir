@@ -251,7 +251,7 @@ $user_reports = $stmtReports->fetchAll();
     // Service Worker Registration
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-            navigator.serviceWorker.register('/sw.js?v=4')
+            navigator.serviceWorker.register('/sw.js?v=5')
                 .then(reg => console.log('Service Worker registered'))
                 .catch(err => console.log('Service Worker registration failed: ', err));
         });
@@ -265,21 +265,14 @@ $user_reports = $stmtReports->fetchAll();
     window.addEventListener('beforeinstallprompt', (e) => {
         e.preventDefault();
         deferredPrompt = e;
-
-        if (!sessionStorage.getItem('pwaPromptShown')) {
-            showInstallPrompt('android');
-            sessionStorage.setItem('pwaPromptShown', 'true');
-        }
     });
 
     document.addEventListener('DOMContentLoaded', function() {
-        if (isIOS && !isStandalone && !sessionStorage.getItem('pwaPromptShown')) {
-            showInstallPrompt('ios');
-            sessionStorage.setItem('pwaPromptShown', 'true');
-        }
+        // No automatic prompt
     });
 
     function showInstallPrompt(platform) {
+        // Keeping function for potential manual calls, but removing automatic trigger logic
         if (platform === 'android') {
             Swal.fire({
                 title: 'نصب اپلیکیشن',
