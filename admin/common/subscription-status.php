@@ -8,12 +8,7 @@ $status_class = 'bg-label-secondary';
 if ($navbar_active_sub && $navbar_active_sub['plan_slug'] !== 'free') {
     $dur_label = '';
     if ($navbar_active_sub['duration_days'] > 0) {
-        if ($navbar_active_sub['duration_days'] == 14) $dur_label = ' (' . __('duration_2_weeks', '۲ هفته') . ')';
-        elseif ($navbar_active_sub['duration_days'] == 30) $dur_label = ' (' . __('duration_1_month', '۱ ماه') . ')';
-        elseif ($navbar_active_sub['duration_days'] == 90) $dur_label = ' (' . __('duration_3_months', '۳ ماه') . ')';
-        elseif ($navbar_active_sub['duration_days'] == 180) $dur_label = ' (' . __('duration_6_months', '۶ ماه') . ')';
-        elseif ($navbar_active_sub['duration_days'] == 365) $dur_label = ' (' . __('duration_1_year', '۱ سال') . ')';
-        else $dur_label = ' (' . $navbar_active_sub['duration_days'] . ' ' . __('days', 'روز') . ')';
+        $dur_label = ' (' . $navbar_active_sub['duration_days'] . ' ' . __('days', 'روز') . ')';
     }
 
     // محاسبه روزهای باقی‌مانده
@@ -34,13 +29,9 @@ if ($navbar_active_sub && $navbar_active_sub['plan_slug'] !== 'free') {
 } elseif ($navbar_pending_sub) {
     $dur_label = '';
     if ($navbar_pending_sub['duration_days'] > 0) {
-        if ($navbar_pending_sub['duration_days'] == 14) $dur_label = ' ' . __('duration_2_weeks', '۲ هفته');
-        elseif ($navbar_pending_sub['duration_days'] == 30) $dur_label = ' ' . __('duration_1_month', '۱ ماه');
-        elseif ($navbar_pending_sub['duration_days'] == 90) $dur_label = ' ' . __('duration_3_months', '۳ ماه');
-        elseif ($navbar_pending_sub['duration_days'] == 180) $dur_label = ' ' . __('duration_6_months', '۶ ماه');
-        elseif ($navbar_pending_sub['duration_days'] == 365) $dur_label = ' ' . __('duration_1_year', '۱ سال');
+        $dur_label = ' ' . $navbar_pending_sub['duration_days'] . ' ' . __('days', 'روز');
     }
-    $status_label = $navbar_pending_sub['plan_name'] . $dur_label . ' (' . __('in_review', 'در حال بازبینی') . ')';
+    $status_label = $navbar_pending_sub['plan_name'] . ' (' . $dur_label . ' - ' . __('in_review', 'در حال بازبینی') . ')';
     $status_class = 'bg-label-warning';
 }
 ?>
