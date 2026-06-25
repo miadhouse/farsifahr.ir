@@ -65,28 +65,28 @@ $user_reports = $stmtReports->fetchAll();
     <?php endif; ?>
     
     <!-- کارت تنظیمات -->
-    <div class="row mb-4">
+    <div class="row mb-3 settings-row-container">
         <div class="col-12">
             <div class="card shadow-none border">
-                <div class="card-body p-3 d-flex align-items-center justify-content-between flex-nowrap gap-2" style="overflow-x: auto;">
+                <div class="card-body py-1 py-sm-2 px-3 d-flex align-items-center justify-content-between flex-nowrap gap-2" style="overflow-x: auto;">
                     <!-- Settings info -->
                     <div class="d-flex align-items-center gap-3 settings-info-container flex-grow-1">
                         <!-- Exam Date Item -->
                         <div class="d-flex align-items-center text-nowrap">
-                            <i class="bx bx-calendar text-primary me-1 fs-4"></i>
+                            <i class="bx bx-calendar text-primary me-1 fs-5"></i>
                             <span class="fw-semibold me-1">تاریخ امتحان:</span>
                             <span class="badge bg-label-primary text-uppercase">
                                 <?php echo $isConfigured ? $examDateText : 'تنظیم نشده'; ?>
-                                <span class="d-none d-sm-inline">(<?php echo date('d.m.Y', strtotime($referenceDate)); ?>)</span>
+                                (<?php echo date('d.m.Y', strtotime($referenceDate)); ?>)
                             </span>
                         </div>
                         
                         <!-- Separator Line -->
-                        <div class="border-end vertical-separator" style="height: 20px;"></div>
+                        <div class="border-end vertical-separator" style="height: 18px;"></div>
 
                         <!-- Language Item -->
                         <div class="d-flex align-items-center text-nowrap">
-                            <i class="bx bx-globe text-primary me-1 fs-4"></i>
+                            <i class="bx bx-globe text-primary me-1 fs-5"></i>
                             <span class="fw-semibold me-1">زبان مطالعه:</span>
                             <span class="badge bg-label-info text-uppercase">
                                 <?php echo $isConfigured ? $languageText : 'تنظیم نشده'; ?>
@@ -98,8 +98,7 @@ $user_reports = $stmtReports->fetchAll();
                     <div class="settings-action-btn text-nowrap">
                         <button type="button" onclick="openConfigModal()" class="btn btn-label-primary btn-sm d-flex align-items-center">
                             <i class="bx bx-cog me-1"></i>
-                            <span class="d-none d-sm-inline">تنظیمات اولیه</span>
-                            <span class="d-inline d-sm-none">تنظیم</span>
+                            <span>تنظیمات</span>
                         </button>
                     </div>
                 </div>
@@ -109,7 +108,30 @@ $user_reports = $stmtReports->fetchAll();
 
     <!-- بقیه محتوای داشبورد -->
     <style>
+    /* Settings Card Custom Styles */
+    .settings-row-container {
+        margin-top: -24px !important;
+    }
+    .settings-info-container {
+        font-size: 0.82rem;
+        gap: 15px !important;
+    }
+    .settings-info-container .badge {
+        font-size: 0.78rem;
+        padding: 4px 8px;
+    }
+    .settings-info-container i {
+        font-size: 1.2rem !important;
+    }
+    .settings-action-btn .btn {
+        font-size: 0.78rem;
+        padding: 4px 10px;
+    }
+
     @media (max-width: 767.98px) {
+        .settings-row-container {
+            margin-top: -12px !important;
+        }
         .base-btn {
             height: auto !important;
         }
@@ -196,22 +218,22 @@ $user_reports = $stmtReports->fetchAll();
 
         /* Compact settings card style on mobile */
         .settings-info-container {
-            font-size: 0.72rem !important;
-            gap: 8px !important;
+            font-size: 0.65rem !important;
+            gap: 6px !important;
         }
         .settings-info-container .badge {
             padding: 3px 5px !important;
-            font-size: 0.65rem !important;
+            font-size: 0.62rem !important;
         }
         .settings-info-container i {
-            font-size: 1.1rem !important;
+            font-size: 1rem !important;
         }
         .settings-info-container .vertical-separator {
-            height: 15px !important;
+            height: 12px !important;
         }
         .settings-action-btn .btn {
             padding: 4px 6px !important;
-            font-size: 0.7rem !important;
+            font-size: 0.65rem !important;
         }
     }
     </style>
