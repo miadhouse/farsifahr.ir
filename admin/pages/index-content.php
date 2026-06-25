@@ -4,12 +4,14 @@ require_once('../incloud/user-config-handler.php');
 
 // بررسی ورود کاربر
 if (!is_logged_in()) {
-    header('Location: login.php');
+    header('Location: /register.php');
     exit;
 }
 
 // چک کردن تنظیمات کاربر
 check_user_configuration();
+
+$pending_sub = get_user_pending_subscription($_SESSION['user_id'], $pdo);
 
 // دریافت تنظیمات فعلی
 $configHandler = new UserConfigHandler($pdo);
@@ -39,6 +41,28 @@ $user_reports = $stmtReports->fetchAll();
 ?>
 
 <div class="container-xxl flex-grow-1 container-p-y">
+
+    <?php if ($pending_sub): ?>
+    <div class="row mb-4">
+      <div class="col-12">
+        <div class="alert alert-info d-flex flex-column align-items-center text-center py-4 shadow-sm mb-0" role="alert" style="border: 2px dashed #03c3ec;">
+          <h5 class="alert-heading fw-bold mb-3"><i class="bx bx-paper-plane me-2 fs-3"></i>ارتباط با پشتیبانی</h5>
+          <p class="mb-4">جهت فعال‌سازی اشتراک، الزامی است از طریق دکمه‌های زیر به پشتیبانی اطلاع‌رسانی کنید:</p>
+          <div class="d-flex gap-3 flex-wrap justify-content-center">
+            <?php 
+              $wa_msg = "سلام، من درخواست اشتراک " . $pending_sub['plan_name'] . " با مبلغ " . number_format($pending_sub['amount_paid']) . " تومان را در سایت farsifahr ثبت کردم.\nایمیل من: " . ($_SESSION['email'] ?? 'نامشخص') . "\nلطفا فعال کنید.";
+            ?>
+            <a href="https://wa.me/989177876760?text=<?= urlencode($wa_msg) ?>" target="_blank" class="btn btn-success btn-lg shadow">
+              <i class="bx bxl-whatsapp me-2 fs-4"></i> اطلاع‌رسانی در واتس‌اپ
+            </a>
+            <a href="https://t.me/farsifahr" target="_blank" class="btn btn-info btn-lg shadow">
+              <i class="bx bxl-telegram me-2 fs-4"></i> اطلاع‌رسانی در تلگرام
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+    <?php endif; ?>
     
     <!-- کارت تنظیمات -->
     <div class="row mb-4">
@@ -76,11 +100,98 @@ $user_reports = $stmtReports->fetchAll();
     </div>
 
     <!-- بقیه محتوای داشبورد -->
+    <style>
+    @media (max-width: 767.98px) {
+        .base-btn {
+            height: auto !important;
+        }
+        .base-btn .row {
+            height: auto !important;
+            margin-left: -6px !important;
+            margin-right: -6px !important;
+        }
+        .base-btn .col-6 {
+            padding-left: 6px !important;
+            padding-right: 6px !important;
+        }
+        .nav-hover-zoom {
+            height: 120px !important;
+        }
+        .nav-hover-zoom .card-img-overlay {
+            padding: 10px 8px !important;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center !important;
+            text-align: center;
+        }
+        .nav-hover-zoom .nav-icons {
+            width: 42px !important;
+            height: auto !important;
+            margin-bottom: 6px;
+            margin-right: 0 !important;
+            margin-left: 0 !important;
+            opacity: 0.85 !important;
+            position: relative !important;
+        }
+        .nav-hover-zoom .items {
+            font-size: 0.9rem !important;
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+            line-height: 1.3;
+            display: block;
+            width: 100%;
+        }
+
+        /* Readiness & Comparison Cards side-by-side on mobile */
+        .exam-readiness-card, .weekly-comparison-card {
+            padding-left: 6px !important;
+            padding-right: 6px !important;
+        }
+        .exam-readiness-card .card-body, .weekly-comparison-card .card-body {
+            padding: 12px 8px !important;
+        }
+        .exam-readiness-card .chart-title {
+            font-size: 0.78rem !important;
+            font-weight: 600;
+        }
+        .weekly-comparison-card .card-header {
+            padding: 10px 8px !important;
+        }
+        .weekly-comparison-card .card-title {
+            font-size: 0.78rem !important;
+            font-weight: 600;
+        }
+        .weekly-comparison-card .card-body h6 {
+            font-size: 0.75rem !important;
+            margin-bottom: 4px !important;
+        }
+        .weekly-comparison-card .card-body .desc-text {
+            font-size: 0.65rem !important;
+            margin-bottom: 8px !important;
+        }
+        .weekly-comparison-card .card-body .label-text {
+            font-size: 0.62rem !important;
+        }
+        .weekly-comparison-card .card-body .val-text {
+            font-size: 0.62rem !important;
+        }
+        .weekly-comparison-card .card-body .avatar {
+            width: 20px !important;
+            height: 20px !important;
+        }
+        .weekly-comparison-card .card-body .avatar-initial {
+            font-size: 10px !important;
+        }
+        .weekly-comparison-card .card-body ul li {
+            margin-bottom: 8px !important;
+        }
+    }
+    </style>
     <div class="row">
         <!-- Activity -->
         <div class="col-md-8 col-lg-8 col-xl-8 col-xxl-8 mb-4 base-btn">
             <div class="row h-100">
-                <div class="col-12 mb-3 col-md-6 ">
+                <div class="col-6 mb-3 col-md-6 ">
                     <div class="col-12  h-100 vh-25  w-100 position-relative text-white nav-hover-zoom nav-blue-soft">
                         <img class="nav-img" src="assets/img/backgrounds/about-4-1.png" alt="...">
                         <div class="card-img-overlay d-flex align-items-center h-100 px-5"><img class="nav-icons"
@@ -91,7 +202,7 @@ $user_reports = $stmtReports->fetchAll();
                     </div>
                 </div>
 
-                <div class="col-12 mb-3 col-md-6  ">
+                <div class="col-6 mb-3 col-md-6  ">
                     <div class="col-12  h-100 vh-25  w-100 position-relative text-white nav-hover-zoom nav-cyan-soft">
                         <img class="nav-img" src="assets/img/backgrounds/about-4-1.png" alt="...">
                         <div class="card-img-overlay d-flex align-items-center h-100 px-5"><img class="nav-icons"
@@ -101,7 +212,7 @@ $user_reports = $stmtReports->fetchAll();
                         </div>
                     </div>
                 </div>
-                <div class="col-12 mb-3 mb-md-0 col-md-6 ">
+                <div class="col-6 mb-3 mb-md-0 col-md-6 ">
                     <div class="col-12  h-100 vh-25  w-100 position-relative text-white nav-hover-zoom nav-purple-soft">
                         <img class="nav-img" src="assets/img/backgrounds/about-4-1.png" alt="...">
                         <div class="card-img-overlay d-flex align-items-center h-100 px-5"><img class="nav-icons"
@@ -111,7 +222,7 @@ $user_reports = $stmtReports->fetchAll();
                         </div>
                     </div>
                 </div>
-                <div class="col-12  col-md-6 ">
+                <div class="col-6  col-md-6 ">
                     <div class="col-12  h-100 vh-25  w-100 position-relative text-white nav-hover-zoom nav-indigo-soft">
                         <img class="nav-img" src="assets/img/backgrounds/about-4-1.png" alt="...">
                         <div class="card-img-overlay d-flex align-items-center h-100 px-5"><img class="nav-icons"
@@ -125,18 +236,76 @@ $user_reports = $stmtReports->fetchAll();
         </div>
         <!--/ Activity -->
 
-        <!-- Activity -->
-        <div class="col-md-4 col-lg-4 col-xl-4 col-xxl-4 mb-4">
+        <!-- Activity (Readiness Chart) -->
+        <div class="col-6 col-md-4 mb-4 exam-readiness-card">
             <div class="card h-100">
                 <div class="card-body text-center">
                     <div id="growthRadialChart"></div>
-                    <h6 class="mb-0">آمادگی شما جهت امتحان</h6>
+                    <h6 class="mb-0 chart-title">آمادگی شما جهت امتحان</h6>
                 </div>
             </div>
         </div>
         <!--/ Activity -->
-    </div>
-    <div class="row">
+
+        <!-- Weekly Comparison Card -->
+        <div class="col-6 col-md-4 mb-4 weekly-comparison-card">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">مقایسه با هفته گذشته</h5>
+                </div>
+                <div class="card-body">
+                    <h6 class="mt-1">هفته قبل</h6>
+                    <p class="mb-3 desc-text text-muted">کارایی نسبت به هفته قبل</p>
+                    <ul class="list-unstyled m-0 pt-0">
+                        <li class="mb-3">
+                            <div class="d-flex align-items-center mb-2">
+                                <div class="avatar avatar-sm flex-shrink-0 me-2">
+                                    <span class="avatar-initial rounded bg-label-primary"><i
+                                            class="bx bx-trending-up"></i></span>
+                                </div>
+                                <div class="w-100">
+                                    <p class="mb-0 text-muted text-nowrap label-text">مطالعه این هفته</p>
+                                    <small class="fw-semibold text-nowrap val-text">0 سوال</small>
+                                </div>
+                            </div>
+                            <div class="progress" style="height: 6px">
+                                <div class="progress-bar bg-primary" style="width: 0%" role="progressbar"
+                                    aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                            </div>
+                        </li>
+                        <li>
+                            <div class="d-flex align-items-center mb-2">
+                                <div class="avatar avatar-sm flex-shrink-0 me-2">
+                                    <span class="avatar-initial rounded bg-label-success"><i
+                                            class="bx bx-dollar"></i></span>
+                                </div>
+                                <div class="w-100">
+                                    <p class="mb-0 text-muted text-nowrap label-text">مطالعه هفته گذشته</p>
+                                    <small class="fw-semibold text-nowrap val-text">0 سوال</small>
+                                </div>
+                            </div>
+                            <div class="progress" style="height: 6px">
+                                <div class="progress-bar bg-success" style="width: 0%" role="progressbar"
+                                    aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Monthly Progress Chart -->
+        <div class="col-12 col-md-8 mb-4">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">گزارش ماهیانه پیشرفت</h5>
+                </div>
+                <div class="card-body">
+                    <div id="orderSummaryChart"></div>
+                </div>
+            </div>
+        </div>
+
         <!-- Growth Chart-->
         <div class="col-12 col-md-4 mb-4">
             <div class="card h-100">
@@ -210,65 +379,6 @@ $user_reports = $stmtReports->fetchAll();
                             </div>
                         </li>
                     </ul>
-                </div>
-            </div>
-        </div>
-        <div class="col-12 col-md-8 col-12 mb-4">
-            <div class="card h-100">
-                <div class="row row-bordered m-0">
-                    <!-- Order Summary -->
-                    <div class="col-md-8 col-12 pe-0">
-                        <div class="card-header d-flex justify-content-between align-items-center">
-                            <h5 class="card-title mb-0">گزارش ماهیانه پیشرفت</h5>
-                        </div>
-                        <div class="card-body p-0">
-                            <div id="orderSummaryChart"></div>
-                        </div>
-                    </div>
-                    <!-- Sales History -->
-                    <div class="col-md-4 col-12 px-0">
-                        <div class="card-header d-flex justify-content-between align-items-center">
-                            <h5 class="card-title mb-0">مقایسه با هفته گذشته</h5>
-                        </div>
-                        <div class="card-body">
-                            <h6 class="mt-1">هفته قبل</h6>
-                            <p class="mb-4">کارایی 45% بهتر نسبت به هفته قبل</p>
-                            <ul class="list-unstyled m-0 pt-0">
-                                <li class="mb-4">
-                                    <div class="d-flex align-items-center mb-2">
-                                        <div class="avatar avatar-sm flex-shrink-0 me-2">
-                                            <span class="avatar-initial rounded bg-label-primary"><i
-                                                    class="bx bx-trending-up"></i></span>
-                                        </div>
-                                        <div>
-                                            <p class="mb-0 text-muted text-nowrap">مطالعه این هفته</p>
-                                            <small class="fw-semibold text-nowrap">116 سوال</small>
-                                        </div>
-                                    </div>
-                                    <div class="progress" style="height: 6px">
-                                        <div class="progress-bar bg-primary" style="width: 75%" role="progressbar"
-                                            aria-valuenow="75" aria-valuemin="0" aria-valuemax="100"></div>
-                                    </div>
-                                </li>
-                                <li>
-                                    <div class="d-flex align-items-center mb-2">
-                                        <div class="avatar avatar-sm flex-shrink-0 me-2">
-                                            <span class="avatar-initial rounded bg-label-success"><i
-                                                    class="bx bx-dollar"></i></span>
-                                        </div>
-                                        <div>
-                                            <p class="mb-0 text-muted text-nowrap">مطالعه هفته گذشته</p>
-                                            <small class="fw-semibold text-nowrap">98 سوال</small>
-                                        </div>
-                                    </div>
-                                    <div class="progress" style="height: 6px">
-                                        <div class="progress-bar bg-success" style="width: 75%" role="progressbar"
-                                            aria-valuenow="75" aria-valuemin="0" aria-valuemax="100"></div>
-                                    </div>
-                                </li>
-                            </ul>
-                        </div>
-                    </div>
                 </div>
             </div>
         </div>
@@ -450,9 +560,12 @@ $user_reports = $stmtReports->fetchAll();
 
         chartEl.innerHTML = '';
 
+        const isMobile = window.innerWidth < 768;
+        const chartHeight = isMobile ? 180 : 265;
+
         const options = {
             chart: {
-                height: 265,
+                height: chartHeight,
                 type: 'radialBar',
                 sparkline: {
                     show: true
@@ -462,16 +575,16 @@ $user_reports = $stmtReports->fetchAll();
             grid: {
                 show: false,
                 padding: {
-                    top: -23,
-                    bottom: -2
+                    top: isMobile ? -10 : -23,
+                    bottom: isMobile ? -5 : -2
                 }
             },
             plotOptions: {
                 radialBar: {
-                    size: 100,
+                    size: isMobile ? 80 : 100,
                     startAngle: -135,
                     endAngle: 135,
-                    offsetY: 10,
+                    offsetY: isMobile ? 5 : 10,
                     hollow: {
                         size: '55%'
                     },
@@ -482,18 +595,18 @@ $user_reports = $stmtReports->fetchAll();
                     },
                     dataLabels: {
                         value: {
-                            offsetY: -22,
+                            offsetY: isMobile ? -12 : -22,
                             color: headingColor,
                             fontWeight: 500,
-                            fontSize: '26px',
+                            fontSize: isMobile ? '16px' : '26px',
                             formatter: function (val) {
                                 return parseInt(val) + '%';
                             }
                         },
                         name: {
-                            fontSize: '15px',
+                            fontSize: isMobile ? '11px' : '15px',
                             color: legendColor,
-                            offsetY: 20
+                            offsetY: isMobile ? 12 : 20
                         }
                     }
                 }
@@ -556,7 +669,7 @@ $user_reports = $stmtReports->fetchAll();
     }
 
     function updateWeeklyComparison(data) {
-        const container = document.querySelector('.col-md-4.col-12.px-0 .card-body');
+        const container = document.querySelector('.weekly-comparison-card .card-body') || document.querySelector('.col-md-4.col-12.px-0 .card-body');
         if (!container) return;
 
         const improvementText = data.improvement >= 0
@@ -564,7 +677,7 @@ $user_reports = $stmtReports->fetchAll();
             : `کارایی ${Math.abs(data.improvement)}% کمتر نسبت به هفته قبل`;
 
         const weekTitle = container.querySelector('h6.mt-1');
-        const weekDesc = container.querySelector('p.mb-4');
+        const weekDesc = container.querySelector('.desc-text') || container.querySelector('p.mb-4');
         
         if (weekTitle) weekTitle.textContent = 'هفته قبل';
         if (weekDesc) weekDesc.textContent = improvementText;
@@ -572,7 +685,7 @@ $user_reports = $stmtReports->fetchAll();
         const items = container.querySelectorAll('ul li');
         
         if (items[0]) {
-            const thisWeekSmall = items[0].querySelector('small');
+            const thisWeekSmall = items[0].querySelector('small') || items[0].querySelector('.val-text');
             const thisWeekProgress = items[0].querySelector('.progress-bar');
             if (thisWeekSmall) thisWeekSmall.textContent = data.this_week.toLocaleString('fa-IR') + ' سوال';
             if (thisWeekProgress) {
@@ -582,7 +695,7 @@ $user_reports = $stmtReports->fetchAll();
         }
 
         if (items[1]) {
-            const lastWeekSmall = items[1].querySelector('small');
+            const lastWeekSmall = items[1].querySelector('small') || items[1].querySelector('.val-text');
             const lastWeekProgress = items[1].querySelector('.progress-bar');
             if (lastWeekSmall) lastWeekSmall.textContent = data.last_week.toLocaleString('fa-IR') + ' سوال';
             if (lastWeekProgress) {
