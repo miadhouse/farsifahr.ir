@@ -96,9 +96,8 @@ $user_reports = $stmtReports->fetchAll();
 
                     <!-- Settings button -->
                     <div class="settings-action-btn text-nowrap">
-                        <button type="button" onclick="openConfigModal()" class="btn btn-label-primary btn-sm d-flex align-items-center">
-                            <i class="bx bx-cog me-1"></i>
-                            <span>تنظیمات</span>
+                        <button type="button" onclick="openConfigModal()" class="btn btn-icon btn-label-primary btn-sm" title="تنظیمات">
+                            <i class="bx bx-cog fs-5"></i>
                         </button>
                     </div>
                 </div>
