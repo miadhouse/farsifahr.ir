@@ -39,15 +39,38 @@ try {
         exit;
     }
 
+    // Fetch user question statuses
+    $questionIds = array_column($questions, 'id');
+    $statuses = [];
+    if (!empty($questionIds)) {
+        $placeholders = str_repeat('?,', count($questionIds) - 1) . '?';
+        $stmtStats = $pdo->prepare("
+            SELECT question_id, correct, incorrect 
+            FROM user_question_stats 
+            WHERE user_id = ? AND question_id IN ($placeholders)
+        ");
+        $stmtStats->execute(array_merge([$user_id], $questionIds));
+        $resultsStats = $stmtStats->fetchAll(PDO::FETCH_ASSOC);
+        
+        foreach ($resultsStats as $row) {
+            $correct = (int)$row['correct'];
+            $incorrect = (int)$row['incorrect'];
+            
+            if ($correct >= 2 && $incorrect == 0) {
+                $color = 'green';
+            } elseif ($correct == 1 && $incorrect == 0) {
+                $color = 'blue';
+            } elseif ($incorrect >= 1 && $correct == 0) {
+                $color = 'red';
+            } else {
+                $color = 'yellow';
+            }
+            $statuses[$row['question_id']] = $color;
+        }
+    }
+
     // Display questions count header
     echo '<div class="questions-header mb-3">';
-    // echo '<div class="alert alert-info d-flex justify-content-between align-items-center">';
-    // echo '<div>';
-    // echo '<i class="fas fa-list-ul me-2"></i>';
-    // echo '<strong>' . count($questions) . '</strong> سوال یافت شد';
-    // echo '</div>';
-    // echo '<div class="text-muted small">همه سوالات به صورت پیش‌فرض انتخاب شده‌اند</div>';
-    // echo '</div>';
     echo '</div>';
 
     // Display questions with checkboxes
@@ -57,8 +80,18 @@ try {
         $questionNumber = $index + 1;
         $questionId = htmlspecialchars($question['id']);
         $questionText = htmlspecialchars($question['text']);
+        
+        $color = $statuses[$question['id']] ?? 'gray';
+        $picture = $question['picture'] ?? '';
+        $isImage = (!empty($picture) && !str_ends_with($picture, '.m4v'));
+        $isVideo = (!empty($picture) && str_ends_with($picture, '.m4v'));
+        $points = (int)($question['points'] ?? 0);
 
-        echo '<div class="form-check modal-bg form-check-primary mt-3 question-item d-flex align-items-center justify-content-between">';
+        echo '<div class="form-check modal-bg form-check-primary mt-3 question-item d-flex align-items-center justify-content-between" ' .
+             'data-points="' . $points . '" ' .
+             'data-is-image="' . ($isImage ? '1' : '0') . '" ' .
+             'data-is-video="' . ($isVideo ? '1' : '0') . '" ' .
+             'data-status="' . $color . '">';
         echo '<div>';
         echo '<input style="margin-right: -1.4em;" class="form-check-input " type="checkbox" value="' . $questionId . '" id="' . $questionId . '" checked>';
         echo '<label class="form-check-label" for="' . $questionId . '">';

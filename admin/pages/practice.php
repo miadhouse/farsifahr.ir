@@ -250,6 +250,32 @@ foreach ($tags as $tag) {
                             </button>
                         </div>
                     </div>
+
+                    <!-- فیلترهای سوالات -->
+                    <div class="d-flex flex-wrap gap-2 mb-3 filter-buttons-container" style="direction: rtl;">
+                        <button type="button" class="btn btn-sm btn-dark filter-btn active" data-filter="all" onclick="applyQuestionFilter('all', this)">
+                            ✨ همه
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-primary filter-btn" data-filter="image" onclick="applyQuestionFilter('image', this)">
+                            🖼 تصویری
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-info filter-btn" data-filter="video" onclick="applyQuestionFilter('video', this)">
+                            🎥 ویدیویی
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-danger filter-btn" data-filter="not-prepared" onclick="applyQuestionFilter('not-prepared', this)">
+                            ❌ اصلاً آماده نیستیم (قرمز/خاکستری)
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-warning filter-btn" data-filter="half-prepared" onclick="applyQuestionFilter('half-prepared', this)">
+                            ⚠️ ۵۰ درصد آماده (زرد/آبی)
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-success filter-btn" data-filter="prepared" onclick="applyQuestionFilter('prepared', this)">
+                            ✅ کاملاً آماده (سبز)
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary filter-btn" data-filter="points5" onclick="applyQuestionFilter('points5', this)">
+                            ⭐️ ۵ امتیازی
+                        </button>
+                    </div>
+
                     <div id="questionsContainer">
                         <div class="text-center p-4">
                             <div class="spinner-border text-primary" role="status">
@@ -924,8 +950,15 @@ foreach ($tags as $tag) {
                 .then(response => response.text())
                 .then(data => {
                     container.innerHTML = data;
-                    updateQuestionCounts();
                     setupQuestionCheckboxes();
+                    
+                    // Reset filter button to "All"
+                    const allBtn = document.querySelector('.filter-btn[data-filter="all"]');
+                    if (allBtn) {
+                        applyQuestionFilter('all', allBtn);
+                    } else {
+                        updateQuestionCounts();
+                    }
                 })
                 .catch(error => {
                     console.error('خطا در بارگذاری سوالات:', error);
@@ -948,22 +981,28 @@ foreach ($tags as $tag) {
 
         // Update question counts
         function updateQuestionCounts() {
-            const checkboxes = document.querySelectorAll('#questionsContainer input[type="checkbox"]');
-            const selectedCheckboxes = document.querySelectorAll('#questionsContainer input[type="checkbox"]:checked');
+            const allCheckboxes = document.querySelectorAll('#questionsContainer input[type="checkbox"]');
+            const allSelected = document.querySelectorAll('#questionsContainer input[type="checkbox"]:checked');
 
-            const totalCount = checkboxes.length;
-            const selectedCount = selectedCheckboxes.length;
+            const visibleCheckboxes = Array.from(allCheckboxes).filter(cb => {
+                const item = cb.closest('.question-item');
+                return item && item.style.display !== 'none';
+            });
+            const visibleSelected = visibleCheckboxes.filter(cb => cb.checked);
 
-            document.getElementById('totalQuestionsCount').textContent = totalCount;
-            document.getElementById('selectedQuestionsCount').textContent = selectedCount;
-            document.getElementById('footerSelectedCount').textContent = selectedCount;
+            document.getElementById('totalQuestionsCount').textContent = visibleCheckboxes.length;
+            document.getElementById('selectedQuestionsCount').textContent = visibleSelected.length;
+            document.getElementById('footerSelectedCount').textContent = allSelected.length;
         }
 
         // Select all questions
         function selectAllQuestions() {
             const checkboxes = document.querySelectorAll('#questionsContainer input[type="checkbox"]');
             checkboxes.forEach(checkbox => {
-                checkbox.checked = true;
+                const item = checkbox.closest('.question-item');
+                if (item && item.style.display !== 'none') {
+                    checkbox.checked = true;
+                }
             });
             updateQuestionCounts();
         }
@@ -972,8 +1011,80 @@ foreach ($tags as $tag) {
         function deselectAllQuestions() {
             const checkboxes = document.querySelectorAll('#questionsContainer input[type="checkbox"]');
             checkboxes.forEach(checkbox => {
-                checkbox.checked = false;
+                const item = checkbox.closest('.question-item');
+                if (item && item.style.display !== 'none') {
+                    checkbox.checked = false;
+                }
             });
+            updateQuestionCounts();
+        }
+
+        // Apply question filter
+        let currentActiveFilter = 'all';
+        function applyQuestionFilter(filterType, btn) {
+            currentActiveFilter = filterType;
+            
+            // Highlight active button
+            const buttons = document.querySelectorAll('.filter-btn');
+            buttons.forEach(b => {
+                b.classList.remove('active');
+                if (b.classList.contains('btn-primary')) { b.classList.remove('btn-primary'); b.classList.add('btn-outline-primary'); }
+                else if (b.classList.contains('btn-info')) { b.classList.remove('btn-info'); b.classList.add('btn-outline-info'); }
+                else if (b.classList.contains('btn-danger')) { b.classList.remove('btn-danger'); b.classList.add('btn-outline-danger'); }
+                else if (b.classList.contains('btn-warning')) { b.classList.remove('btn-warning'); b.classList.add('btn-outline-warning'); }
+                else if (b.classList.contains('btn-success')) { b.classList.remove('btn-success'); b.classList.add('btn-outline-success'); }
+                else if (b.classList.contains('btn-secondary')) { b.classList.remove('btn-secondary'); b.classList.add('btn-outline-secondary'); }
+                else if (b.classList.contains('btn-dark')) { b.classList.remove('btn-dark'); b.classList.add('btn-outline-dark'); }
+            });
+            
+            btn.classList.add('active');
+            if (btn.classList.contains('btn-outline-primary')) { btn.classList.remove('btn-outline-primary'); btn.classList.add('btn-primary'); }
+            else if (btn.classList.contains('btn-outline-info')) { btn.classList.remove('btn-outline-info'); btn.classList.add('btn-info'); }
+            else if (btn.classList.contains('btn-outline-danger')) { btn.classList.remove('btn-outline-danger'); btn.classList.add('btn-danger'); }
+            else if (btn.classList.contains('btn-outline-warning')) { btn.classList.remove('btn-outline-warning'); btn.classList.add('btn-warning'); }
+            else if (btn.classList.contains('btn-outline-success')) { btn.classList.remove('btn-outline-success'); btn.classList.add('btn-success'); }
+            else if (btn.classList.contains('btn-outline-secondary')) { btn.classList.remove('btn-outline-secondary'); btn.classList.add('btn-secondary'); }
+            else if (btn.classList.contains('btn-outline-dark')) { btn.classList.remove('btn-outline-dark'); btn.classList.add('btn-dark'); }
+
+            const questionItems = document.querySelectorAll('.question-item');
+            questionItems.forEach(item => {
+                const points = parseInt(item.getAttribute('data-points') || '0', 10);
+                const isImage = item.getAttribute('data-is-image') === '1';
+                const isVideo = item.getAttribute('data-is-video') === '1';
+                const status = item.getAttribute('data-status') || 'gray';
+                
+                let show = false;
+                switch (filterType) {
+                    case 'all':
+                        show = true;
+                        break;
+                    case 'image':
+                        show = isImage;
+                        break;
+                    case 'video':
+                        show = isVideo;
+                        break;
+                    case 'not-prepared':
+                        show = (status === 'red' || status === 'gray');
+                        break;
+                    case 'half-prepared':
+                        show = (status === 'yellow' || status === 'blue');
+                        break;
+                    case 'prepared':
+                        show = (status === 'green');
+                        break;
+                    case 'points5':
+                        show = (points === 5);
+                        break;
+                }
+                
+                if (show) {
+                    item.style.setProperty('display', 'flex', 'important');
+                } else {
+                    item.style.setProperty('display', 'none', 'important');
+                }
+            });
+            
             updateQuestionCounts();
         }
 
