@@ -81,6 +81,12 @@
       </a>
     </li>
     <li class="menu-item">
+      <a href="announcements.php" class="menu-link">
+        <i class="menu-icon tf-icons bx bx-bell"></i>
+        <div><?= __('announcements', 'اعلان‌ها') ?></div>
+      </a>
+    </li>
+    <li class="menu-item">
       <a href="reports.php" class="menu-link">
         <i class="menu-icon tf-icons bx bx-bug"></i>
         <div><?= __('reports') ?></div>

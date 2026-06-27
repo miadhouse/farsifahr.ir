@@ -496,6 +496,9 @@ function render_announcements($page_name)
     $announcements = get_active_announcements($page_name);
     if (empty($announcements)) return;
     
+    // فقط آخرین اعلان فعال را برای این صفحه نمایش می‌دهیم تا از شلوغی جلوگیری شود
+    $latest_ann = $announcements[0];
+    
     // گروه بندی اعلان ها بر اساس موقعیت
     $positions = [
         'top' => [],
@@ -503,10 +506,8 @@ function render_announcements($page_name)
         'bottom' => []
     ];
     
-    foreach ($announcements as $ann) {
-        if (isset($positions[$ann['position']])) {
-            $positions[$ann['position']][] = $ann;
-        }
+    if (isset($positions[$latest_ann['position']])) {
+        $positions[$latest_ann['position']][] = $latest_ann;
     }
     
     ?>
@@ -835,4 +836,111 @@ function render_announcements($page_name)
     </script>
     <?php
 }
+
+/**
+ * تعداد اعلان‌های خوانده‌نشده برای کاربر
+ */
+function get_unread_announcements_count($user_id)
+{
+    global $pdo;
+    $now = date('Y-m-d H:i:s');
+    try {
+        // دریافت شناسه تمامی اعلان‌های فعال
+        $stmt = $pdo->prepare("
+            SELECT id FROM announcements 
+            WHERE is_active = 1 
+              AND (end_date IS NULL OR end_date > ?)
+              AND (audience = 'all' OR audience = 'members')
+        ");
+        $stmt->execute([$now]);
+        $announcements = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        if (empty($announcements)) return 0;
+        
+        // دریافت اعلان‌های خوانده شده توسط کاربر
+        $stmtRead = $pdo->prepare("
+            SELECT announcement_id FROM user_announcement_reads 
+            WHERE user_id = ?
+        ");
+        $stmtRead->execute([$user_id]);
+        $readIds = $stmtRead->fetchAll(PDO::FETCH_COLUMN) ?: [];
+        
+        $unreadCount = 0;
+        foreach ($announcements as $ann) {
+            if (!in_array($ann['id'], $readIds)) {
+                $unreadCount++;
+            }
+        }
+        return $unreadCount;
+    } catch (PDOException $e) {
+        error_log("Error in get_unread_announcements_count: " . $e->getMessage());
+        return 0;
+    }
+}
+
+/**
+ * دریافت تمامی اعلان‌های فعال برای کاربر (به همراه وضعیت خوانده شدن)
+ */
+function get_user_announcements($user_id)
+{
+    global $pdo;
+    $now = date('Y-m-d H:i:s');
+    try {
+        // دریافت تمامی اعلان‌های فعال مرتب شده از جدید به قدیم
+        $stmt = $pdo->prepare("
+            SELECT a.*, 
+                   CASE WHEN r.id IS NOT NULL THEN 1 ELSE 0 END as is_read
+            FROM announcements a
+            LEFT JOIN user_announcement_reads r ON a.id = r.announcement_id AND r.user_id = ?
+            WHERE a.is_active = 1 
+              AND (a.end_date IS NULL OR a.end_date > ?)
+              AND (a.audience = 'all' OR a.audience = 'members')
+            ORDER BY a.id DESC
+        ");
+        $stmt->execute([$user_id, $now]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        error_log("Error in get_user_announcements: " . $e->getMessage());
+        return [];
+    }
+}
+
+/**
+ * علامت‌گذاری تمامی اعلان‌های فعال به عنوان خوانده شده برای کاربر
+ */
+function mark_all_announcements_as_read($user_id)
+{
+    global $pdo;
+    $now = date('Y-m-d H:i:s');
+    try {
+        // دریافت شناسه تمام اعلان‌های فعال
+        $stmt = $pdo->prepare("
+            SELECT id FROM announcements 
+            WHERE is_active = 1 
+              AND (end_date IS NULL OR end_date > ?)
+              AND (audience = 'all' OR audience = 'members')
+        ");
+        $stmt->execute([$now]);
+        $active_ids = $stmt->fetchAll(PDO::FETCH_COLUMN);
+        
+        if (empty($active_ids)) return;
+        
+        // ثبت در جدول خوانده شده‌ها
+        $pdo->beginTransaction();
+        $stmtInsert = $pdo->prepare("
+            INSERT IGNORE INTO user_announcement_reads (user_id, announcement_id) 
+            VALUES (?, ?)
+        ");
+        foreach ($active_ids as $ann_id) {
+            $stmtInsert->execute([$user_id, $ann_id]);
+        }
+        $pdo->commit();
+    } catch (PDOException $e) {
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+        error_log("Error in mark_all_announcements_as_read: " . $e->getMessage());
+    }
+}
+
 

@@ -31,7 +31,7 @@
         <!-- bascket -->
 
         <!-- Notification -->
-        <?php //include("notification.php"); ?>
+        <?php include("notification.php"); ?>
         <!--/ Notification -->
 
         <!-- User -->
