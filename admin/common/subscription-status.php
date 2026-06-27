@@ -2,36 +2,23 @@
 $navbar_active_sub = get_user_active_subscription($_SESSION['user_id'], $pdo);
 $navbar_pending_sub = get_user_pending_subscription($_SESSION['user_id'], $pdo);
 
-$status_label = __('free_subscription', 'اشتراک رایگان');
+$status_label = __('free', 'رایگان');
 $status_class = 'bg-label-secondary';
 
 if ($navbar_active_sub && $navbar_active_sub['plan_slug'] !== 'free') {
-    $dur_label = '';
-    if ($navbar_active_sub['duration_days'] > 0) {
-        $dur_label = ' (' . $navbar_active_sub['duration_days'] . ' ' . __('days', 'روز') . ')';
-    }
-
-    // محاسبه روزهای باقی‌مانده
-    $days_remaining = '';
+    $days_remaining = __('expired', 'منقضی شده');
     if ($navbar_active_sub['expires_at']) {
         $now = new DateTime();
         $expires = new DateTime($navbar_active_sub['expires_at']);
         $diff = $now->diff($expires);
         if ($expires > $now) {
-            $days_remaining = ' - ' . $diff->days . ' ' . __('days_left', 'روز مانده');
-        } else {
-            $days_remaining = ' - ' . __('expired', 'منقضی شده');
+            $days_remaining = $diff->days . ' ' . __('days_left', 'روز مانده');
         }
     }
-
-    $status_label = $navbar_active_sub['plan_name'] . $dur_label . $days_remaining;
+    $status_label = $days_remaining;
     $status_class = 'bg-label-success';
 } elseif ($navbar_pending_sub) {
-    $dur_label = '';
-    if ($navbar_pending_sub['duration_days'] > 0) {
-        $dur_label = ' ' . $navbar_pending_sub['duration_days'] . ' ' . __('days', 'روز');
-    }
-    $status_label = $navbar_pending_sub['plan_name'] . ' (' . $dur_label . ' - ' . __('in_review', 'در حال بازبینی') . ')';
+    $status_label = __('in_review', 'در حال بررسی');
     $status_class = 'bg-label-warning';
 }
 ?>
