@@ -153,10 +153,32 @@ class AnnouncementResource extends Resource
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
+                Tables\Actions\Action::make('reactivate')
+                    ->label('فعالسازی مجدد')
+                    ->icon('heroicon-o-arrow-path')
+                    ->color('success')
+                    ->requiresConfirmation()
+                    ->modalHeading('فعالسازی مجدد اعلان')
+                    ->modalDescription('آیا مطمئن هستید که می‌خواهید این اعلان را برای همه کاربران مجدداً فعال کنید؟ با این کار سابقه مشاهده و بستن این اعلان در مرورگر کاربران بازنشانی می‌شود.')
+                    ->modalSubmitActionLabel('بله، فعالسازی مجدد')
+                    ->modalCancelActionLabel('انصراف')
+                    ->action(fn (Announcement $record) => $record->touch())
+                    ->successNotificationTitle('اعلان با موفقیت برای همه کاربران مجدداً فعال شد.'),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\BulkAction::make('reactivateBulk')
+                        ->label('فعالسازی مجدد انتخاب شده‌ها')
+                        ->icon('heroicon-o-arrow-path')
+                        ->color('success')
+                        ->requiresConfirmation()
+                        ->modalHeading('فعالسازی مجدد اعلان‌های انتخاب شده')
+                        ->modalDescription('آیا مطمئن هستید که می‌خواهید اعلان‌های انتخاب شده را برای همه کاربران مجدداً فعال کنید؟')
+                        ->modalSubmitActionLabel('بله، فعالسازی مجدد')
+                        ->modalCancelActionLabel('انصراف')
+                        ->action(fn (\Illuminate\Database\Eloquent\Collection $records) => $records->each(fn ($record) => $record->touch()))
+                        ->successNotificationTitle('اعلان‌های انتخاب شده با موفقیت مجدداً فعال شدند.'),
                 ]),
             ]);
     }

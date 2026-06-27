@@ -663,7 +663,8 @@ function render_announcements($page_name)
         <div class="announcement-item announcement-top-bar" id="announcement-<?= $ann['id'] ?>" 
              data-id="<?= $ann['id'] ?>"
              data-display-type="<?= $ann['display_type'] ?>"
-             data-views-limit="<?= $ann['custom_views_limit'] ?? 0 ?>">
+             data-views-limit="<?= $ann['custom_views_limit'] ?? 0 ?>"
+             data-updated-at="<?= strtotime($ann['updated_at']) ?>">
             <div class="announcement-content-wrapper" style="direction: rtl;">
                 <?= $ann['content'] ?>
             </div>
@@ -676,7 +677,8 @@ function render_announcements($page_name)
         <div class="announcement-item announcement-bottom-bar" id="announcement-<?= $ann['id'] ?>" 
              data-id="<?= $ann['id'] ?>"
              data-display-type="<?= $ann['display_type'] ?>"
-             data-views-limit="<?= $ann['custom_views_limit'] ?? 0 ?>">
+             data-views-limit="<?= $ann['custom_views_limit'] ?? 0 ?>"
+             data-updated-at="<?= strtotime($ann['updated_at']) ?>">
             <div class="announcement-content-wrapper" style="direction: rtl;">
                 <?= $ann['content'] ?>
             </div>
@@ -689,7 +691,8 @@ function render_announcements($page_name)
         <div class="announcement-item announcement-modal-backdrop" id="announcement-<?= $ann['id'] ?>" 
              data-id="<?= $ann['id'] ?>"
              data-display-type="<?= $ann['display_type'] ?>"
-             data-views-limit="<?= $ann['custom_views_limit'] ?? 0 ?>">
+             data-views-limit="<?= $ann['custom_views_limit'] ?? 0 ?>"
+             data-updated-at="<?= strtotime($ann['updated_at']) ?>">
             <div class="announcement-modal-card">
                 <div class="announcement-modal-header" style="direction: rtl;">
                     <span><?= htmlspecialchars($ann['title']) ?></span>
@@ -725,6 +728,15 @@ function render_announcements($page_name)
                 const id = el.getAttribute('data-id');
                 const displayType = el.getAttribute('data-display-type');
                 const viewsLimit = parseInt(el.getAttribute('data-views-limit') || '0', 10);
+                const updatedAt = el.getAttribute('data-updated-at') || '0';
+                
+                // بررسی نسخه اعلان جهت فعالسازی مجدد (Reactivation)
+                const storedUpdated = localStorage.getItem('announcement_updated_' + id) || '0';
+                if (storedUpdated !== updatedAt) {
+                    localStorage.removeItem('dismissed_announcement_' + id);
+                    localStorage.setItem('announcement_views_' + id, '0');
+                    localStorage.setItem('announcement_updated_' + id, updatedAt);
+                }
                 
                 // بررسی بسته شدن دستی اعلان
                 if (localStorage.getItem('dismissed_announcement_' + id) === '1') {
