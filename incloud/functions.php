@@ -750,6 +750,9 @@ function render_announcements($page_name)
         }
         
         function initAnnouncements() {
+            if (window.announcementsInitialized) return;
+            window.announcementsInitialized = true;
+
             document.querySelectorAll('.announcement-item').forEach(el => {
                 const id = el.getAttribute('data-id');
                 const displayType = el.getAttribute('data-display-type');
