@@ -200,6 +200,11 @@
                 if (loadedUnreadCount > 0 && !isOpen) {
                     unreadCount = loadedUnreadCount;
                     showBadge(unreadCount);
+
+                    if (!localStorage.getItem(WELCOME_KEY)) {
+                        playNotificationSound();
+                        localStorage.setItem(WELCOME_KEY, '1');
+                    }
                 }
                 
                 if (isOpen && lastMessageId > 0) {
@@ -556,11 +561,7 @@
             this.style.height = Math.min(this.scrollHeight, 80) + 'px';
         });
 
-        if (chatToken) {
-            initSession();
-        } else {
-            showWelcomePopup();
-        }
+        initSession();
     }
 
     if (document.readyState === 'loading') {

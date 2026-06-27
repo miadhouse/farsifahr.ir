@@ -101,12 +101,9 @@ switch ($action) {
             $session_id = $pdo->lastInsertId();
 
             // Insert welcome bot message
-            $welcome = 'سلام! 👋 به پشتیبانی farsifahr خوش آمدید. پیام خود را بنویسید تا در اولین فرصت پاسخ دهیم.';
-            if (!$user_id) {
-                $welcome = 'سلام! 👋 برای شروع چت، لطفاً ابتدا نام و ایمیل خود را وارد کنید.';
-            }
+            $welcome = 'خیلی خوش اومدی دوست عزیز از الان تا زمانی که گواهینامه آلمانی رو تو دستاتت بگیری ما کنارت هستیم، هر سوالی داشتی اینجا بپرس';
 
-            $pdo->prepare("INSERT INTO chat_messages (session_id, sender_type, message) VALUES (?, 'system', ?)")
+            $pdo->prepare("INSERT INTO chat_messages (session_id, sender_type, message) VALUES (?, 'admin', ?)")
                 ->execute([$session_id, $welcome]);
 
             $stmt = $pdo->prepare("SELECT * FROM chat_sessions WHERE id = ?");
