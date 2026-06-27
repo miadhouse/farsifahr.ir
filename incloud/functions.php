@@ -753,6 +753,7 @@ function render_announcements($page_name)
             if (window.announcementsInitialized) return;
             window.announcementsInitialized = true;
 
+            console.log('--- FarsiFahr Announcements debug ---');
             document.querySelectorAll('.announcement-item').forEach(el => {
                 const id = el.getAttribute('data-id');
                 const displayType = el.getAttribute('data-display-type');
@@ -761,20 +762,29 @@ function render_announcements($page_name)
                 
                 // بررسی نسخه اعلان جهت فعالسازی مجدد (Reactivation)
                 const storedUpdated = safeStorage.getItem('announcement_updated_' + id) || '0';
+                console.log('Announcement ID:', id);
+                console.log('  updatedAt (server):', updatedAt);
+                console.log('  storedUpdated (browser):', storedUpdated);
+                
                 if (storedUpdated !== updatedAt) {
+                    console.log('  --> Version mismatch! Resetting counts.');
                     safeStorage.removeItem('dismissed_announcement_' + id);
                     safeStorage.setItem('announcement_views_' + id, '0');
                     safeStorage.setItem('announcement_updated_' + id, updatedAt);
                 }
                 
                 // بررسی بسته شدن دستی اعلان
-                if (safeStorage.getItem('dismissed_announcement_' + id) === '1') {
+                const dismissed = safeStorage.getItem('dismissed_announcement_' + id);
+                console.log('  dismissed:', dismissed);
+                if (dismissed === '1') {
+                    console.log('  --> Dismissed permanently. Removing element.');
                     el.remove();
                     return;
                 }
                 
                 // شمارش تعداد بازدیدهای ذخیره شده در مرورگر کاربر
                 const views = parseInt(safeStorage.getItem('announcement_views_' + id) || '0', 10);
+                console.log('  views (before increment):', views);
                 
                 let show = true;
                 if (displayType === 'once' && views >= 1) {
@@ -785,9 +795,11 @@ function render_announcements($page_name)
                     show = false;
                 }
                 
+                console.log('  will show:', show);
                 if (show) {
                     // افزایش و ثبت شمارش بازدید
                     safeStorage.setItem('announcement_views_' + id, views + 1);
+                    console.log('  views (after increment):', views + 1);
                     // نمایش اعلان با اولویت بالا جهت جلوگیری از تداخل CSS
                     const displayStyle = el.classList.contains('announcement-modal-backdrop') ? 'flex' : 'block';
                     el.style.setProperty('display', displayStyle, 'important');
