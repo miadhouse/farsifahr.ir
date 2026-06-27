@@ -14,12 +14,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit;
 }
 
+header("X-API-Handler: V1-Index");
 $request_uri = $_SERVER['REQUEST_URI'];
-$base_path = '/api/v1';
+$path = parse_url($request_uri, PHP_URL_PATH);
 
-// Remove base path from URI
-$path = str_replace($base_path, '', $request_uri);
-$path = explode('?', $path)[0]; // Remove query string
+// Find the part after /api/v1
+$base_segment = '/api/v1';
+$pos = strpos($path, $base_segment);
+if ($pos !== false) {
+    $path = substr($path, $pos + strlen($base_segment));
+}
 $path = trim($path, '/');
 
 $parts = explode('/', $path);

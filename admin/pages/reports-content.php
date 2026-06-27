@@ -3,7 +3,7 @@ require_once('../incloud/functions.php');
 
 // بررسی ورود کاربر
 if (!is_logged_in()) {
-    header('Location: login.php');
+    header('Location: /register.php');
     exit;
 }
 

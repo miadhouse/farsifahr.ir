@@ -1,3 +1,10 @@
+<?php
+require_once(__DIR__ . '/../../incloud/functions.php');
+if (!is_logged_in()) {
+    header('Location: /register.php');
+    exit;
+}
+?>
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
 

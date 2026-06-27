@@ -161,30 +161,28 @@ function verify_captcha($input)
     return $result;
 }
 
-// بررسی Google reCAPTCHA
-function verify_recaptcha($response)
+// بررسی Cloudflare Turnstile
+function verify_turnstile($response)
 {
     if (empty($response)) {
         return false;
     }
 
-    $url = 'https://www.google.com/recaptcha/api/siteverify';
+    $url = 'https://challenges.cloudflare.com/turnstile/v0/siteverify';
     $data = [
-        'secret' => RECAPTCHA_SECRET_KEY,
+        'secret' => TURNSTILE_SECRET_KEY,
         'response' => $response,
         'remoteip' => get_user_ip()
     ];
 
-    $options = [
-        'http' => [
-            'header'  => "Content-type: application/x-www-form-urlencoded\r\n",
-            'method'  => 'POST',
-            'content' => http_build_query($data)
-        ]
-    ];
-
-    $context  = stream_context_create($options);
-    $result = file_get_contents($url, false, $context);
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $url);
+    curl_setopt($ch, CURLOPT_POST, 1);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($data));
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    
+    $result = curl_exec($ch);
+    curl_close($ch);
     
     if ($result === FALSE) {
         return false;
@@ -264,6 +262,7 @@ function validate_session($pdo)
             $stmtCheck->execute([$_SESSION['user_id']]);
             if ($stmtCheck->rowCount() > 0) {
                 setcookie('concurrent_login', '1', time() + 60, '/');
+                $GLOBALS['concurrent_login_flag'] = true;
             }
         }
         
@@ -282,13 +281,32 @@ function validate_session($pdo)
 // دریافت IP کاربر
 function get_user_ip()
 {
-    if (!empty($_SERVER['HTTP_CLIENT_IP'])) {
-        return $_SERVER['HTTP_CLIENT_IP'];
-    } elseif (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
-        return $_SERVER['HTTP_X_FORWARDED_FOR'];
-    } else {
-        return $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
+    // اگر سایت پشت کلادفلر است، آی‌پی واقعی در این هدر قرار دارد
+    if (!empty($_SERVER['HTTP_CF_CONNECTING_IP'])) {
+        return $_SERVER['HTTP_CF_CONNECTING_IP'];
     }
+    
+    if (!empty($_SERVER['HTTP_CLIENT_IP'])) {
+        $ip = $_SERVER['HTTP_CLIENT_IP'];
+    } elseif (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+        $ip = $_SERVER['HTTP_X_FORWARDED_FOR'];
+    } else {
+        $ip = $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
+    }
+
+    // اگر آی‌پی شامل چند بخش با کاما بود (مثلاً پشت چند پروکسی)، اولین آی‌پی معتبر غیر محلی را استخراج می‌کنیم
+    if (strpos($ip, ',') !== false) {
+        $ips = array_map('trim', explode(',', $ip));
+        foreach ($ips as $single_ip) {
+            // حذف آی‌پی‌های محلی یا خالی
+            if ($single_ip !== '127.0.0.1' && $single_ip !== '::1' && !empty($single_ip)) {
+                return $single_ip;
+            }
+        }
+        return $ips[0]; // در نهایت اگر همه محلی بودند، اولین مورد
+    }
+
+    return $ip;
 }
 
 /**
@@ -300,6 +318,7 @@ function get_user_ip()
 function send_telegram_admin_message($message)
 {
     if (!defined('TELEGRAM_BOT_TOKEN') || !defined('TELEGRAM_ADMIN_CHAT_ID')) {
+        file_put_contents('/home/farsifahr.com/public_html/chat/api/telegram_error.log', "[" . date('Y-m-d H:i:s') . "] Constants not defined\n", FILE_APPEND);
         return false;
     }
 
@@ -307,6 +326,7 @@ function send_telegram_admin_message($message)
     $chat_id = TELEGRAM_ADMIN_CHAT_ID;
 
     if (empty($token) || empty($chat_id)) {
+        file_put_contents('/home/farsifahr.com/public_html/chat/api/telegram_error.log', "[" . date('Y-m-d H:i:s') . "] Token or Chat ID empty\n", FILE_APPEND);
         return false;
     }
 
@@ -323,11 +343,17 @@ function send_telegram_admin_message($message)
     curl_setopt($ch, CURLOPT_POST, 1);
     curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($data));
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 5);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 10);
     
     $response = curl_exec($ch);
     $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $curl_err = curl_error($ch);
     curl_close($ch);
+
+    if ($http_code != 200 || !$response) {
+        $log_msg = "[" . date('Y-m-d H:i:s') . "] Failed: HTTP code: {$http_code}, Error: {$curl_err}, Response: {$response}, Message: {$message}\n";
+        file_put_contents('/home/farsifahr.com/public_html/chat/api/telegram_error.log', $log_msg, FILE_APPEND);
+    }
 
     return ($http_code == 200);
 }

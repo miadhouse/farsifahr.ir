@@ -34,8 +34,11 @@
               </div>
               <div class="flex-shrink-0 dropdown-notifications-actions">
                 <a href="javascript:void(0)" class="dropdown-notifications-read">در حال بازبینی</a>
-                <form id="cancel-pending-form" action="cancel-pending-subscription.php" method="POST" style="display:none;"></form>
-                <a href="javascript:void(0)" onclick="event.preventDefault(); Swal.fire({title: 'توجه', text: 'آیا از لغو این درخواست اطمینان دارید؟', icon: 'warning', showCancelButton: true, confirmButtonText: 'بله', cancelButtonText: 'خیر'}).then((result) => { if(result.isConfirmed) { document.getElementById('cancel-pending-form').submit(); } })" class="dropdown-notifications-archive"><span class="bx bx-trash text-danger"></span></a>
+                <form action="/admin/cancel-pending-subscription.php" method="POST" class="d-inline">
+                  <a href="javascript:void(0)" onclick="event.preventDefault(); Swal.fire({title: 'توجه', text: 'آیا از لغو این درخواست اطمینان دارید؟', icon: 'warning', showCancelButton: true, confirmButtonText: 'بله', cancelButtonText: 'خیر'}).then((result) => { if(result.isConfirmed) { this.closest('form').submit(); } })" class="dropdown-notifications-archive">
+                    <span class="bx bx-trash text-danger"></span>
+                  </a>
+                </form>
               </div>
             </div>
           </li>

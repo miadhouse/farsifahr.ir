@@ -47,7 +47,15 @@ if (!$workshop) {
 
                     <div class="card overflow-hidden">
                         <?php if ($workshop['image']): ?>
-                            <img src="/miad/public/storage/<?php echo htmlspecialchars($workshop['image']); ?>" class="img-fluid" alt="<?php echo htmlspecialchars($workshop['title']); ?>" style="width: 100%; max-height: 400px; object-fit: cover;">
+                            <?php 
+                                $image_src = $workshop['image'];
+                                if (strpos($image_src, 'http') !== 0) {
+                                    $image_src = '/miad/public/storage/' . $image_src;
+                                }
+                            ?>
+                            <div class="text-center bg-light p-4">
+                                <img src="<?php echo htmlspecialchars($image_src); ?>" class="img-fluid" alt="<?php echo htmlspecialchars($workshop['title']); ?>" style="max-height: 300px; object-fit: contain;">
+                            </div>
                         <?php endif; ?>
                         
                         <div class="card-body">

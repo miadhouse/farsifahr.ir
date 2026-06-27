@@ -31,7 +31,7 @@ if (empty($_SESSION['csrf_token'])) {
     <link href="assets/css/font-ir.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Rubik:wght@300;400;500;700&display=swap" rel="stylesheet">
-    <link href="assets/css/auth-dark.css" rel="stylesheet">
+    <link href="assets/css/auth-dark.css?v=1.1" rel="stylesheet">
 </head>
 <body>
 
@@ -89,7 +89,7 @@ if (empty($_SESSION['csrf_token'])) {
             </div>
 
             <div class="d-flex justify-content-center">
-                <div class="g-recaptcha" data-sitekey="<?= RECAPTCHA_SITE_KEY ?>"></div>
+                <div class="cf-turnstile" data-sitekey="<?= TURNSTILE_SITE_KEY ?>"></div>
             </div>
 
             <button type="submit" class="btn btn-primary w-100 mb-3">
@@ -113,7 +113,7 @@ if (empty($_SESSION['csrf_token'])) {
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script src="https://www.google.com/recaptcha/api.js?hl=<?= get_current_lang() ?>" async defer></script>
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 
 <script>
     function togglePasswordVisibility(inputId, button) {
@@ -199,8 +199,8 @@ if (empty($_SESSION['csrf_token'])) {
                     title: '<?= __("error", "خطا") ?>',
                     text: result.message
                 });
-                if (typeof grecaptcha !== 'undefined') {
-                    grecaptcha.reset();
+                if (typeof turnstile !== 'undefined') {
+                    turnstile.reset();
                 }
             }
         } catch (error) {

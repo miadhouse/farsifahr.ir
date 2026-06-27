@@ -19,7 +19,7 @@
     <script src="assets/js/main1.js"></script>
 
     <!-- Page JS -->
-    <script src="assets/js/dashboards-analytics.js"></script>
+    <script src="assets/js/dashboards-analytics.js?v=2.4"></script>
     <script src="assets/js/dashboards-ecommerce.js"></script>
     
     <script>
@@ -34,7 +34,7 @@
         }
     });
     </script>
-    <script src="/chat/widget.js?v=1.2" async></script>
+    <script src="/chat/widget.js?v=2.3" async></script>
     
     <script>
         // Service Worker Registration

@@ -13,6 +13,25 @@ if (is_logged_in()) {
     exit();
 }
 
+// دریافت تنظیمات خدمات جانبی
+$stmt_services = $pdo->prepare("SELECT * FROM service_settings WHERE is_active = 1");
+$stmt_services->execute();
+$services_list = $stmt_services->fetchAll();
+$services = [];
+foreach ($services_list as $s) {
+    $services[$s['service_key']] = $s;
+}
+
+$translation_title = $services['translation']['title'] ?? 'ترجمه رسمی گواهینامه';
+$translation_desc = $services['translation']['description'] ?? 'ترجمه رسمی گواهینامه رانندگی ایرانی شما به آلمانی توسط مترجم رسمی قسم‌خورده.';
+$translation_price = isset($services['translation']['price']) ? number_format($services['translation']['price']) : '50';
+
+$eyetest_title = $services['eyetest']['title'] ?? 'نوبت تست چشم‌پزشکی';
+$eyetest_desc = $services['eyetest']['description'] ?? 'یکی از پیش‌نیازهای دریافت گواهینامه رانندگی در آلمان، تست چشم‌پزشکی است.';
+
+$firstaid_title = $services['firstaid']['title'] ?? 'کورس کمک‌های اولیه (Erste Hilfe)';
+$firstaid_desc = $services['firstaid']['description'] ?? 'شرکت در دوره کمک‌های اولیه برای گرفتن گواهینامه آلمانی اجباری است.';
+
 // جلوگیری از کش شدن صفحه (هم برای مهمان‌ها به دلیل CSRF و هم برای جلوگیری از نمایش محتوای قدیمی)
 header('Vary: Cookie');
 header('Cache-Control: no-cache, no-store, must-revalidate'); // HTTP 1.1
@@ -71,7 +90,7 @@ header('X-LiteSpeed-Cache-Control: no-cache'); // LiteSpeed Server
     <link rel="preload" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'"><noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css"></noscript>
     <link rel="preload" href="https://cdn.jsdelivr.net/gh/lipis/flag-icons@7.2.3/css/flag-icons.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'"><noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/lipis/flag-icons@7.2.3/css/flag-icons.min.css"></noscript>
     <link href="assets/css/font-ir.css" rel="stylesheet">
-    <link rel="stylesheet" href="/chat/widget.css?v=1.2">
+    <link rel="stylesheet" href="/chat/widget.css?v=2.3">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Rajdhani:wght@300;400;500;600;700&family=Rubik:ital,wght@0,300..900;1,300..900&display=swap" rel="stylesheet">
 
     <link rel="manifest" href="/manifest.json">
@@ -83,7 +102,7 @@ header('X-LiteSpeed-Cache-Control: no-cache'); // LiteSpeed Server
     <meta name="apple-mobile-web-app-title" content="farsifahr">
     <link rel="apple-touch-icon" href="/assets/imgT24Logo.png">
 
-    <script src="https://www.google.com/recaptcha/api.js?hl=<?= get_current_lang() ?>" async defer></script>
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 
     <?php if (isset($_SESSION['error'])): ?>
     <script>
@@ -375,40 +394,6 @@ header('X-LiteSpeed-Cache-Control: no-cache'); // LiteSpeed Server
         </div>
     </header>
 
-    <!-- PWA Install Section -->
-    <section class="pwa-install-section">
-        <div class="container">
-            <div class="pwa-install-wrapper">
-                <!-- Android Item -->
-                <div class="pwa-item android">
-                    <div class="icon-box">
-                        <i class="fa-brands fa-android"></i>
-                    </div>
-                    <div class="content-box">
-                        <h3>نصب نسخه اندروید</h3>
-                        <div class="actions">
-                            <button class="btn-pwa btn-install" id="btn-pwa-android-hero">نصب مستقیم</button>
-                            <button class="btn-pwa btn-tutorial" onclick="showTutorial('android')">آموزش نصب</button>
-                        </div>
-                    </div>
-                </div>
-                <!-- iOS Item -->
-                <div class="pwa-item ios">
-                    <div class="icon-box">
-                        <i class="fa-brands fa-apple"></i>
-                    </div>
-                    <div class="content-box">
-                        <h3>نصب نسخه آیفون (iOS)</h3>
-                        <div class="actions">
-                            <button class="btn-pwa btn-install" onclick="showTutorial('ios')">نصب اپلیکیشن</button>
-                            <button class="btn-pwa btn-tutorial" onclick="showTutorial('ios')">آموزش نصب</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
     <!-- Subscription Status Banner (for logged in users) -->
 
     <!-- Main Content -->
@@ -584,6 +569,127 @@ header('X-LiteSpeed-Cache-Control: no-cache'); // LiteSpeed Server
             </div>
         </div>
     </div>
+    <!-- PWA Install Section -->
+    <section class="pwa-install-section">
+        <div class="container">
+            <div class="section-head text-center mb--50">
+                <h2 class="title">نصب به صورت نرم‌افزار</h2>
+                <p class="description">
+                    شما می‌توانید به صورت نرم‌افزار از سایت استفاده کنید، در تمام دستگاه‌ها قابل نصب است.
+                    همچنین بدون نصب هم می‌توانید با ثبت‌نام و ورود در سایت از امکانات آن استفاده کنید.
+                </p>
+            </div>
+            <div class="pwa-install-wrapper">
+                <!-- Android Item -->
+                <div class="pwa-item android">
+                    <div class="icon-box">
+                        <i class="fa-brands fa-android"></i>
+                    </div>
+                    <div class="content-box">
+                        <h3>نصب نسخه اندروید</h3>
+                        <div class="actions">
+                            <button class="btn-pwa btn-install" id="btn-pwa-android-hero">نصب مستقیم</button>
+                            <button class="btn-pwa btn-tutorial" onclick="showTutorial('android')">آموزش نصب</button>
+                        </div>
+                    </div>
+                </div>
+                <!-- iOS Item -->
+                <div class="pwa-item ios">
+                    <div class="icon-box">
+                        <i class="fa-brands fa-apple"></i>
+                    </div>
+                    <div class="content-box">
+                        <h3>نصب نسخه آیفون (iOS)</h3>
+                        <div class="actions">
+                            <button class="btn-pwa btn-install" onclick="showTutorial('ios')">نصب اپلیکیشن</button>
+                            <button class="btn-pwa btn-tutorial" onclick="showTutorial('ios')">آموزش نصب</button>
+                        </div>
+                    </div>
+                </div>
+                <!-- Windows Item -->
+                <div class="pwa-item windows">
+                    <div class="icon-box">
+                        <i class="fa-brands fa-windows"></i>
+                    </div>
+                    <div class="content-box">
+                        <h3>نصب نسخه ویندوز (Desktop)</h3>
+                        <div class="actions">
+                            <button class="btn-pwa btn-install" onclick="showTutorial('windows')">نصب اپلیکیشن</button>
+                            <button class="btn-pwa btn-tutorial" onclick="showTutorial('windows')">آموزش نصب</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Start Services Area -->
+    <section class="services-area tmp-section-gapTop" id="services" style="padding-top: 80px; padding-bottom: 80px; background-color: #0b0f19;">
+        <div class="container">
+            <div class="row justify-content-center text-center mb-5">
+                <div class="col-lg-8">
+                    <span class="text-primary fw-semibold text-uppercase tracking-wider" style="color: #6366f1 !important; font-size: 0.9rem; letter-spacing: 2px;">خدمات اختصاصی ما</span>
+                    <h2 class="fw-bold text-white mt-2" style="font-size: 2.2rem;">خدمات جانبی گواهینامه آلمانی</h2>
+                    <p class="text-muted mt-3">تمام پیش‌نیازهای دریافت گواهینامه آلمانی را به صورت یکجا، با پشتیبانی فارسی و بالاترین سرعت انجام دهید.</p>
+                </div>
+            </div>
+            
+            <div class="row g-4">
+                <!-- Translation Card -->
+                <div class="col-lg-4 col-md-6">
+                    <div class="card h-100 p-4" style="background: rgba(17, 24, 39, 0.6); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 20px; transition: all 0.3s; box-shadow: 0 10px 25px rgba(0,0,0,0.3);">
+                        <div class="card-body d-flex flex-column text-center">
+                            <div class="icon-box mb-4 mx-auto d-flex align-items-center justify-content-center" style="width: 70px; height: 70px; border-radius: 15px; background: rgba(99, 102, 241, 0.15); color: #818cf8;">
+                                <i class="fa-solid fa-file-signature" style="font-size: 30px;"></i>
+                            </div>
+                            <h4 class="fw-bold text-white mb-3"><?= htmlspecialchars($translation_title) ?></h4>
+                            <p class="text-muted mb-4 small flex-grow-1" style="line-height: 1.6;"><?= htmlspecialchars($translation_desc) ?></p>
+                            <div class="mb-4">
+                                <span class="fs-4 fw-bold text-white"><?= htmlspecialchars($translation_price) ?> یورو</span>
+                            </div>
+                            <a href="service-translation.php" class="btn btn-primary w-100 py-3 fw-semibold" style="border-radius: 12px; background: linear-gradient(135deg, #6366f1, #4f46e5); border: none;">ثبت درخواست ترجمه</a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Eye Test Card -->
+                <div class="col-lg-4 col-md-6">
+                    <div class="card h-100 p-4" style="background: rgba(17, 24, 39, 0.6); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 20px; transition: all 0.3s; box-shadow: 0 10px 25px rgba(0,0,0,0.3);">
+                        <div class="card-body d-flex flex-column text-center">
+                            <div class="icon-box mb-4 mx-auto d-flex align-items-center justify-content-center" style="width: 70px; height: 70px; border-radius: 15px; background: rgba(3, 195, 236, 0.15); color: #03c3ec;">
+                                <i class="fa-solid fa-eye" style="font-size: 30px;"></i>
+                            </div>
+                            <h4 class="fw-bold text-white mb-3"><?= htmlspecialchars($eyetest_title) ?></h4>
+                            <p class="text-muted mb-4 small flex-grow-1" style="line-height: 1.6;"><?= htmlspecialchars($eyetest_desc) ?></p>
+                            <div class="mb-4">
+                                <span class="badge bg-success p-2 fs-6" style="background-color: rgba(16, 185, 129, 0.2) !important; color: #34d399 !important;">رایگان (ویژه اعضا)</span>
+                            </div>
+                            <a href="service-eyetest.php" class="btn btn-info w-100 py-3 fw-semibold text-white" style="border-radius: 12px; background: linear-gradient(135deg, #03c3ec, #0284c7); border: none;">رزرو نوبت تست چشم</a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- First Aid Card -->
+                <div class="col-lg-4 col-md-6">
+                    <div class="card h-100 p-4" style="background: rgba(17, 24, 39, 0.6); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 20px; transition: all 0.3s; box-shadow: 0 10px 25px rgba(0,0,0,0.3);">
+                        <div class="card-body d-flex flex-column text-center">
+                            <div class="icon-box mb-4 mx-auto d-flex align-items-center justify-content-center" style="width: 70px; height: 70px; border-radius: 15px; background: rgba(16, 185, 129, 0.15); color: #34d399;">
+                                <i class="fa-solid fa-kit-medical" style="font-size: 30px;"></i>
+                            </div>
+                            <h4 class="fw-bold text-white mb-3"><?= htmlspecialchars($firstaid_title) ?></h4>
+                            <p class="text-muted mb-4 small flex-grow-1" style="line-height: 1.6;"><?= htmlspecialchars($firstaid_desc) ?></p>
+                            <div class="mb-4">
+                                <span class="badge bg-success p-2 fs-6" style="background-color: rgba(16, 185, 129, 0.2) !important; color: #34d399 !important;">رایگان (ویژه اعضا)</span>
+                            </div>
+                            <a href="service-firstaid.php" class="btn btn-success w-100 py-3 fw-semibold text-white" style="border-radius: 12px; background: linear-gradient(135deg, #10b981, #059669); border: none;">رزرو کورس Erste Hilfe</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- End Services Area -->
+
     <section class="about-us-area">
         <div class="container">
             <div class="row align-items-center">
@@ -950,7 +1056,7 @@ header('X-LiteSpeed-Cache-Control: no-cache'); // LiteSpeed Server
             }
         });
 </script>
-<script src="/chat/widget.js?v=1.2" async></script>
+<script src="/chat/widget.js?v=2.3" async></script>
 
     <?php if (isset($_COOKIE['concurrent_login']) && $_COOKIE['concurrent_login'] === '1'): ?>
     <script>
@@ -1007,18 +1113,24 @@ header('X-LiteSpeed-Cache-Control: no-cache'); // LiteSpeed Server
         }
 
         function showTutorial(platform) {
-            const title = platform === 'android' ? 'آموزش نصب در اندروید' : 'آموزش نصب در آیفون';
-            const gif = platform === 'android' ? 'android.gif' : 'iphon.gif';
-            const desc = platform === 'android' 
-                ? 'برای نصب در اندروید، روی دکمه "نصب مستقیم" کلیک کنید یا از منوی مرورگر گزینه Install را انتخاب کنید.' 
-                : 'برای نصب در آیفون، در مرورگر Safari دکمه Share را زده و گزینه Add to Home Screen را انتخاب کنید.';
+            let title, desc;
+            
+            if (platform === 'android') {
+                title = 'آموزش نصب در اندروید';
+                desc = 'برای نصب در اندروید، روی دکمه "نصب مستقیم" کلیک کنید یا از منوی مرورگر گزینه Install را انتخاب کنید.';
+            } else if (platform === 'ios') {
+                title = 'آموزش نصب در آیفون';
+                desc = 'برای نصب در آیفون، در مرورگر Safari دکمه Share را زده و گزینه Add to Home Screen را انتخاب کنید.';
+            } else {
+                title = 'آموزش نصب در دسکتاپ';
+                desc = 'برای نصب در ویندوز یا مک، در نوار آدرس مرورگر (Chrome یا Edge) روی آیکون نصب <i class="fa-regular fa-display-arrow-down"></i> کلیک کنید.';
+            }
             
             Swal.fire({
                 title: title,
                 html: `
                     <div class="text-center">
-                        <p class="mb-3">${desc}</p>
-                        <img src="/${gif}" class="tutorial-gif" alt="${title}" onerror="this.src='assets/images/logo/logoAsset%201.svg'; this.style.width='100px';">
+                        <p class="mb-0">${desc}</p>
                     </div>
                 `,
                 confirmButtonText: 'متوجه شدم',

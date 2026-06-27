@@ -136,24 +136,18 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
                     clearInterval(timerInterval);
                 }
             });
-            if (typeof grecaptcha !== 'undefined') {
-                const recaptchas = document.querySelectorAll('.g-recaptcha');
-                for (let i = 0; i < recaptchas.length; i++) {
-                    try { grecaptcha.reset(i); } catch (e) {}
-                }
-            }
+        if (typeof turnstile !== 'undefined') {
+            turnstile.reset();
+        }
         } else {
             Swal.fire({
                 icon: 'error',
                 title: 'خطا',
                 text: result.message
             });
-            if (typeof grecaptcha !== 'undefined') {
-                const recaptchas = document.querySelectorAll('.g-recaptcha');
-                for (let i = 0; i < recaptchas.length; i++) {
-                    try { grecaptcha.reset(i); } catch (e) {}
-                }
-            }
+        if (typeof turnstile !== 'undefined') {
+            turnstile.reset();
+        }
         }
     } catch (error) {
         Swal.fire({
@@ -161,11 +155,8 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
             title: 'خطا',
             text: 'خطا در برقراری ارتباط با سرور'
         });
-        if (typeof grecaptcha !== 'undefined') {
-            const recaptchas = document.querySelectorAll('.g-recaptcha');
-            for (let i = 0; i < recaptchas.length; i++) {
-                try { grecaptcha.reset(i); } catch (e) {}
-            }
+        if (typeof turnstile !== 'undefined') {
+            turnstile.reset();
         }
     } finally {
         submitBtn.disabled = false;
@@ -190,11 +181,8 @@ document.getElementById('registerForm').addEventListener('submit', async functio
             title: 'خطا',
             text: 'رمز عبور و تکرار آن مطابقت ندارند'
         });
-        if (typeof grecaptcha !== 'undefined') {
-            const recaptchas = document.querySelectorAll('.g-recaptcha');
-            for (let i = 0; i < recaptchas.length; i++) {
-                try { grecaptcha.reset(i); } catch (e) {}
-            }
+        if (typeof turnstile !== 'undefined') {
+            turnstile.reset();
         }
         return;
     }
@@ -232,12 +220,9 @@ document.getElementById('registerForm').addEventListener('submit', async functio
                 title: 'خطا',
                 text: result.message
             });
-            if (typeof grecaptcha !== 'undefined') {
-                const recaptchas = document.querySelectorAll('.g-recaptcha');
-                for (let i = 0; i < recaptchas.length; i++) {
-                    try { grecaptcha.reset(i); } catch (e) {}
-                }
-            }
+        if (typeof turnstile !== 'undefined') {
+            turnstile.reset();
+        }
         }
     } catch (error) {
         Swal.fire({
@@ -245,11 +230,8 @@ document.getElementById('registerForm').addEventListener('submit', async functio
             title: 'خطا',
             text: 'خطا در برقراری ارتباط با سرور'
         });
-        if (typeof grecaptcha !== 'undefined') {
-            const recaptchas = document.querySelectorAll('.g-recaptcha');
-            for (let i = 0; i < recaptchas.length; i++) {
-                try { grecaptcha.reset(i); } catch (e) {}
-            }
+        if (typeof turnstile !== 'undefined') {
+            turnstile.reset();
         }
     } finally {
         submitBtn.disabled = false;

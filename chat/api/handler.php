@@ -197,9 +197,8 @@ switch ($action) {
 
         $message = htmlspecialchars($message, ENT_QUOTES, 'UTF-8');
 
-        if (is_chat_admin()) {
+        if (is_chat_admin() && $session_id > 0) {
             // Admin sending to a specific session
-            if (!$session_id) { echo json_encode(['success' => false]); break; }
             $stmt = $pdo->prepare("SELECT * FROM chat_sessions WHERE id = ?");
             $stmt->execute([$session_id]);
             $session = $stmt->fetch();

@@ -79,6 +79,14 @@ class Post extends Model
                 }
             }
         });
+
+        static::created(function ($post) {
+            try {
+                \App\Services\TelegramService::sendPostToChannel($post);
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error('Telegram auto-posting exception: ' . $e->getMessage());
+            }
+        });
     }
 
     public function comments()

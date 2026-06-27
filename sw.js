@@ -1,8 +1,12 @@
-const CACHE_NAME = 'farsifahr-pwa-cache-v5';
+const CACHE_NAME = 'farsifahr-pwa-cache-v6';
 const urlsToCache = [
+  '/',
+  '/admin/',
+  '/register.php',
   '/assets/css/style.rtl.css',
   '/assets/css/vendor/bootstrap.min.rtl.css',
-  '/assets/images/logo/logo-white.png'
+  '/assets/images/logo/logo-white.png',
+  '/assets/imgT24Logo.png'
 ];
 
 self.addEventListener('install', event => {

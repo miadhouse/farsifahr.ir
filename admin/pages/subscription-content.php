@@ -185,7 +185,7 @@ if ($user_sub !== false && $user_sub !== null) {
     <?php if ($pending_sub): ?>
     <div class="col-12 mb-4">
       <div class="alert alert-info d-flex flex-column align-items-center text-center py-4 shadow-sm" role="alert" style="border: 2px dashed #03c3ec;">
-        <h5 class="alert-heading fw-bold mb-3"><i class="bx bx-paper-plane me-2 fs-3"></i>درخواست شما در حال بازبینی است</h5>
+        <h5 class="alert-heading fw-bold mb-3"><i class="bx bx-paper-plane me-2 fs-3"></i>ارتباط با پشتیبانی</h5>
         <p class="mb-4">جهت فعال‌سازی اشتراک، الزامی است از طریق دکمه‌های زیر به پشتیبانی اطلاع‌رسانی کنید:</p>
         <div class="d-flex gap-3 flex-wrap justify-content-center">
           <?php 
@@ -348,7 +348,7 @@ if ($user_sub !== false && $user_sub !== null) {
                           <button type="button" class="btn btn-warning fs-5 py-2 px-3" disabled>
                              <span>در حال بازبینی</span>
                           </button>
-                          <form action="cancel-pending-subscription.php" method="POST" class="d-inline">
+                          <form action="/admin/cancel-pending-subscription.php" method="POST" class="d-inline">
                             <button type="submit" class="btn btn-danger fs-5 py-2 px-3" onclick="event.preventDefault(); Swal.fire({title: 'توجه', text: 'آیا از لغو این درخواست اطمینان دارید؟', icon: 'warning', showCancelButton: true, confirmButtonText: 'بله', cancelButtonText: 'خیر'}).then((result) => { if(result.isConfirmed) { this.closest('form').submit(); } })">
                                <i class="bx bx-x"></i>
                             </button>

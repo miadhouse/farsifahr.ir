@@ -1,14 +1,18 @@
 {
-  "id": "/",
+  "id": "/?pwa=1",
   "name": "farsifahr",
   "short_name": "farsifahr",
   "description": "آموزش و آمادگی آزمون تئوری گواهینامه آلمانی",
+  "lang": "fa-IR",
+  "dir": "rtl",
   "start_url": "/admin/",
   "scope": "/",
   "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
   "background_color": "#ffffff",
   "theme_color": "#667eea",
   "orientation": "portrait",
+  "categories": ["education", "reference"],
   "icons": [
     {
       "src": "/assets/imgT24Logo.png",

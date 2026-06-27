@@ -385,7 +385,7 @@ if ($error == 0 && !$pending && $plan && $duration && $plan['slug'] !== 'free') 
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
-        <form action="cancel-pending-subscription.php" method="POST" class="d-inline">
+        <form action="/admin/cancel-pending-subscription.php" method="POST" class="d-inline">
           <button type="submit" class="btn btn-danger">بله، لغو کن</button>
         </form>
       </div>

@@ -801,11 +801,12 @@
         dashArray: 3
       },
       series: [78],
-      labels: ['رشد']
+      labels: ['آمادگی']
     };
 
-  if (typeof growthRadialChartEl !== undefined && growthRadialChartEl !== null) {
-    const growthRadialChart = new ApexCharts(growthRadialChartEl, growthRadialChartConfig);
-    growthRadialChart.render();
-  }
+  // Disable static initial rendering of growthRadialChart to avoid flashing placeholder values (78%)
+  // if (typeof growthRadialChartEl !== undefined && growthRadialChartEl !== null) {
+  //   const growthRadialChart = new ApexCharts(growthRadialChartEl, growthRadialChartConfig);
+  //   growthRadialChart.render();
+  // }
 })();

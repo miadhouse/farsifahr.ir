@@ -87,6 +87,25 @@ class PostResource extends Resource
                 //
             ])
             ->actions([
+                Tables\Actions\Action::make('sendToTelegram')
+                    ->label('ارسال به تلگرام')
+                    ->icon('heroicon-o-paper-airplane')
+                    ->color('info')
+                    ->action(function (Post $record) {
+                        $success = \App\Services\TelegramService::sendPostToChannel($record);
+                        if ($success) {
+                            \Filament\Notifications\Notification::make()
+                                ->title('مطلب با موفقیت به تلگرام ارسال شد.')
+                                ->success()
+                                ->send();
+                        } else {
+                            \Filament\Notifications\Notification::make()
+                                ->title('خطا در ارسال به تلگرام. لطفا لاگ‌ها را بررسی کنید.')
+                                ->danger()
+                                ->send();
+                        }
+                    })
+                    ->requiresConfirmation(),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
             ])

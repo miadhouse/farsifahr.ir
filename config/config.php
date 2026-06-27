@@ -46,8 +46,8 @@ define('SMTP_PORT', getenv('SMTP_PORT') ?: 587);
 define('SMTP_FROM', getenv('SMTP_FROM') ?: '');
 
 // تنظیمات امنیتی
-define('RECAPTCHA_SITE_KEY', getenv('RECAPTCHA_SITE_KEY') ?: '');
-define('RECAPTCHA_SECRET_KEY', getenv('RECAPTCHA_SECRET_KEY') ?: '');
+define('TURNSTILE_SITE_KEY', getenv('TURNSTILE_SITE_KEY') ?: '');
+define('TURNSTILE_SECRET_KEY', getenv('TURNSTILE_SECRET_KEY') ?: '');
 
 define('MAX_LOGIN_ATTEMPTS', 5);
 define('LOGIN_ATTEMPT_TIMEOUT', 15); // دقیقه

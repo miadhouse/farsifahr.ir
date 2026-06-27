@@ -28,9 +28,12 @@
         btn.id = 'chat-toggle-btn';
         btn.setAttribute('aria-label', 'چت پشتیبانی');
         btn.innerHTML = `
-            <svg class="icon-chat" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
-            <svg class="icon-close" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
-            <span id="chat-toggle-badge"></span>
+            <div class="chat-toggle-content">
+                <svg class="icon-chat" viewBox="0 0 24 24"><path d="M12 2c-4.97 0-9 4.03-9 9v7c0 1.66 1.34 3 3 3h3v-8H5v-2c0-3.87 3.13-7 7-7s7 3.13 7 7v2h-4v8h3c1.66 0 3-1.34 3-3v-7c0-4.97-4.03-9-9-9z"/></svg>
+                <svg class="icon-close" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+                <span class="chat-toggle-text">چت با پشتیبانی</span>
+                <span id="chat-toggle-badge"></span>
+            </div>
         `;
 
         // Main window
@@ -204,8 +207,7 @@
         const div = document.createElement('div');
         div.id = 'chat-guest-form';
         div.innerHTML = `
-            <h5>ابتدا خودتان را معرفی کنید</h5>
-            <input type="text" id="guest-name" placeholder="نام شما" />
+            <h5>ابتدا ایمیل خود را وارد کنید</h5>
             <input type="email" id="guest-email" placeholder="ایمیل شما" />
             <button id="guest-submit-btn">شروع چت 🚀</button>
         `;
@@ -216,11 +218,10 @@
     }
 
     function submitGuestInfo() {
-        const name = document.getElementById('guest-name')?.value.trim();
         const email = document.getElementById('guest-email')?.value.trim();
 
-        if (!name || !email) {
-            alert('لطفاً نام و ایمیل را وارد کنید.');
+        if (!email) {
+            alert('لطفاً ایمیل خود را وارد کنید.');
             return;
         }
 
@@ -231,7 +232,7 @@
         fetch(CHAT_API, {
             method: 'POST',
             headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-            body: `action=set_guest_info&token=${encodeURIComponent(chatToken)}&name=${encodeURIComponent(name)}&email=${encodeURIComponent(email)}`
+            body: `action=set_guest_info&token=${encodeURIComponent(chatToken)}&email=${encodeURIComponent(email)}&name=Guest`
         })
         .then(r => r.json())
         .then(data => {

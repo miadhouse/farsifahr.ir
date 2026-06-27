@@ -83,6 +83,9 @@ RewriteCond %{HTTP_HOST} ^www\.(.*)$ [NC]
 RewriteRule ^(.*)$ https://%1/$1 [R=301,L]
 
 # 5. Clean URLs & Routing
+# Ignore API directory
+RewriteRule ^api/ - [L]
+
 # Remove .php extension (External Redirect)
 RewriteCond %{REQUEST_METHOD} GET [NC]
 RewriteCond %{THE_REQUEST} ^[A-Z]{3,9}\ /index\.php\ HTTP/
@@ -97,10 +100,21 @@ RewriteCond %{REQUEST_FILENAME}\.php -f
 RewriteRule ^(.*?)/?$ /$1.php [L]
 
 # 6. Security: Deny access to sensitive files
-<FilesMatch "\.(sql|log|env|bak|config|json|sh|xlsx)$">
+<FilesMatch "\.(sql|log|env|bak|config|sh|xlsx)$">
     Order allow,deny
     Deny from all
 </FilesMatch>
+
+# Specifically protect settings.json but allow manifest.json
+<Files "settings.json">
+    Order allow,deny
+    Deny from all
+</Files>
+
+<Files "manifest.json">
+    Order allow,deny
+    Allow from all
+</Files>
 
 # Serve existing files and directories directly
 RewriteCond %{REQUEST_FILENAME} -d [OR]

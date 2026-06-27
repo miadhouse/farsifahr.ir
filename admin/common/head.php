@@ -5,9 +5,15 @@ require_once(__DIR__ . '/../../incloud/subscription-functions.php');
 
 // بررسی ورود کاربر
 if (!is_logged_in() || !validate_session($pdo)) {
-    header("Location: ../index.php");
+    if (isset($GLOBALS['concurrent_login_flag']) && $GLOBALS['concurrent_login_flag'] === true) {
+        header("Location: /index.php");
+    } else {
+        header("Location: /register.php");
+    }
     exit();
 }
+
+require_once(__DIR__ . '/../../incloud/pending-request-handler.php');
 
 // دریافت اطلاعات کاربر
 $user_name = $_SESSION['name'] ?? 'کاربر';
@@ -62,11 +68,19 @@ $recent_logins = $stmt->fetchAll();
     </style>
 
     <!-- Vendors CSS -->
-    <link rel="stylesheet" href="/chat/widget.css?v=1.2">
+    <link rel="stylesheet" href="/chat/widget.css?v=2.3">
     <link rel="stylesheet" href="assets/vendor/libs/perfect-scrollbar/perfect-scrollbar.css">
     <link rel="stylesheet" href="assets/vendor/libs/typeahead-js/typeahead.css">
     <link rel="stylesheet" href="assets/vendor/libs/apex-charts/apex-charts.css">
     <link rel="stylesheet" href="assets/vendor/libs/sweetalert2/sweetalert2.css">
+
+    <!-- PWA Meta Tags -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#667eea">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="farsifahr">
+    <link rel="apple-touch-icon" href="/assets/imgT24Logo.png">
 
     <!-- Page CSS -->
 

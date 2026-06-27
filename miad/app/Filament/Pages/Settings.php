@@ -52,6 +52,10 @@ class Settings extends Page
             'contact_email' => $settings['contact_email'] ?? '',
             'footer_description' => $settings['footer_description'] ?? '',
             'copyright_text' => $settings['copyright_text'] ?? '',
+
+            // Telegram bot settings
+            'telegram_bot_token' => $settings['telegram_bot_token'] ?? env('TELEGRAM_BOT_TOKEN', ''),
+            'telegram_channel_id' => $settings['telegram_channel_id'] ?? env('TELEGRAM_CHANNEL_ID', ''),
         ]);
     }
 
@@ -88,6 +92,20 @@ class Settings extends Page
                             TextInput::make('telegram_channel_url')->label('لینک کانال تلگرام')->url(),
                             TextInput::make('telegram_support_url')->label('لینک پشتیبانی تلگرام')->url(),
                             TextInput::make('whatsapp_url')->label('لینک/شماره واتس‌اپ')->placeholder('https://wa.me/...'),
+                        ]),
+                    ]),
+
+                Section::make('تنظیمات ربات تلگرام (جهت ارسال خودکار مطالب)')
+                    ->schema([
+                        Grid::make(2)->schema([
+                            TextInput::make('telegram_bot_token')
+                                ->label('توکن ربات تلگرام')
+                                ->placeholder('مثال: 8621231197:AAF9Ey2Sb-rIQDiLm_iYcvHPrkIZcJSjjCg')
+                                ->password()
+                                ->revealable(),
+                            TextInput::make('telegram_channel_id')
+                                ->label('آیدی کانال تلگرام (یا چت‌آیدی)')
+                                ->placeholder('مثال: @farsifahr_channel یا -100123456789'),
                         ]),
                     ]),
 
@@ -133,6 +151,8 @@ class Settings extends Page
             'contact_email' => $data['contact_email'],
             'footer_description' => $data['footer_description'],
             'copyright_text' => $data['copyright_text'],
+            'telegram_bot_token' => $data['telegram_bot_token'],
+            'telegram_channel_id' => $data['telegram_channel_id'],
         ];
         File::put($settingsPath, json_encode($jsonSettings, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT));
 
@@ -167,8 +187,41 @@ class Settings extends Page
             } else {
                 $env .= "\nEURO_TO_TOMAN_RATE=" . $euroRate;
             }
+
+            // Update Telegram credentials in .env
+            $botToken = $data['telegram_bot_token'] ?? '';
+            $channelId = $data['telegram_channel_id'] ?? '';
+            if (preg_match('/^TELEGRAM_BOT_TOKEN=.*$/m', $env)) {
+                $env = preg_replace('/^TELEGRAM_BOT_TOKEN=.*$/m', 'TELEGRAM_BOT_TOKEN=' . $botToken, $env);
+            } else {
+                $env .= "\nTELEGRAM_BOT_TOKEN=" . $botToken;
+            }
+            if (preg_match('/^TELEGRAM_CHANNEL_ID=.*$/m', $env)) {
+                $env = preg_replace('/^TELEGRAM_CHANNEL_ID=.*$/m', 'TELEGRAM_CHANNEL_ID=' . $channelId, $env);
+            } else {
+                $env .= "\nTELEGRAM_CHANNEL_ID=" . $channelId;
+            }
             
             File::put($path, $env);
+        }
+
+        // 3b. Update root .env if it exists
+        $rootEnvPath = base_path('../.env');
+        if (File::exists($rootEnvPath)) {
+            $rootEnv = File::get($rootEnvPath);
+            $botToken = $data['telegram_bot_token'] ?? '';
+            $channelId = $data['telegram_channel_id'] ?? '';
+            if (preg_match('/^TELEGRAM_BOT_TOKEN=.*$/m', $rootEnv)) {
+                $rootEnv = preg_replace('/^TELEGRAM_BOT_TOKEN=.*$/m', 'TELEGRAM_BOT_TOKEN=' . $botToken, $rootEnv);
+            } else {
+                $rootEnv .= "\nTELEGRAM_BOT_TOKEN=" . $botToken;
+            }
+            if (preg_match('/^TELEGRAM_CHANNEL_ID=.*$/m', $rootEnv)) {
+                $rootEnv = preg_replace('/^TELEGRAM_CHANNEL_ID=.*$/m', 'TELEGRAM_CHANNEL_ID=' . $channelId, $rootEnv);
+            } else {
+                $rootEnv .= "\nTELEGRAM_CHANNEL_ID=" . $channelId;
+            }
+            File::put($rootEnvPath, $rootEnv);
         }
 
         // 3. Update native PHP config.php

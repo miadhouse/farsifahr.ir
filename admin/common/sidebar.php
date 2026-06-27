@@ -75,6 +75,12 @@
       </a>
     </li>
     <li class="menu-item">
+      <a href="my-requests.php" class="menu-link">
+        <i class="menu-icon tf-icons bx bx-list-ul"></i>
+        <div><?= __('my_requests', 'درخواست‌های من') ?></div>
+      </a>
+    </li>
+    <li class="menu-item">
       <a href="reports.php" class="menu-link">
         <i class="menu-icon tf-icons bx bx-bug"></i>
         <div><?= __('reports') ?></div>

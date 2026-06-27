@@ -6,23 +6,9 @@
  * @return string
  */
 function get_current_lang() {
-    if (isset($_GET['lang']) && in_array($_GET['lang'], ['fa', 'de', 'en'])) {
-        $_SESSION['lang'] = $_GET['lang'];
-        setcookie('site_lang', $_GET['lang'], time() + (86400 * 30), "/");
-        return $_GET['lang'];
-    }
-    
-    if (isset($_SESSION['lang'])) {
-        return $_SESSION['lang'];
-    }
-    
-    if (isset($_COOKIE['site_lang']) && in_array($_COOKIE['site_lang'], ['fa', 'de', 'en'])) {
-        return $_COOKIE['site_lang'];
-    }
-    
-    return 'fa'; // Default language
+    // اجباری کردن زبان فارسی
+    return 'fa';
 }
-
 /**
  * Global translations cache
  */

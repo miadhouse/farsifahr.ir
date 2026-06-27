@@ -1,10 +1,10 @@
 <?php
-require_once('../config/config.php');
+require_once('../incloud/functions.php');
 require_once('../incloud/subscription-functions.php');
 
 // بررسی ورود کاربر
-if (!isset($_SESSION['user_id'])) {
-    header('Location: ../login.php');
+if (!is_logged_in()) {
+    header('Location: /register.php');
     exit;
 }
 

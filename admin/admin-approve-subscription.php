@@ -9,6 +9,12 @@ require_once('../config/config.php');
 require_once('../incloud/functions.php');
 require_once('../incloud/subscription-functions.php');
 
+// بررسی ورود کاربر
+if (!is_logged_in()) {
+    header('Location: /register.php');
+    exit;
+}
+
 // بررسی دسترسی ادمین
 if (!is_super_admin()) {
     die('دسترسی غیرمجاز');

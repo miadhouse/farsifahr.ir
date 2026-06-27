@@ -73,12 +73,18 @@ foreach ($sub_categories as $parent_id => $subs) {
                         <h5 class="mb-0">دسته‌بندی‌ها</h5>
                     </div>
                     <div class="list-group list-group-flush">
-                        <a href="#all" class="list-group-item list-group-item-action active category-filter" data-category="all">
+                        <a href="#all" class="list-group-item list-group-item-action active category-filter" 
+                           data-category="all" 
+                           data-name="همه آموزش‌ها" 
+                           data-description="در این بخش تمامی آموزش‌های مربوط به گواهینامه رانندگی آلمان را مشاهده می‌کنید.">
                             همه آموزش‌ها
                         </a>
                         <?php foreach ($parent_categories as $parent): ?>
                             <div class="list-group-item p-0 border-bottom-0">
-                                <a href="#cat-<?php echo $parent['id']; ?>" class="list-group-item list-group-item-action category-filter fw-bold bg-light" data-category="<?php echo $parent['id']; ?>">
+                                <a href="#cat-<?php echo $parent['id']; ?>" class="list-group-item list-group-item-action category-filter fw-bold bg-light" 
+                                   data-category="<?php echo $parent['id']; ?>"
+                                   data-name="<?php echo htmlspecialchars($parent['name']); ?>"
+                                   data-description="<?php echo htmlspecialchars($parent['description'] ?? ''); ?>">
                                     <?php echo htmlspecialchars($parent['name']); ?>
                                     <span class="badge bg-label-secondary rounded-pill ms-auto">
                                         <?php echo $workshop_counts[$parent['id']] ?? 0; ?>
@@ -87,7 +93,11 @@ foreach ($sub_categories as $parent_id => $subs) {
                                 <?php if (isset($sub_categories[$parent['id']])): ?>
                                     <div class="list-group list-group-flush ps-3 border-bottom">
                                         <?php foreach ($sub_categories[$parent['id']] as $sub): ?>
-                                            <a href="#cat-<?php echo $sub['id']; ?>" class="list-group-item list-group-item-action category-filter py-1" data-category="<?php echo $sub['id']; ?>" style="font-size: 0.9em;">
+                                            <a href="#cat-<?php echo $sub['id']; ?>" class="list-group-item list-group-item-action category-filter py-1" 
+                                               data-category="<?php echo $sub['id']; ?>"
+                                               data-name="<?php echo htmlspecialchars($sub['name']); ?>"
+                                               data-description="<?php echo htmlspecialchars($sub['description'] ?? ''); ?>"
+                                               style="font-size: 0.9em;">
                                                 <i class="bx bx-chevron-left me-1"></i> <?php echo htmlspecialchars($sub['name']); ?>
                                                 <span class="badge bg-label-secondary rounded-pill ms-auto" style="font-size: 0.8em;">
                                                     <?php echo $workshop_counts[$sub['id']] ?? 0; ?>
@@ -104,6 +114,17 @@ foreach ($sub_categories as $parent_id => $subs) {
 
             <!-- Workshop List -->
             <div class="col-md-9">
+                <!-- Category Header -->
+                <div id="category-header" class="mb-4" style="display: none;">
+                    <div class="card border-0 shadow-none bg-transparent">
+                        <div class="card-body p-0 ps-2">
+                            <h3 id="category-title" class="mb-2 text-primary"></h3>
+                            <p id="category-description" class="text-muted mb-0" style="line-height: 1.6;"></p>
+                        </div>
+                    </div>
+                    <hr class="mt-4">
+                </div>
+
                 <div class="row" id="workshop-container">
                     <?php foreach ($all_workshops as $workshop): ?>
                         <?php 
@@ -122,7 +143,13 @@ foreach ($sub_categories as $parent_id => $subs) {
                              data-parent-id="<?php echo $parent_id; ?>">
                             <div class="card h-100 shadow-sm border-0">
                                 <?php if ($workshop['image']): ?>
-                                    <img src="/miad/public/storage/<?php echo htmlspecialchars($workshop['image']); ?>" class="card-img-top" alt="<?php echo htmlspecialchars($workshop['title']); ?>" style="height: 200px; object-fit: cover;">
+                                    <?php 
+                                        $image_src = $workshop['image'];
+                                        if (strpos($image_src, 'http') !== 0) {
+                                            $image_src = '/miad/public/storage/' . $image_src;
+                                        }
+                                    ?>
+                                    <img src="<?php echo htmlspecialchars($image_src); ?>" class="card-img-top p-3" alt="<?php echo htmlspecialchars($workshop['title']); ?>" style="height: 200px; object-fit: contain; background-color: #f8f9fa;">
                                 <?php else: ?>
                                     <div class="card-img-top bg-label-secondary d-flex align-items-center justify-content-center" style="height: 200px;">
                                         <i class="bx bx-image bx-lg text-muted"></i>
@@ -154,6 +181,9 @@ foreach ($sub_categories as $parent_id => $subs) {
 document.addEventListener('DOMContentLoaded', function() {
     const filters = document.querySelectorAll('.category-filter');
     const cards = document.querySelectorAll('.workshop-card');
+    const header = document.getElementById('category-header');
+    const title = document.getElementById('category-title');
+    const desc = document.getElementById('category-description');
 
     filters.forEach(filter => {
         filter.addEventListener('click', function(e) {
@@ -164,6 +194,17 @@ document.addEventListener('DOMContentLoaded', function() {
             this.classList.add('active');
 
             const categoryId = this.getAttribute('data-category');
+            const categoryName = this.getAttribute('data-name');
+            const categoryDesc = this.getAttribute('data-description');
+
+            // Update Header
+            if (categoryId === 'all') {
+                header.style.display = 'none';
+            } else {
+                header.style.display = 'block';
+                title.innerText = categoryName;
+                desc.innerText = categoryDesc;
+            }
 
             cards.forEach(card => {
                 const cardCatId = card.getAttribute('data-category-id');

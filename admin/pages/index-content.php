@@ -96,6 +96,9 @@ if ($userConfig) {
     <!-- بقیه محتوای داشبورد -->
     <style>
     /* Settings Card Custom Styles */
+    .container-p-y {
+        padding-bottom: 0.5rem !important;
+    }
     .settings-row-container {
         margin-top: -24px !important;
     }
@@ -119,61 +122,71 @@ if ($userConfig) {
         .settings-row-container {
             margin-top: -12px !important;
         }
-        .base-btn {
+        .base-btn, .readiness-comparison-wrapper {
             height: auto !important;
+        }
+        .row > .base-btn.mb-4 {
+            margin-bottom: 4px !important;
         }
         .base-btn .row {
             height: auto !important;
-            margin-left: -6px !important;
-            margin-right: -6px !important;
+            margin-left: -4px !important;
+            margin-right: -4px !important;
         }
         .base-btn .col-6 {
-            padding-left: 6px !important;
-            padding-right: 6px !important;
+            padding-left: 4px !important;
+            padding-right: 4px !important;
+        }
+        .base-btn .col-6.mb-3 {
+            margin-bottom: 8px !important;
+        }
+        .readiness-comparison-wrapper .row {
+            height: auto !important;
+            margin-left: calc(-0.5 * var(--bs-gutter-x)) !important;
+            margin-right: calc(-0.5 * var(--bs-gutter-x)) !important;
+        }
+        .readiness-comparison-wrapper .col-6 {
+            padding-left: calc(0.5 * var(--bs-gutter-x)) !important;
+            padding-right: calc(0.5 * var(--bs-gutter-x)) !important;
         }
         .nav-hover-zoom {
-            height: 120px !important;
+            height: 60px !important;
         }
         .nav-hover-zoom .card-img-overlay {
-            padding: 10px 8px !important;
-            flex-direction: column;
-            justify-content: center;
+            padding: 5px 8px !important;
+            flex-direction: row !important;
+            justify-content: center !important;
             align-items: center !important;
-            text-align: center;
+            text-align: right !important;
         }
         .nav-hover-zoom .nav-icons {
-            width: 42px !important;
+            width: 28px !important;
             height: auto !important;
-            margin-bottom: 6px;
-            margin-right: 0 !important;
-            margin-left: 0 !important;
+            margin-bottom: 0 !important;
+            margin-inline-end: 8px !important;
+            margin-inline-start: 0 !important;
             opacity: 0.85 !important;
             position: relative !important;
         }
         .nav-hover-zoom .items {
-            font-size: 0.9rem !important;
+            font-size: 0.76rem !important;
             padding-left: 0 !important;
             padding-right: 0 !important;
-            line-height: 1.3;
-            display: block;
-            width: 100%;
+            padding-inline-start: 0 !important;
+            line-height: 1.2;
+            display: inline-block;
+            width: auto;
         }
 
-        /* Readiness & Comparison Cards side-by-side on mobile */
-        .exam-readiness-card, .weekly-comparison-card {
-            padding-left: 6px !important;
-            padding-right: 6px !important;
-        }
-        .exam-readiness-card .card-body, .weekly-comparison-card .card-body {
+        /* Spacing for readiness & comparison cards inside wrapper */
+        .exam-readiness-card .card-body {
             padding: 12px 8px !important;
         }
         .exam-readiness-card .chart-title {
             font-size: 0.78rem !important;
             font-weight: 600;
         }
-        .weekly-comparison-card .card-header {
-            padding: 10px 8px !important;
-        }
+
         .weekly-comparison-card .card-title {
             font-size: 0.78rem !important;
             font-weight: 600;
@@ -222,11 +235,49 @@ if ($userConfig) {
             padding: 4px 6px !important;
             font-size: 0.65rem !important;
         }
+
+        /* Study Report Card on mobile */
+        .study-report-card .card-body {
+            padding: 12px 10px !important;
+        }
+        .study-report-card .card-title {
+            font-size: 0.8rem !important;
+            font-weight: 600;
+        }
+        .study-report-card .card-body span {
+            font-size: 0.72rem !important;
+        }
+        .study-report-card .avatar {
+            width: 28px !important;
+            height: 28px !important;
+        }
+        .study-report-card .avatar-initial {
+            font-size: 13px !important;
+        }
+        .study-report-card .me-3 {
+            margin-inline-end: 0.5rem !important;
+        }
+        .study-report-card .card-body ul li {
+            margin-bottom: 8px !important;
+            padding-bottom: 4px !important;
+        }
+
+        /* Uniform rounded corners & spacing for all dashboard cards on mobile */
+        .card {
+            border-radius: 1rem !important;
+            overflow: hidden;
+        }
+        .card .card-header {
+            border-radius: 1rem 1rem 0 0 !important;
+        }
+        .row > [class*="col-"].mb-4 {
+            margin-bottom: 12px !important;
+        }
     }
     </style>
     <div class="row">
         <!-- Activity -->
-        <div class="col-md-8 col-lg-8 col-xl-8 col-xxl-8 mb-4 base-btn">
+        <div class="col-12 col-md-6 col-lg-6 col-xl-6 col-xxl-6 mb-4 base-btn">
             <div class="row h-100">
                 <div class="col-6 mb-3 col-md-6 ">
                     <div class="col-12  h-100 vh-25  w-100 position-relative text-white nav-hover-zoom nav-blue-soft">
@@ -249,7 +300,7 @@ if ($userConfig) {
                         </div>
                     </div>
                 </div>
-                <div class="col-6 mb-3 mb-md-0 col-md-6 ">
+                <div class="col-6 mb-0 col-md-6 ">
                     <div class="col-12  h-100 vh-25  w-100 position-relative text-white nav-hover-zoom nav-purple-soft">
                         <img class="nav-img" src="assets/img/backgrounds/about-4-1.png" alt="...">
                         <div class="card-img-overlay d-flex align-items-center h-100 px-5"><img class="nav-icons"
@@ -259,7 +310,7 @@ if ($userConfig) {
                         </div>
                     </div>
                 </div>
-                <div class="col-6  col-md-6 ">
+                <div class="col-6 mb-0 col-md-6 ">
                     <div class="col-12  h-100 vh-25  w-100 position-relative text-white nav-hover-zoom nav-indigo-soft">
                         <img class="nav-img" src="assets/img/backgrounds/about-4-1.png" alt="...">
                         <div class="card-img-overlay d-flex align-items-center h-100 px-5"><img class="nav-icons"
@@ -273,92 +324,87 @@ if ($userConfig) {
         </div>
         <!--/ Activity -->
 
-        <!-- Activity (Readiness Chart) -->
-        <div class="col-6 col-md-4 mb-4 exam-readiness-card">
-            <div class="card h-100">
-                <div class="card-body text-center">
-                    <div id="growthRadialChart"></div>
-                    <h6 class="mb-0 chart-title">آمادگی شما جهت امتحان</h6>
-                </div>
-            </div>
-        </div>
-        <!--/ Activity -->
-
-        <!-- Weekly Comparison Card -->
-        <div class="col-6 col-md-4 mb-4 weekly-comparison-card">
-            <div class="card h-100">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="card-title mb-0">مقایسه با هفته گذشته</h5>
-                </div>
-                <div class="card-body">
-                    <h6 class="mt-1">هفته قبل</h6>
-                    <p class="mb-3 desc-text text-muted">کارایی نسبت به هفته قبل</p>
-                    <ul class="list-unstyled m-0 pt-0">
-                        <li class="mb-3">
-                            <div class="d-flex align-items-center mb-2">
-                                <div class="avatar avatar-sm flex-shrink-0 me-2">
-                                    <span class="avatar-initial rounded bg-label-primary"><i
-                                            class="bx bx-trending-up"></i></span>
-                                </div>
-                                <div class="w-100">
-                                    <p class="mb-0 text-muted text-nowrap label-text">مطالعه این هفته</p>
-                                    <small class="fw-semibold text-nowrap val-text">0 سوال</small>
+        <!-- Readiness & Comparison Wrapper -->
+        <div class="col-12 col-md-6 col-lg-6 col-xl-6 col-xxl-6 mb-4 readiness-comparison-wrapper">
+            <div class="row h-100">
+                <div class="col-6 mb-0 exam-readiness-card">
+                    <div class="card h-100">
+                        <div class="card-body text-center">
+                            <div id="growthRadialChart">
+                                <div class="d-flex align-items-center justify-content-center" style="min-height: 150px;">
+                                    <div class="spinner-border text-primary" role="status" style="width: 1.8rem; height: 1.8rem;">
+                                        <span class="visually-hidden">در حال بارگذاری...</span>
+                                    </div>
                                 </div>
                             </div>
-                            <div class="progress" style="height: 6px">
-                                <div class="progress-bar bg-primary" style="width: 0%" role="progressbar"
-                                    aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
-                            </div>
-                        </li>
-                        <li>
-                            <div class="d-flex align-items-center mb-2">
-                                <div class="avatar avatar-sm flex-shrink-0 me-2">
-                                    <span class="avatar-initial rounded bg-label-success"><i
-                                            class="bx bx-dollar"></i></span>
-                                </div>
-                                <div class="w-100">
-                                    <p class="mb-0 text-muted text-nowrap label-text">مطالعه هفته گذشته</p>
-                                    <small class="fw-semibold text-nowrap val-text">0 سوال</small>
-                                </div>
-                            </div>
-                            <div class="progress" style="height: 6px">
-                                <div class="progress-bar bg-success" style="width: 0%" role="progressbar"
-                                    aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
-                            </div>
-                        </li>
-                    </ul>
+                            <h6 class="mb-0 chart-title">آمادگی شما جهت امتحان</h6>
+                        </div>
+                    </div>
                 </div>
-            </div>
-        </div>
-
-        <!-- Monthly Progress Chart -->
-        <div class="col-12 col-md-8 mb-4">
-            <div class="card h-100">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="card-title mb-0">گزارش ماهیانه پیشرفت</h5>
-                </div>
-                <div class="card-body">
-                    <div id="orderSummaryChart"></div>
+                <div class="col-6 mb-0 weekly-comparison-card">
+                    <div class="card h-100">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="card-title mb-0">مقایسه با هفته گذشته</h5>
+                        </div>
+                        <div class="card-body">
+                            <p class="mb-3 desc-text text-muted">تغییر نسبت به هفته قبل</p>
+                            <ul class="list-unstyled m-0 pt-0">
+                                <li class="mb-3">
+                                    <div class="d-flex align-items-center mb-2">
+                                        <div class="avatar avatar-sm flex-shrink-0 me-2">
+                                            <span class="avatar-initial rounded bg-label-primary"><i
+                                                    class="bx bx-trending-up"></i></span>
+                                        </div>
+                                        <div class="d-flex align-items-center justify-content-between w-100">
+                                            <p class="mb-0 text-muted text-nowrap label-text">این هفته</p>
+                                            <small class="fw-semibold text-nowrap val-text">0 سوال</small>
+                                        </div>
+                                    </div>
+                                    <div class="progress" style="height: 6px">
+                                        <div class="progress-bar bg-primary" style="width: 0%" role="progressbar"
+                                            aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                                    </div>
+                                </li>
+                                <li>
+                                    <div class="d-flex align-items-center mb-2">
+                                        <div class="avatar avatar-sm flex-shrink-0 me-2">
+                                            <span class="avatar-initial rounded bg-label-success"><i
+                                                    class="bx bx-dollar"></i></span>
+                                        </div>
+                                        <div class="d-flex align-items-center justify-content-between w-100">
+                                            <p class="mb-0 text-muted text-nowrap label-text">هفته گذشته</p>
+                                            <small class="fw-semibold text-nowrap val-text">0 سوال</small>
+                                        </div>
+                                    </div>
+                                    <div class="progress" style="height: 6px">
+                                        <div class="progress-bar bg-success" style="width: 0%" role="progressbar"
+                                            aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
 
         <!-- Growth Chart-->
-        <div class="col-12 col-md-4 mb-4">
+        <div class="col-12 mb-4 study-report-card">
             <div class="card h-100">
-                <div class="card-header">
+                <div class="card-header d-flex justify-content-between align-items-center gap-2">
                     <h5 class="card-title mb-0">گزارش کلی مطالعه شما</h5>
+                    <button type="button" class="btn btn-sm btn-label-primary text-nowrap" data-bs-toggle="modal" data-bs-target="#monthlyReportModal" style="font-size: 0.75rem !important; padding: 4px 10px !important;">گزارش ماهیانه</button>
                 </div>
                 <div class="card-body">
-                    <ul class="p-0 m-0">
-                        <li class="d-flex align-items-center mb-4 pb-2">
+                    <ul class="list-unstyled p-0 m-0 row">
+                        <li class="col-md-6 col-6 d-flex align-items-center mb-4 pb-2">
                             <div class="avatar avatar-sm flex-shrink-0 me-3">
                                 <span class="avatar-initial rounded-circle bg-label-primary"><i
                                         class="bx bx-cube"></i></span>
                             </div>
                             <div class="d-flex flex-column w-100">
                                 <div class="d-flex justify-content-between mb-2">
-                                    <span>کل سوالاتی که پاسخ دادید</span>
+                                    <span>پاسخ داده شده</span>
                                     <span class="text-muted">1169</span>
                                 </div>
                                 <div class="progress" style="height: 6px">
@@ -367,14 +413,14 @@ if ($userConfig) {
                                 </div>
                             </div>
                         </li>
-                        <li class="d-flex align-items-center mb-4 pb-2">
+                        <li class="col-md-6 col-6 d-flex align-items-center mb-4 pb-2">
                             <div class="avatar avatar-sm flex-shrink-0 me-3">
                                 <span class="avatar-initial rounded-circle bg-label-success"><i
                                         class="bx bx-dollar"></i></span>
                             </div>
                             <div class="d-flex flex-column w-100">
                                 <div class="d-flex justify-content-between mb-2">
-                                    <span>سوالاتی که آماده اید برای امتحان</span>
+                                    <span>آماده امتحان</span>
                                     <span class="text-muted">8,478</span>
                                 </div>
                                 <div class="progress" style="height: 6px">
@@ -383,14 +429,14 @@ if ($userConfig) {
                                 </div>
                             </div>
                         </li>
-                        <li class="d-flex align-items-center mb-4 pb-2">
+                        <li class="col-md-6 col-6 d-flex align-items-center mb-4 pb-2">
                             <div class="avatar avatar-sm flex-shrink-0 me-3">
                                 <span class="avatar-initial rounded-circle bg-label-warning"><i
                                         class="bx bx-error"></i></span>
                             </div>
                             <div class="d-flex flex-column w-100">
                                 <div class="d-flex justify-content-between mb-2">
-                                    <span>سوالاتی که پنجاه درصد آماده اید</span>
+                                    <span>۵۰ درصد آماده</span>
                                     <span class="text-muted">8,478</span>
                                 </div>
                                 <div class="progress" style="height: 6px">
@@ -399,14 +445,14 @@ if ($userConfig) {
                                 </div>
                             </div>
                         </li>
-                        <li class="d-flex align-items-center mb-4 pb-2">
+                        <li class="col-md-6 col-6 d-flex align-items-center mb-4 pb-2">
                             <div class="avatar avatar-sm flex-shrink-0 me-3">
                                 <span class="avatar-initial rounded-circle bg-label-danger"><i
                                         class="bx bx-x-circle"></i></span>
                             </div>
                             <div class="d-flex flex-column w-100">
                                 <div class="d-flex justify-content-between mb-2">
-                                    <span>سوالاتی که اصلا آماده نیستید</span>
+                                    <span>صفر درصد آماده</span>
                                     <span class="text-muted">8,478</span>
                                 </div>
                                 <div class="progress" style="height: 6px">
@@ -422,6 +468,21 @@ if ($userConfig) {
     </div>
 
 
+</div>
+
+<!-- Modal برای گزارش ماهیانه پیشرفت -->
+<div class="modal fade" id="monthlyReportModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">گزارش ماهیانه پیشرفت</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="orderSummaryChart"></div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <!-- SweetAlert2 JS -->
@@ -599,8 +660,7 @@ if ($userConfig) {
                 }
             },
             stroke: {
-                show: false,
-                width: 0
+                dashArray: 3
             },
             labels: ['آمادگی'],
             series: [percentage]
@@ -611,14 +671,14 @@ if ($userConfig) {
     }
 
     function updateGeneralStats(data) {
-        updateStatItem(0, 'کل سوالاتی که پاسخ دادید', data.total_answered, data.total_questions, 'bg-info');
-        updateStatItem(1, 'سوالاتی که آماده اید برای امتحان', data.green_count, data.total_questions, 'bg-success');
+        updateStatItem(0, 'پاسخ داده شده', data.total_answered, data.total_questions, 'bg-info');
+        updateStatItem(1, 'آماده امتحان', data.green_count, data.total_questions, 'bg-success');
 
         const halfReady = data.blue_count + data.yellow_count;
-        updateStatItem(2, 'سوالاتی که پنجاه درصد آماده اید', halfReady, data.total_questions, 'bg-warning');
+        updateStatItem(2, '۵۰ درصد آماده', halfReady, data.total_questions, 'bg-warning');
 
         const notReady = data.red_count + data.not_answered;
-        updateStatItem(3, 'سوالاتی که اصلا آماده نیستید', notReady, data.total_questions, 'bg-danger');
+        updateStatItem(3, 'صفر درصد آماده', notReady, data.total_questions, 'bg-danger');
     }
 
     function updateStatItem(index, label, value, total, colorClass) {
@@ -646,8 +706,8 @@ if ($userConfig) {
         if (!container) return;
 
         const improvementText = data.improvement >= 0
-            ? `کارایی ${Math.abs(data.improvement)}% بهتر نسبت به هفته قبل`
-            : `کارایی ${Math.abs(data.improvement)}% کمتر نسبت به هفته قبل`;
+            ? `${Math.abs(data.improvement)}% بهتر`
+            : `${Math.abs(data.improvement)}% کمتر`;
 
         const weekTitle = container.querySelector('h6.mt-1');
         const weekDesc = container.querySelector('.desc-text') || container.querySelector('p.mb-4');
@@ -800,6 +860,7 @@ if ($userConfig) {
 
         const chart = new ApexCharts(chartEl, options);
         chart.render();
+        window.monthlyChartInstance = chart;
     }
 
     document.addEventListener('DOMContentLoaded', function () {
@@ -928,6 +989,20 @@ if ($userConfig) {
 
     // Export openConfigModal to window
     window.openConfigModal = openConfigModal;
+
+    // ثبت رویداد برای تغییر اندازه نمودار ماهیانه بعد از باز شدن مودال
+    document.addEventListener('DOMContentLoaded', function() {
+        const modalEl = document.getElementById('monthlyReportModal');
+        if (modalEl) {
+            modalEl.addEventListener('shown.bs.modal', function () {
+                if (window.monthlyChartInstance && typeof window.monthlyChartInstance.windowResizeHandler === 'function') {
+                    window.monthlyChartInstance.windowResizeHandler();
+                } else {
+                    window.dispatchEvent(new Event('resize'));
+                }
+            });
+        }
+    });
 </script>
 
 <!-- اسکریپت چارت‌های داشبورد با استایل‌های بهبود یافته -->
