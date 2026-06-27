@@ -142,12 +142,12 @@ if ($userConfig) {
         }
         .readiness-comparison-wrapper .row {
             height: auto !important;
-            margin-left: calc(-0.5 * var(--bs-gutter-x)) !important;
-            margin-right: calc(-0.5 * var(--bs-gutter-x)) !important;
+            margin-left: -4px !important;
+            margin-right: -4px !important;
         }
         .readiness-comparison-wrapper .col-6 {
-            padding-left: calc(0.5 * var(--bs-gutter-x)) !important;
-            padding-right: calc(0.5 * var(--bs-gutter-x)) !important;
+            padding-left: 4px !important;
+            padding-right: 4px !important;
         }
         .nav-hover-zoom {
             height: 60px !important;
