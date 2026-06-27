@@ -759,8 +759,9 @@ function render_announcements($page_name)
                 if (show) {
                     // افزایش و ثبت شمارش بازدید
                     localStorage.setItem('announcement_views_' + id, views + 1);
-                    // نمایش اعلان
-                    el.style.display = el.classList.contains('announcement-modal-backdrop') ? 'flex' : 'block';
+                    // نمایش اعلان با اولویت بالا جهت جلوگیری از تداخل CSS
+                    const displayStyle = el.classList.contains('announcement-modal-backdrop') ? 'flex' : 'block';
+                    el.style.setProperty('display', displayStyle, 'important');
                 } else {
                     el.remove();
                 }
