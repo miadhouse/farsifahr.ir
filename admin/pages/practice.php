@@ -1184,10 +1184,14 @@ foreach ($tags as $tag) {
             updateQuestionCounts();
         }
 
-        // Get selected question IDs
+        // Get selected question IDs (only counts visible questions)
         function getSelectedQuestionIds() {
             const selectedCheckboxes = document.querySelectorAll('#questionsContainer input[type="checkbox"]:checked');
-            return Array.from(selectedCheckboxes).map(checkbox => checkbox.id);
+            const visibleSelected = Array.from(selectedCheckboxes).filter(checkbox => {
+                const item = checkbox.closest('.question-item');
+                return item && item.style.display !== 'none';
+            });
+            return visibleSelected.map(checkbox => checkbox.id);
         }
 
         // Navigate to test page with selected questions
