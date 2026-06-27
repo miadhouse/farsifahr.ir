@@ -707,8 +707,34 @@ function render_announcements($page_name)
     
     <!-- جاوااسکریپت کنترل نمایش و ذخیره آمار -->
     <script>
+        // کمکی جهت جلوگیری از بروز خطای SecurityError در حالت Private یا در صورت مسدود بودن LocalStorage
+        const safeStorage = {
+            getItem: function(key) {
+                try {
+                    return localStorage.getItem(key);
+                } catch (e) {
+                    return this._data[key] || null;
+                }
+            },
+            setItem: function(key, value) {
+                try {
+                    localStorage.setItem(key, value);
+                } catch (e) {
+                    this._data[key] = String(value);
+                }
+            },
+            removeItem: function(key) {
+                try {
+                    localStorage.removeItem(key);
+                } catch (e) {
+                    delete this._data[key];
+                }
+            },
+            _data: {}
+        };
+
         function dismissAnnouncement(id) {
-            localStorage.setItem('dismissed_announcement_' + id, '1');
+            safeStorage.setItem('dismissed_announcement_' + id, '1');
             const el = document.getElementById('announcement-' + id);
             if (el) {
                 if (el.classList.contains('announcement-modal-backdrop')) {
@@ -723,7 +749,7 @@ function render_announcements($page_name)
             }
         }
         
-        document.addEventListener('DOMContentLoaded', function() {
+        function initAnnouncements() {
             document.querySelectorAll('.announcement-item').forEach(el => {
                 const id = el.getAttribute('data-id');
                 const displayType = el.getAttribute('data-display-type');
@@ -731,21 +757,21 @@ function render_announcements($page_name)
                 const updatedAt = el.getAttribute('data-updated-at') || '0';
                 
                 // بررسی نسخه اعلان جهت فعالسازی مجدد (Reactivation)
-                const storedUpdated = localStorage.getItem('announcement_updated_' + id) || '0';
+                const storedUpdated = safeStorage.getItem('announcement_updated_' + id) || '0';
                 if (storedUpdated !== updatedAt) {
-                    localStorage.removeItem('dismissed_announcement_' + id);
-                    localStorage.setItem('announcement_views_' + id, '0');
-                    localStorage.setItem('announcement_updated_' + id, updatedAt);
+                    safeStorage.removeItem('dismissed_announcement_' + id);
+                    safeStorage.setItem('announcement_views_' + id, '0');
+                    safeStorage.setItem('announcement_updated_' + id, updatedAt);
                 }
                 
                 // بررسی بسته شدن دستی اعلان
-                if (localStorage.getItem('dismissed_announcement_' + id) === '1') {
+                if (safeStorage.getItem('dismissed_announcement_' + id) === '1') {
                     el.remove();
                     return;
                 }
                 
                 // شمارش تعداد بازدیدهای ذخیره شده در مرورگر کاربر
-                const views = parseInt(localStorage.getItem('announcement_views_' + id) || '0', 10);
+                const views = parseInt(safeStorage.getItem('announcement_views_' + id) || '0', 10);
                 
                 let show = true;
                 if (displayType === 'once' && views >= 1) {
@@ -758,7 +784,7 @@ function render_announcements($page_name)
                 
                 if (show) {
                     // افزایش و ثبت شمارش بازدید
-                    localStorage.setItem('announcement_views_' + id, views + 1);
+                    safeStorage.setItem('announcement_views_' + id, views + 1);
                     // نمایش اعلان با اولویت بالا جهت جلوگیری از تداخل CSS
                     const displayStyle = el.classList.contains('announcement-modal-backdrop') ? 'flex' : 'block';
                     el.style.setProperty('display', displayStyle, 'important');
@@ -766,7 +792,13 @@ function render_announcements($page_name)
                     el.remove();
                 }
             });
-        });
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initAnnouncements);
+        } else {
+            initAnnouncements();
+        }
     </script>
     <?php
 }
