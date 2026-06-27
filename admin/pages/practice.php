@@ -264,7 +264,15 @@ foreach ($tags as $tag) {
                                     
                                     <!-- فیلترهای سوالات به صورت چک‌باکس‌های دکمه‌ای هم‌اندازه -->
                                     <div class="row g-2 filter-container">
-                                        <div class="col-md-4 col-6">
+                                        <div class="col-md-3 col-6">
+                                            <input type="checkbox" class="btn-check" id="filter-all" autocomplete="off" onchange="toggleFilterAll()">
+                                            <label class="btn btn-sm btn-outline-dark w-100 py-2 d-flex align-items-center justify-content-center filter-btn-label" for="filter-all">
+                                                <i class="fas fa-check-square me-2 checked-icon" style="display: none;"></i>
+                                                <i class="far fa-square me-2 unchecked-icon"></i>
+                                                همه سوالات
+                                            </label>
+                                        </div>
+                                        <div class="col-md-3 col-6">
                                             <input type="checkbox" class="btn-check" id="filter-image" autocomplete="off" onchange="applyFilters()">
                                             <label class="btn btn-sm btn-outline-primary w-100 py-2 d-flex align-items-center justify-content-center filter-btn-label" for="filter-image">
                                                 <i class="fas fa-check-square me-2 checked-icon" style="display: none;"></i>
@@ -272,7 +280,7 @@ foreach ($tags as $tag) {
                                                 تصویری
                                             </label>
                                         </div>
-                                        <div class="col-md-4 col-6">
+                                        <div class="col-md-3 col-6">
                                             <input type="checkbox" class="btn-check" id="filter-video" autocomplete="off" onchange="applyFilters()">
                                             <label class="btn btn-sm btn-outline-info w-100 py-2 d-flex align-items-center justify-content-center filter-btn-label" for="filter-video">
                                                 <i class="fas fa-check-square me-2 checked-icon" style="display: none;"></i>
@@ -280,15 +288,23 @@ foreach ($tags as $tag) {
                                                 ویدیویی
                                             </label>
                                         </div>
-                                        <div class="col-md-4 col-6">
-                                            <input type="checkbox" class="btn-check" id="filter-not-prepared" autocomplete="off" onchange="applyFilters()">
-                                            <label class="btn btn-sm btn-outline-danger w-100 py-2 d-flex align-items-center justify-content-center filter-btn-label" for="filter-not-prepared">
+                                        <div class="col-md-3 col-6">
+                                            <input type="checkbox" class="btn-check" id="filter-incorrect" autocomplete="off" onchange="applyFilters()">
+                                            <label class="btn btn-sm btn-outline-danger w-100 py-2 d-flex align-items-center justify-content-center filter-btn-label" for="filter-incorrect">
                                                 <i class="fas fa-check-square me-2 checked-icon" style="display: none;"></i>
                                                 <i class="far fa-square me-2 unchecked-icon"></i>
-                                                اصلاً آماده نیستم
+                                                اشتباه (پرچم قرمز)
                                             </label>
                                         </div>
-                                        <div class="col-md-4 col-6">
+                                        <div class="col-md-3 col-6">
+                                            <input type="checkbox" class="btn-check" id="filter-unanswered" autocomplete="off" onchange="applyFilters()">
+                                            <label class="btn btn-sm btn-outline-secondary w-100 py-2 d-flex align-items-center justify-content-center filter-btn-label" for="filter-unanswered">
+                                                <i class="fas fa-check-square me-2 checked-icon" style="display: none;"></i>
+                                                <i class="far fa-square me-2 unchecked-icon"></i>
+                                                بدون پاسخ (خاکستری)
+                                            </label>
+                                        </div>
+                                        <div class="col-md-3 col-6">
                                             <input type="checkbox" class="btn-check" id="filter-half-prepared" autocomplete="off" onchange="applyFilters()">
                                             <label class="btn btn-sm btn-outline-warning w-100 py-2 d-flex align-items-center justify-content-center filter-btn-label" for="filter-half-prepared">
                                                 <i class="fas fa-check-square me-2 checked-icon" style="display: none;"></i>
@@ -296,7 +312,7 @@ foreach ($tags as $tag) {
                                                 ۵۰ درصد آماده
                                             </label>
                                         </div>
-                                        <div class="col-md-4 col-6">
+                                        <div class="col-md-3 col-6">
                                             <input type="checkbox" class="btn-check" id="filter-prepared" autocomplete="off" onchange="applyFilters()">
                                             <label class="btn btn-sm btn-outline-success w-100 py-2 d-flex align-items-center justify-content-center filter-btn-label" for="filter-prepared">
                                                 <i class="fas fa-check-square me-2 checked-icon" style="display: none;"></i>
@@ -304,7 +320,7 @@ foreach ($tags as $tag) {
                                                 کاملاً آماده
                                             </label>
                                         </div>
-                                        <div class="col-md-4 col-6">
+                                        <div class="col-md-3 col-6">
                                             <input type="checkbox" class="btn-check" id="filter-points5" autocomplete="off" onchange="applyFilters()">
                                             <label class="btn btn-sm btn-outline-secondary w-100 py-2 d-flex align-items-center justify-content-center filter-btn-label" for="filter-points5">
                                                 <i class="fas fa-check-square me-2 checked-icon" style="display: none;"></i>
@@ -1010,9 +1026,13 @@ foreach ($tags as $tag) {
                 </div>
             `;
 
-            // Reset all filter checkboxes
+            // Reset all filter checkboxes and check 'filter-all'
             document.querySelectorAll('.btn-check').forEach(cb => {
-                cb.checked = false;
+                if (cb.id === 'filter-all') {
+                    cb.checked = true;
+                } else {
+                    cb.checked = false;
+                }
             });
 
             // Collapse accordion if open
@@ -1117,22 +1137,48 @@ foreach ($tags as $tag) {
             updateQuestionCounts();
         }
 
+        // Toggle master filter all
+        function toggleFilterAll() {
+            const filterAll = document.getElementById('filter-all');
+            if (filterAll.checked) {
+                // Uncheck all other filters
+                document.querySelectorAll('.btn-check').forEach(cb => {
+                    if (cb.id !== 'filter-all') {
+                        cb.checked = false;
+                    }
+                });
+            }
+            applyFilters();
+        }
+
         // Apply multiple question filters (combines filters with AND/OR logic)
         function applyFilters() {
+            const filterAll = document.getElementById('filter-all').checked;
             const filterImage = document.getElementById('filter-image').checked;
             const filterVideo = document.getElementById('filter-video').checked;
-            const filterNotPrepared = document.getElementById('filter-not-prepared').checked;
+            const filterIncorrect = document.getElementById('filter-incorrect').checked;
+            const filterUnanswered = document.getElementById('filter-unanswered').checked;
             const filterHalfPrepared = document.getElementById('filter-half-prepared').checked;
             const filterPrepared = document.getElementById('filter-prepared').checked;
             const filterPoints5 = document.getElementById('filter-points5').checked;
 
+            // If any specific filter is checked, uncheck "filter-all"
+            const anySpecificActive = (filterImage || filterVideo || filterIncorrect || filterUnanswered || filterHalfPrepared || filterPrepared || filterPoints5);
+            if (anySpecificActive && filterAll) {
+                document.getElementById('filter-all').checked = false;
+            }
+
+            // If no specific filter is checked, check "filter-all"
+            if (!anySpecificActive) {
+                document.getElementById('filter-all').checked = true;
+            }
+
             // Update accordion active filters state
-            const anyActive = (filterImage || filterVideo || filterNotPrepared || filterHalfPrepared || filterPrepared || filterPoints5);
             const titleText = document.getElementById('accordionTitleText');
             const accordionBtn = document.querySelector('.filter-accordion-btn');
 
             if (titleText && accordionBtn) {
-                if (anyActive) {
+                if (anySpecificActive) {
                     titleText.textContent = 'فیلتر سوالات (فیلتر فعال)';
                     accordionBtn.classList.add('has-active-filters');
                 } else {
@@ -1148,6 +1194,12 @@ foreach ($tags as $tag) {
                 const isVideo = item.getAttribute('data-is-video') === '1';
                 const status = item.getAttribute('data-status') || 'gray';
 
+                // If "All Questions" is active, show everything
+                if (document.getElementById('filter-all').checked) {
+                    item.style.setProperty('display', 'flex', 'important');
+                    return;
+                }
+
                 // 1. Type Filter (Image/Video)
                 let matchesType = true;
                 if (filterImage || filterVideo) {
@@ -1158,9 +1210,10 @@ foreach ($tags as $tag) {
 
                 // 2. Status Filter
                 let matchesStatus = true;
-                if (filterNotPrepared || filterHalfPrepared || filterPrepared) {
+                if (filterIncorrect || filterUnanswered || filterHalfPrepared || filterPrepared) {
                     matchesStatus = false;
-                    if (filterNotPrepared && (status === 'red' || status === 'gray')) matchesStatus = true;
+                    if (filterIncorrect && status === 'red') matchesStatus = true;
+                    if (filterUnanswered && status === 'gray') matchesStatus = true;
                     if (filterHalfPrepared && (status === 'yellow' || status === 'blue')) matchesStatus = true;
                     if (filterPrepared && status === 'green') matchesStatus = true;
                 }
