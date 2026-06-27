@@ -42,8 +42,13 @@ try {
     // Fetch user question statuses
     $questionIds = array_column($questions, 'id');
     $statuses = [];
+    $bookmarkedIds = [];
+    $numericalIds = [];
+    
     if (!empty($questionIds)) {
         $placeholders = str_repeat('?,', count($questionIds) - 1) . '?';
+        
+        // واکشی وضعیت‌های پاسخ‌دهی
         $stmtStats = $pdo->prepare("
             SELECT question_id, correct, incorrect 
             FROM user_question_stats 
@@ -68,6 +73,24 @@ try {
             }
             $statuses[$row['question_id']] = $color;
         }
+
+        // واکشی نشان‌شده‌ها (bookmarks)
+        $stmtBookmarked = $pdo->prepare("
+            SELECT question_id 
+            FROM question_bookmarks 
+            WHERE user_id = ? AND question_id IN ($placeholders)
+        ");
+        $stmtBookmarked->execute(array_merge([$user_id], $questionIds));
+        $bookmarkedIds = $stmtBookmarked->fetchAll(PDO::FETCH_COLUMN) ?: [];
+
+        // واکشی سوالات عددی (تگ شناسه 1)
+        $stmtTags = $pdo->prepare("
+            SELECT question_id 
+            FROM question_question_tag 
+            WHERE question_tag_id = 1 AND question_id IN ($placeholders)
+        ");
+        $stmtTags->execute($questionIds);
+        $numericalIds = $stmtTags->fetchAll(PDO::FETCH_COLUMN) ?: [];
     }
 
     // Display questions count header
@@ -88,12 +111,16 @@ try {
         $isImage = (!empty($picture) && !str_ends_with($pictureLower, '.m4v'));
         $isVideo = (!empty($picture) && str_ends_with($pictureLower, '.m4v'));
         $points = (int)($question['points'] ?? 0);
+        $isBookmarked = in_array($question['id'], $bookmarkedIds);
+        $isNumerical = in_array($question['id'], $numericalIds);
 
         echo '<div class="form-check modal-bg form-check-primary mt-3 question-item d-flex align-items-center justify-content-between" ' .
              'data-points="' . $points . '" ' .
              'data-is-image="' . ($isImage ? '1' : '0') . '" ' .
              'data-is-video="' . ($isVideo ? '1' : '0') . '" ' .
-             'data-status="' . $color . '">';
+             'data-status="' . $color . '" ' .
+             'data-is-bookmarked="' . ($isBookmarked ? '1' : '0') . '" ' .
+             'data-is-numerical="' . ($isNumerical ? '1' : '0') . '">';
         echo '<div>';
         echo '<input style="margin-right: -1.4em;" class="form-check-input " type="checkbox" value="' . $questionId . '" id="' . $questionId . '" checked>';
         echo '<label class="form-check-label" for="' . $questionId . '">';

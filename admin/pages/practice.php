@@ -293,7 +293,23 @@ foreach ($tags as $tag) {
                                             <label class="btn btn-sm btn-outline-danger w-100 py-2 d-flex align-items-center justify-content-center filter-btn-label" for="filter-incorrect">
                                                 <i class="fas fa-check-square me-2 checked-icon" style="display: none;"></i>
                                                 <i class="far fa-square me-2 unchecked-icon"></i>
-                                                اشتباه (پرچم قرمز)
+                                                اشتباهات
+                                            </label>
+                                        </div>
+                                        <div class="col-md-3 col-6">
+                                            <input type="checkbox" class="btn-check" id="filter-bookmarked" autocomplete="off" onchange="applyFilters()">
+                                            <label class="btn btn-sm btn-outline-warning w-100 py-2 d-flex align-items-center justify-content-center filter-btn-label" for="filter-bookmarked">
+                                                <i class="fas fa-check-square me-2 checked-icon" style="display: none;"></i>
+                                                <i class="far fa-square me-2 unchecked-icon"></i>
+                                                نشان شده‌ها
+                                            </label>
+                                        </div>
+                                        <div class="col-md-3 col-6">
+                                            <input type="checkbox" class="btn-check" id="filter-numerical" autocomplete="off" onchange="applyFilters()">
+                                            <label class="btn btn-sm btn-outline-secondary w-100 py-2 d-flex align-items-center justify-content-center filter-btn-label" for="filter-numerical">
+                                                <i class="fas fa-check-square me-2 checked-icon" style="display: none;"></i>
+                                                <i class="far fa-square me-2 unchecked-icon"></i>
+                                                سوالات عددی
                                             </label>
                                         </div>
                                         <div class="col-md-3 col-6">
@@ -1161,9 +1177,11 @@ foreach ($tags as $tag) {
             const filterHalfPrepared = document.getElementById('filter-half-prepared').checked;
             const filterPrepared = document.getElementById('filter-prepared').checked;
             const filterPoints5 = document.getElementById('filter-points5').checked;
+            const filterBookmarked = document.getElementById('filter-bookmarked').checked;
+            const filterNumerical = document.getElementById('filter-numerical').checked;
 
             // If any specific filter is checked, uncheck "filter-all"
-            const anySpecificActive = (filterImage || filterVideo || filterIncorrect || filterUnanswered || filterHalfPrepared || filterPrepared || filterPoints5);
+            const anySpecificActive = (filterImage || filterVideo || filterIncorrect || filterUnanswered || filterHalfPrepared || filterPrepared || filterPoints5 || filterBookmarked || filterNumerical);
             if (anySpecificActive && filterAll) {
                 document.getElementById('filter-all').checked = false;
             }
@@ -1192,6 +1210,8 @@ foreach ($tags as $tag) {
                 const points = parseInt(item.getAttribute('data-points') || '0', 10);
                 const isImage = item.getAttribute('data-is-image') === '1';
                 const isVideo = item.getAttribute('data-is-video') === '1';
+                const isBookmarked = item.getAttribute('data-is-bookmarked') === '1';
+                const isNumerical = item.getAttribute('data-is-numerical') === '1';
                 const status = item.getAttribute('data-status') || 'gray';
 
                 // If "All Questions" is active, show everything
@@ -1224,8 +1244,20 @@ foreach ($tags as $tag) {
                     matchesPoints = (points === 5);
                 }
 
+                // 4. Bookmark Filter
+                let matchesBookmark = true;
+                if (filterBookmarked) {
+                    matchesBookmark = isBookmarked;
+                }
+
+                // 5. Numerical Filter
+                let matchesNumerical = true;
+                if (filterNumerical) {
+                    matchesNumerical = isNumerical;
+                }
+
                 // Combine conditions
-                const show = matchesType && matchesStatus && matchesPoints;
+                const show = matchesType && matchesStatus && matchesPoints && matchesBookmark && matchesNumerical;
 
                 if (show) {
                     item.style.setProperty('display', 'flex', 'important');
