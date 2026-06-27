@@ -364,7 +364,12 @@ $user_id = $_SESSION['user_id'];
             const grid = document.getElementById('categoryGrid');
 
             if (categories.length === 0) {
-                grid.innerHTML = '<div class="error-message">هنوز کلمه‌ای ذخیره نکرده‌اید</div>';
+                grid.innerHTML = `
+                    <div class="error-message">هنوز کلمه‌ای ذخیره نکرده‌اید</div>
+                    <p class="text-muted text-center mt-3 mx-auto" style="max-width: 500px; line-height: 1.8; font-size: 0.92rem; direction: rtl;">
+                        شما می‌توانید هنگام مطالعه سوالات روی هر کلمه‌ای یک بار کلیک کنید سپس بعد از ترجمه در صورت تمایل آن کلمه را ذخیره کنید
+                    </p>
+                `;
                 return;
             }
 
