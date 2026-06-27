@@ -496,18 +496,17 @@ function render_announcements($page_name)
     $announcements = get_active_announcements($page_name);
     if (empty($announcements)) return;
     
-    // فقط آخرین اعلان فعال را برای این صفحه نمایش می‌دهیم تا از شلوغی جلوگیری شود
-    $latest_ann = $announcements[0];
-    
-    // گروه بندی اعلان ها بر اساس موقعیت
+    // گروه بندی اعلان ها بر اساس موقعیت (همه اعلان‌ها رندر می‌شوند و صف‌بندی در جاوااسکریپت کنترل می‌شود)
     $positions = [
         'top' => [],
         'middle' => [],
         'bottom' => []
     ];
     
-    if (isset($positions[$latest_ann['position']])) {
-        $positions[$latest_ann['position']][] = $latest_ann;
+    foreach ($announcements as $ann) {
+        if (isset($positions[$ann['position']])) {
+            $positions[$ann['position']][] = $ann;
+        }
     }
     
     ?>
@@ -746,19 +745,31 @@ function render_announcements($page_name)
             _data: {}
         };
 
+        // صف اعلان‌ها و اندیس جاری برای نمایش نوبتی
+        let announcementQueue = [];
+        let activeAnnouncementIndex = -1;
+
         // بستن موقت اعلان (فقط برای صفحه فعلی و تا زمان لود بعدی)
         function dismissAnnouncement(id) {
             const el = document.getElementById('announcement-' + id);
             if (el) {
                 if (el.classList.contains('announcement-modal-backdrop')) {
                     el.style.opacity = '0';
-                    setTimeout(() => el.remove(), 300);
+                    setTimeout(() => {
+                        el.remove();
+                        showNextInQueue();
+                    }, 300);
                 } else {
                     el.style.height = '0';
                     el.style.padding = '0';
                     el.style.opacity = '0';
-                    setTimeout(() => el.remove(), 300);
+                    setTimeout(() => {
+                        el.remove();
+                        showNextInQueue();
+                    }, 300);
                 }
+            } else {
+                showNextInQueue();
             }
         }
 
@@ -767,13 +778,36 @@ function render_announcements($page_name)
             safeStorage.setItem('dismissed_announcement_' + id, '1');
             dismissAnnouncement(id);
         }
+
+        // نمایش اعلان بعدی در صف
+        function showNextInQueue() {
+            activeAnnouncementIndex++;
+            if (activeAnnouncementIndex < announcementQueue.length) {
+                const el = announcementQueue[activeAnnouncementIndex];
+                const id = el.getAttribute('data-id');
+                const displayType = el.getAttribute('data-display-type');
+                
+                // افزایش و ثبت شمارش بازدید فقط زمانی که اعلان واقعاً به کاربر نشان داده می‌شود
+                const views = parseInt(safeStorage.getItem('announcement_views_' + id) || '0', 10);
+                safeStorage.setItem('announcement_views_' + id, views + 1);
+                console.log('Showing announcement ID:', id, 'views updated to:', views + 1);
+                
+                // نمایش اعلان با اولویت بالا جهت جلوگیری از تداخل CSS
+                const displayStyle = el.classList.contains('announcement-modal-backdrop') ? 'flex' : 'block';
+                el.style.setProperty('display', displayStyle, 'important');
+            }
+        }
         
         function initAnnouncements() {
             if (window.announcementsInitialized) return;
             window.announcementsInitialized = true;
 
             console.log('--- FarsiFahr Announcements debug ---');
-            document.querySelectorAll('.announcement-item').forEach(el => {
+            
+            // دریافت همه اعلان‌ها و معکوس کردن آنها برای نمایش از قدیمی به جدید (به دلیل ORDER BY DESC در سرور)
+            const allElements = Array.from(document.querySelectorAll('.announcement-item')).reverse();
+            
+            allElements.forEach(el => {
                 const id = el.getAttribute('data-id');
                 const displayType = el.getAttribute('data-display-type');
                 const viewsLimit = parseInt(el.getAttribute('data-views-limit') || '0', 10);
@@ -781,12 +815,7 @@ function render_announcements($page_name)
                 
                 // بررسی نسخه اعلان جهت فعالسازی مجدد (Reactivation)
                 const storedUpdated = safeStorage.getItem('announcement_updated_' + id) || '0';
-                console.log('Announcement ID:', id);
-                console.log('  updatedAt (server):', updatedAt);
-                console.log('  storedUpdated (browser):', storedUpdated);
-                
                 if (storedUpdated !== updatedAt) {
-                    console.log('  --> Version mismatch! Resetting counts.');
                     safeStorage.removeItem('dismissed_announcement_' + id);
                     safeStorage.setItem('announcement_views_' + id, '0');
                     safeStorage.setItem('announcement_updated_' + id, updatedAt);
@@ -794,16 +823,13 @@ function render_announcements($page_name)
                 
                 // بررسی بسته شدن دستی اعلان
                 const dismissed = safeStorage.getItem('dismissed_announcement_' + id);
-                console.log('  dismissed:', dismissed);
                 if (dismissed === '1') {
-                    console.log('  --> Dismissed permanently. Removing element.');
                     el.remove();
                     return;
                 }
                 
                 // شمارش تعداد بازدیدهای ذخیره شده در مرورگر کاربر
                 const views = parseInt(safeStorage.getItem('announcement_views_' + id) || '0', 10);
-                console.log('  views (before increment):', views);
                 
                 let show = true;
                 if (displayType === 'once' && views >= 1) {
@@ -814,18 +840,16 @@ function render_announcements($page_name)
                     show = false;
                 }
                 
-                console.log('  will show:', show);
                 if (show) {
-                    // افزایش و ثبت شمارش بازدید
-                    safeStorage.setItem('announcement_views_' + id, views + 1);
-                    console.log('  views (after increment):', views + 1);
-                    // نمایش اعلان با اولویت بالا جهت جلوگیری از تداخل CSS
-                    const displayStyle = el.classList.contains('announcement-modal-backdrop') ? 'flex' : 'block';
-                    el.style.setProperty('display', displayStyle, 'important');
+                    // اضافه کردن به صف نمایش
+                    announcementQueue.push(el);
                 } else {
                     el.remove();
                 }
             });
+
+            // نمایش اولین اعلان در صف
+            showNextInQueue();
         }
 
         if (document.readyState === 'loading') {
