@@ -447,5 +447,5 @@ function log_visitor_to_telegram()
 }
 
 // اجرای خودکار لاگ بازدیدکننده
-log_visitor_to_telegram();
+// log_visitor_to_telegram();
 
