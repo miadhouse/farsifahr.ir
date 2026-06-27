@@ -9,6 +9,7 @@
     const HEARTBEAT_INTERVAL = 30000; // 30 seconds
     const STORAGE_KEY = 'ff_chat_token';
     const WELCOME_KEY = 'ff_chat_welcomed';
+    const LAST_READ_KEY = 'ff_chat_last_read_id';
 
     const EMOJIS = ['😊','👋','🙏','✅','❓','😅','🎉','💯','🔥','👍','❤️','😢','👌','🤔','💪'];
 
@@ -110,6 +111,7 @@
             clearBadge();
             unreadCount = 0;
             btn.classList.remove('chat-bounce-active');
+            localStorage.setItem(LAST_READ_KEY, lastMessageId);
             initSession();
             document.getElementById('chat-input')?.focus();
         } else {
@@ -183,10 +185,27 @@
                 }
 
                 // Render existing messages
+                const lastReadId = parseInt(localStorage.getItem(LAST_READ_KEY) || '0', 10);
+                let loadedUnreadCount = 0;
+
                 data.messages.forEach(m => {
                     lastMessageId = Math.max(lastMessageId, m.id);
                     messagesEl.appendChild(buildMessage(m));
+                    
+                    if ((m.type === 'admin' || m.type === 'system') && m.id > lastReadId) {
+                        loadedUnreadCount++;
+                    }
                 });
+                
+                if (loadedUnreadCount > 0 && !isOpen) {
+                    unreadCount = loadedUnreadCount;
+                    showBadge(unreadCount);
+                }
+                
+                if (isOpen && lastMessageId > 0) {
+                    localStorage.setItem(LAST_READ_KEY, lastMessageId);
+                }
+
                 scrollToBottom();
             }
 
@@ -296,6 +315,10 @@
         if (!messagesEl) return;
         messagesEl.appendChild(buildMessage(m));
         scrollToBottom();
+
+        if (isOpen && lastMessageId > 0) {
+            localStorage.setItem(LAST_READ_KEY, lastMessageId);
+        }
     }
 
     function scrollToBottom() {
