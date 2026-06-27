@@ -37,7 +37,7 @@
             @media (max-width: 991.98px) {
 
               body {
-                padding-bottom: 10px !important;
+                padding-bottom: 120px !important;
               }
               
               .mobile-bottom-nav {
