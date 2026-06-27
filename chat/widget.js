@@ -556,7 +556,11 @@
             this.style.height = Math.min(this.scrollHeight, 80) + 'px';
         });
 
-        showWelcomePopup();
+        if (chatToken) {
+            initSession();
+        } else {
+            showWelcomePopup();
+        }
     }
 
     if (document.readyState === 'loading') {

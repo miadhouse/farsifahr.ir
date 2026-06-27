@@ -1056,7 +1056,7 @@ header('X-LiteSpeed-Cache-Control: no-cache'); // LiteSpeed Server
             }
         });
 </script>
-<script src="/chat/widget.js?v=2.6" async></script>
+<script src="/chat/widget.js?v=2.7" async></script>
 
     <?php if (isset($_COOKIE['concurrent_login']) && $_COOKIE['concurrent_login'] === '1'): ?>
     <script>
