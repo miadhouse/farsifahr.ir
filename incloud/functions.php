@@ -667,6 +667,9 @@ function render_announcements($page_name)
              data-updated-at="<?= strtotime($ann['updated_at']) ?>">
             <div class="announcement-content-wrapper" style="direction: rtl;">
                 <?= $ann['content'] ?>
+                <span style="margin-right: 15px;">
+                    <a href="javascript:void(0)" style="color: #ffeb3b; text-decoration: underline; font-size: 0.8rem;" onclick="dismissAnnouncementPermanently(<?= $ann['id'] ?>)">دیگر نشان نده</a>
+                </span>
             </div>
             <button class="announcement-close-btn" onclick="dismissAnnouncement(<?= $ann['id'] ?>)">&times;</button>
         </div>
@@ -681,6 +684,9 @@ function render_announcements($page_name)
              data-updated-at="<?= strtotime($ann['updated_at']) ?>">
             <div class="announcement-content-wrapper" style="direction: rtl;">
                 <?= $ann['content'] ?>
+                <span style="margin-right: 15px;">
+                    <a href="javascript:void(0)" style="color: #ffeb3b; text-decoration: underline; font-size: 0.8rem;" onclick="dismissAnnouncementPermanently(<?= $ann['id'] ?>)">دیگر نشان نده</a>
+                </span>
             </div>
             <button class="announcement-close-btn" onclick="dismissAnnouncement(<?= $ann['id'] ?>)">&times;</button>
         </div>
@@ -700,6 +706,12 @@ function render_announcements($page_name)
                 </div>
                 <div class="announcement-modal-body" style="direction: rtl;">
                     <?= $ann['content'] ?>
+                    
+                    <div class="text-center mt-3 pt-2 border-top announcement-modal-footer">
+                        <button class="btn btn-sm btn-outline-secondary px-3 py-1" onclick="dismissAnnouncementPermanently(<?= $ann['id'] ?>)" style="font-size: 0.82rem; border-radius: 20px;">
+                            دیگر این اعلان را نشان نده
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -733,8 +745,8 @@ function render_announcements($page_name)
             _data: {}
         };
 
+        // بستن موقت اعلان (فقط برای صفحه فعلی و تا زمان لود بعدی)
         function dismissAnnouncement(id) {
-            safeStorage.setItem('dismissed_announcement_' + id, '1');
             const el = document.getElementById('announcement-' + id);
             if (el) {
                 if (el.classList.contains('announcement-modal-backdrop')) {
@@ -747,6 +759,12 @@ function render_announcements($page_name)
                     setTimeout(() => el.remove(), 300);
                 }
             }
+        }
+
+        // بستن دائمی اعلان (دیگر نشان نده)
+        function dismissAnnouncementPermanently(id) {
+            safeStorage.setItem('dismissed_announcement_' + id, '1');
+            dismissAnnouncement(id);
         }
         
         function initAnnouncements() {
