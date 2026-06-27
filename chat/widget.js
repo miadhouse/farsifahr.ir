@@ -20,6 +20,7 @@
     let needsGuestInfo = false;
     let isClosed = false;
     let isPolling = false;
+    let unreadCount = 0;
 
     // ========= BUILD HTML =========
     function buildWidget() {
@@ -107,6 +108,8 @@
 
         if (isOpen) {
             clearBadge();
+            unreadCount = 0;
+            btn.classList.remove('chat-bounce-active');
             initSession();
             document.getElementById('chat-input')?.focus();
         } else {
@@ -368,10 +371,21 @@
         .then(r => r.json())
         .then(data => {
             if (data.success && data.messages.length > 0) {
+                let playedSound = false;
                 data.messages.forEach(m => {
                     lastMessageId = Math.max(lastMessageId, m.id);
                     addMessage(m);
-                    if (!isOpen && m.type !== 'user') showBadge();
+                    
+                    if (m.type === 'admin' || m.type === 'system') {
+                        if (!isOpen) {
+                            unreadCount++;
+                            showBadge(unreadCount);
+                        }
+                        if (!playedSound) {
+                            playNotificationSound();
+                            playedSound = true;
+                        }
+                    }
                 });
             }
             // Wait a bit then poll again. Server-side long poll handles the delay.
@@ -402,14 +416,59 @@
         }, HEARTBEAT_INTERVAL);
     }
 
-    // ========= BADGE =========
-    function showBadge() {
-        const badge = document.getElementById('chat-toggle-badge');
-        if (badge) { badge.style.display = 'flex'; badge.textContent = '●'; }
+    // ========= SOUND & BADGE =========
+    function playNotificationSound() {
+        try {
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const playTone = (frequency, startTime, duration) => {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(frequency, startTime);
+                
+                gain.gain.setValueAtTime(0.15, startTime);
+                gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+                
+                osc.start(startTime);
+                osc.stop(startTime + duration);
+            };
+            
+            const now = audioCtx.currentTime;
+            // Double-tone support chime
+            playTone(659.25, now, 0.3);
+            playTone(880.00, now + 0.12, 0.4);
+        } catch (e) {
+            console.log('Notification chime error:', e);
+        }
     }
+
+    function showBadge(count) {
+        const badge = document.getElementById('chat-toggle-badge');
+        if (badge) {
+            badge.style.setProperty('display', 'flex', 'important');
+            badge.textContent = count || '●';
+            badge.classList.add('badge-pulse-active');
+        }
+        
+        const btn = document.getElementById('chat-toggle-btn');
+        if (btn) {
+            btn.classList.remove('chat-bounce-active');
+            void btn.offsetWidth; // trigger reflow
+            btn.classList.add('chat-bounce-active');
+        }
+    }
+
     function clearBadge() {
         const badge = document.getElementById('chat-toggle-badge');
-        if (badge) badge.style.display = 'none';
+        if (badge) {
+            badge.style.setProperty('display', 'none', 'important');
+            badge.textContent = '';
+            badge.classList.remove('badge-pulse-active');
+        }
     }
 
     // ========= DISABLE/ENABLE INPUT =========

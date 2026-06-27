@@ -642,3 +642,22 @@ body.chat-open-lock {
     width: 100% !important;
     height: 100% !important;
 }
+
+/* Bounce animation for new message alert */
+@keyframes chat-bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+}
+.chat-bounce-active {
+    animation: chat-bounce 0.5s ease-in-out 3 !important;
+}
+
+/* Badge pulse style */
+@keyframes badge-pulse {
+    0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(245, 101, 101, 0.7); }
+    70% { transform: scale(1.15); box-shadow: 0 0 0 8px rgba(245, 101, 101, 0); }
+    100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(245, 101, 101, 0); }
+}
+.badge-pulse-active {
+    animation: badge-pulse 1.5s infinite !important;
+}
