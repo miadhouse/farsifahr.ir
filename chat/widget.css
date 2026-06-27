@@ -115,7 +115,8 @@
 #chat-toggle-badge {
     position: absolute !important;
     top: -4px !important;
-    right: -4px !important;
+    left: -4px !important;
+    right: auto !important;
     background: #f56565 !important;
     color: #fff !important;
     border-radius: 50% !important;
@@ -126,7 +127,7 @@
     display: none !important;
     align-items: center !important;
     justify-content: center !important;
-    border: 2px solid var(--chat-bg) !important;
+    border: none !important;
     font-family: sans-serif !important;
 }
 

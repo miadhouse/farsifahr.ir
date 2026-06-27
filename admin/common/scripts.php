@@ -34,7 +34,7 @@
         }
     });
     </script>
-    <script src="/chat/widget.js?v=2.4" async></script>
+    <script src="/chat/widget.js?v=2.5" async></script>
     
     <script>
         // Service Worker Registration
