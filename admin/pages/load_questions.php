@@ -55,8 +55,9 @@ try {
         foreach ($resultsStats as $row) {
             $correct = (int)$row['correct'];
             $incorrect = (int)$row['incorrect'];
-            
-            if ($correct >= 2 && $incorrect == 0) {
+            if ($correct == 0 && $incorrect == 0) {
+                $color = 'gray';
+            } elseif ($correct >= 2 && $incorrect == 0) {
                 $color = 'green';
             } elseif ($correct == 1 && $incorrect == 0) {
                 $color = 'blue';
@@ -83,8 +84,9 @@ try {
         
         $color = $statuses[$question['id']] ?? 'gray';
         $picture = $question['picture'] ?? '';
-        $isImage = (!empty($picture) && !str_ends_with($picture, '.m4v'));
-        $isVideo = (!empty($picture) && str_ends_with($picture, '.m4v'));
+        $pictureLower = strtolower($picture);
+        $isImage = (!empty($picture) && !str_ends_with($pictureLower, '.m4v'));
+        $isVideo = (!empty($picture) && str_ends_with($pictureLower, '.m4v'));
         $points = (int)($question['points'] ?? 0);
 
         echo '<div class="form-check modal-bg form-check-primary mt-3 question-item d-flex align-items-center justify-content-between" ' .

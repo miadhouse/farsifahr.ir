@@ -251,55 +251,71 @@ foreach ($tags as $tag) {
                         </div>
                     </div>
 
-                    <!-- فیلترهای سوالات به صورت چک‌باکس‌های دکمه‌ای هم‌اندازه -->
-                    <div class="row g-2 mb-3 filter-container" style="direction: rtl;">
-                        <div class="col-md-4 col-6">
-                            <input type="checkbox" class="btn-check" id="filter-image" autocomplete="off" onchange="applyFilters()">
-                            <label class="btn btn-sm btn-outline-primary w-100 py-2 d-flex align-items-center justify-content-center filter-btn-label" for="filter-image">
-                                <i class="fas fa-check-square me-2 checked-icon" style="display: none;"></i>
-                                <i class="far fa-square me-2 unchecked-icon"></i>
-                                تصویری
-                            </label>
-                        </div>
-                        <div class="col-md-4 col-6">
-                            <input type="checkbox" class="btn-check" id="filter-video" autocomplete="off" onchange="applyFilters()">
-                            <label class="btn btn-sm btn-outline-info w-100 py-2 d-flex align-items-center justify-content-center filter-btn-label" for="filter-video">
-                                <i class="fas fa-check-square me-2 checked-icon" style="display: none;"></i>
-                                <i class="far fa-square me-2 unchecked-icon"></i>
-                                ویدیویی
-                            </label>
-                        </div>
-                        <div class="col-md-4 col-6">
-                            <input type="checkbox" class="btn-check" id="filter-not-prepared" autocomplete="off" onchange="applyFilters()">
-                            <label class="btn btn-sm btn-outline-danger w-100 py-2 d-flex align-items-center justify-content-center filter-btn-label" for="filter-not-prepared">
-                                <i class="fas fa-check-square me-2 checked-icon" style="display: none;"></i>
-                                <i class="far fa-square me-2 unchecked-icon"></i>
-                                اصلاً آماده نیستم
-                            </label>
-                        </div>
-                        <div class="col-md-4 col-6">
-                            <input type="checkbox" class="btn-check" id="filter-half-prepared" autocomplete="off" onchange="applyFilters()">
-                            <label class="btn btn-sm btn-outline-warning w-100 py-2 d-flex align-items-center justify-content-center filter-btn-label" for="filter-half-prepared">
-                                <i class="fas fa-check-square me-2 checked-icon" style="display: none;"></i>
-                                <i class="far fa-square me-2 unchecked-icon"></i>
-                                ۵۰ درصد آماده
-                            </label>
-                        </div>
-                        <div class="col-md-4 col-6">
-                            <input type="checkbox" class="btn-check" id="filter-prepared" autocomplete="off" onchange="applyFilters()">
-                            <label class="btn btn-sm btn-outline-success w-100 py-2 d-flex align-items-center justify-content-center filter-btn-label" for="filter-prepared">
-                                <i class="fas fa-check-square me-2 checked-icon" style="display: none;"></i>
-                                <i class="far fa-square me-2 unchecked-icon"></i>
-                                کاملاً آماده
-                            </label>
-                        </div>
-                        <div class="col-md-4 col-6">
-                            <input type="checkbox" class="btn-check" id="filter-points5" autocomplete="off" onchange="applyFilters()">
-                            <label class="btn btn-sm btn-outline-secondary w-100 py-2 d-flex align-items-center justify-content-center filter-btn-label" for="filter-points5">
-                                <i class="fas fa-check-square me-2 checked-icon" style="display: none;"></i>
-                                <i class="far fa-square me-2 unchecked-icon"></i>
-                                ۵ امتیازی
-                            </label>
+                    <!-- آکاردئون فیلتر سوالات -->
+                    <div class="accordion mb-3" id="filterAccordion" style="direction: rtl;">
+                        <div class="accordion-item border rounded shadow-sm">
+                            <h2 class="accordion-header" id="headingFilters">
+                                <button class="accordion-button collapsed filter-accordion-btn" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFilters" aria-expanded="false" aria-controls="collapseFilters">
+                                    <span id="accordionTitleText">فیلتر سوالات</span>
+                                </button>
+                            </h2>
+                            <div id="collapseFilters" class="accordion-collapse collapse" aria-labelledby="headingFilters">
+                                <div class="accordion-body bg-light p-3">
+                                    
+                                    <!-- فیلترهای سوالات به صورت چک‌باکس‌های دکمه‌ای هم‌اندازه -->
+                                    <div class="row g-2 filter-container">
+                                        <div class="col-md-4 col-6">
+                                            <input type="checkbox" class="btn-check" id="filter-image" autocomplete="off" onchange="applyFilters()">
+                                            <label class="btn btn-sm btn-outline-primary w-100 py-2 d-flex align-items-center justify-content-center filter-btn-label" for="filter-image">
+                                                <i class="fas fa-check-square me-2 checked-icon" style="display: none;"></i>
+                                                <i class="far fa-square me-2 unchecked-icon"></i>
+                                                تصویری
+                                            </label>
+                                        </div>
+                                        <div class="col-md-4 col-6">
+                                            <input type="checkbox" class="btn-check" id="filter-video" autocomplete="off" onchange="applyFilters()">
+                                            <label class="btn btn-sm btn-outline-info w-100 py-2 d-flex align-items-center justify-content-center filter-btn-label" for="filter-video">
+                                                <i class="fas fa-check-square me-2 checked-icon" style="display: none;"></i>
+                                                <i class="far fa-square me-2 unchecked-icon"></i>
+                                                ویدیویی
+                                            </label>
+                                        </div>
+                                        <div class="col-md-4 col-6">
+                                            <input type="checkbox" class="btn-check" id="filter-not-prepared" autocomplete="off" onchange="applyFilters()">
+                                            <label class="btn btn-sm btn-outline-danger w-100 py-2 d-flex align-items-center justify-content-center filter-btn-label" for="filter-not-prepared">
+                                                <i class="fas fa-check-square me-2 checked-icon" style="display: none;"></i>
+                                                <i class="far fa-square me-2 unchecked-icon"></i>
+                                                اصلاً آماده نیستم
+                                            </label>
+                                        </div>
+                                        <div class="col-md-4 col-6">
+                                            <input type="checkbox" class="btn-check" id="filter-half-prepared" autocomplete="off" onchange="applyFilters()">
+                                            <label class="btn btn-sm btn-outline-warning w-100 py-2 d-flex align-items-center justify-content-center filter-btn-label" for="filter-half-prepared">
+                                                <i class="fas fa-check-square me-2 checked-icon" style="display: none;"></i>
+                                                <i class="far fa-square me-2 unchecked-icon"></i>
+                                                ۵۰ درصد آماده
+                                            </label>
+                                        </div>
+                                        <div class="col-md-4 col-6">
+                                            <input type="checkbox" class="btn-check" id="filter-prepared" autocomplete="off" onchange="applyFilters()">
+                                            <label class="btn btn-sm btn-outline-success w-100 py-2 d-flex align-items-center justify-content-center filter-btn-label" for="filter-prepared">
+                                                <i class="fas fa-check-square me-2 checked-icon" style="display: none;"></i>
+                                                <i class="far fa-square me-2 unchecked-icon"></i>
+                                                کاملاً آماده
+                                            </label>
+                                        </div>
+                                        <div class="col-md-4 col-6">
+                                            <input type="checkbox" class="btn-check" id="filter-points5" autocomplete="off" onchange="applyFilters()">
+                                            <label class="btn btn-sm btn-outline-secondary w-100 py-2 d-flex align-items-center justify-content-center filter-btn-label" for="filter-points5">
+                                                <i class="fas fa-check-square me-2 checked-icon" style="display: none;"></i>
+                                                <i class="far fa-square me-2 unchecked-icon"></i>
+                                                ۵ امتیازی
+                                            </label>
+                                        </div>
+                                    </div>
+                                    
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -788,6 +804,16 @@ foreach ($tags as $tag) {
             text-align: center;
             border-radius: 0.375rem;
         }
+        .filter-accordion-btn.has-active-filters {
+            background-color: #e8f5e9 !important;
+            color: #2e7d32 !important;
+            font-weight: bold !important;
+        }
+        .dark-style .filter-accordion-btn.has-active-filters {
+            background-color: rgba(46, 125, 50, 0.2) !important;
+            color: #81c784 !important;
+            font-weight: bold !important;
+        }
     </style>
 
     <script>
@@ -989,6 +1015,28 @@ foreach ($tags as $tag) {
                 cb.checked = false;
             });
 
+            // Collapse accordion if open
+            const collapseEl = document.getElementById('collapseFilters');
+            if (collapseEl && collapseEl.classList.contains('show')) {
+                const bsCollapse = bootstrap.Collapse.getInstance(collapseEl);
+                if (bsCollapse) {
+                    bsCollapse.hide();
+                } else {
+                    collapseEl.classList.remove('show');
+                    const btn = document.querySelector('.filter-accordion-btn');
+                    if (btn) {
+                        btn.classList.add('collapsed');
+                        btn.setAttribute('aria-expanded', 'false');
+                    }
+                }
+            }
+
+            // Reset accordion header
+            const titleText = document.getElementById('accordionTitleText');
+            const accordionBtn = document.querySelector('.filter-accordion-btn');
+            if (titleText) titleText.textContent = 'فیلتر سوالات';
+            if (accordionBtn) accordionBtn.classList.remove('has-active-filters');
+
             let url;
             if (selectedType === 'subcategory') {
                 url = `pages/load_questions.php?subcategory_id=${selectedCategoryId}`;
@@ -1077,6 +1125,21 @@ foreach ($tags as $tag) {
             const filterHalfPrepared = document.getElementById('filter-half-prepared').checked;
             const filterPrepared = document.getElementById('filter-prepared').checked;
             const filterPoints5 = document.getElementById('filter-points5').checked;
+
+            // Update accordion active filters state
+            const anyActive = (filterImage || filterVideo || filterNotPrepared || filterHalfPrepared || filterPrepared || filterPoints5);
+            const titleText = document.getElementById('accordionTitleText');
+            const accordionBtn = document.querySelector('.filter-accordion-btn');
+
+            if (titleText && accordionBtn) {
+                if (anyActive) {
+                    titleText.textContent = 'فیلتر سوالات (فیلتر فعال)';
+                    accordionBtn.classList.add('has-active-filters');
+                } else {
+                    titleText.textContent = 'فیلتر سوالات';
+                    accordionBtn.classList.remove('has-active-filters');
+                }
+            }
 
             const questionItems = document.querySelectorAll('.question-item');
             questionItems.forEach(item => {
