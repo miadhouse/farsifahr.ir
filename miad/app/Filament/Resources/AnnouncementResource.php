@@ -148,8 +148,11 @@ class AnnouncementResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                Tables\Filters\ToggledFilter::make('is_active')
-                    ->label('فقط فعال‌ها'),
+                Tables\Filters\TernaryFilter::make('is_active')
+                    ->label('وضعیت فعال بودن')
+                    ->placeholder('همه')
+                    ->trueLabel('فقط فعال')
+                    ->falseLabel('فقط غیرفعال'),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
