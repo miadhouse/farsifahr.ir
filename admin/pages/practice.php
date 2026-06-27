@@ -251,29 +251,56 @@ foreach ($tags as $tag) {
                         </div>
                     </div>
 
-                    <!-- فیلترهای سوالات -->
-                    <div class="d-flex flex-wrap gap-2 mb-3 filter-buttons-container" style="direction: rtl;">
-                        <button type="button" class="btn btn-sm btn-dark filter-btn active" data-filter="all" onclick="applyQuestionFilter('all', this)">
-                            ✨ همه
-                        </button>
-                        <button type="button" class="btn btn-sm btn-outline-primary filter-btn" data-filter="image" onclick="applyQuestionFilter('image', this)">
-                            🖼 تصویری
-                        </button>
-                        <button type="button" class="btn btn-sm btn-outline-info filter-btn" data-filter="video" onclick="applyQuestionFilter('video', this)">
-                            🎥 ویدیویی
-                        </button>
-                        <button type="button" class="btn btn-sm btn-outline-danger filter-btn" data-filter="not-prepared" onclick="applyQuestionFilter('not-prepared', this)">
-                            ❌ اصلاً آماده نیستیم (قرمز/خاکستری)
-                        </button>
-                        <button type="button" class="btn btn-sm btn-outline-warning filter-btn" data-filter="half-prepared" onclick="applyQuestionFilter('half-prepared', this)">
-                            ⚠️ ۵۰ درصد آماده (زرد/آبی)
-                        </button>
-                        <button type="button" class="btn btn-sm btn-outline-success filter-btn" data-filter="prepared" onclick="applyQuestionFilter('prepared', this)">
-                            ✅ کاملاً آماده (سبز)
-                        </button>
-                        <button type="button" class="btn btn-sm btn-outline-secondary filter-btn" data-filter="points5" onclick="applyQuestionFilter('points5', this)">
-                            ⭐️ ۵ امتیازی
-                        </button>
+                    <!-- فیلترهای سوالات به صورت چک‌باکس‌های دکمه‌ای هم‌اندازه -->
+                    <div class="row g-2 mb-3 filter-container" style="direction: rtl;">
+                        <div class="col-md-4 col-6">
+                            <input type="checkbox" class="btn-check" id="filter-image" autocomplete="off" onchange="applyFilters()">
+                            <label class="btn btn-sm btn-outline-primary w-100 py-2 d-flex align-items-center justify-content-center filter-btn-label" for="filter-image">
+                                <i class="fas fa-check-square me-2 checked-icon" style="display: none;"></i>
+                                <i class="far fa-square me-2 unchecked-icon"></i>
+                                تصویری
+                            </label>
+                        </div>
+                        <div class="col-md-4 col-6">
+                            <input type="checkbox" class="btn-check" id="filter-video" autocomplete="off" onchange="applyFilters()">
+                            <label class="btn btn-sm btn-outline-info w-100 py-2 d-flex align-items-center justify-content-center filter-btn-label" for="filter-video">
+                                <i class="fas fa-check-square me-2 checked-icon" style="display: none;"></i>
+                                <i class="far fa-square me-2 unchecked-icon"></i>
+                                ویدیویی
+                            </label>
+                        </div>
+                        <div class="col-md-4 col-6">
+                            <input type="checkbox" class="btn-check" id="filter-not-prepared" autocomplete="off" onchange="applyFilters()">
+                            <label class="btn btn-sm btn-outline-danger w-100 py-2 d-flex align-items-center justify-content-center filter-btn-label" for="filter-not-prepared">
+                                <i class="fas fa-check-square me-2 checked-icon" style="display: none;"></i>
+                                <i class="far fa-square me-2 unchecked-icon"></i>
+                                اصلاً آماده نیستم
+                            </label>
+                        </div>
+                        <div class="col-md-4 col-6">
+                            <input type="checkbox" class="btn-check" id="filter-half-prepared" autocomplete="off" onchange="applyFilters()">
+                            <label class="btn btn-sm btn-outline-warning w-100 py-2 d-flex align-items-center justify-content-center filter-btn-label" for="filter-half-prepared">
+                                <i class="fas fa-check-square me-2 checked-icon" style="display: none;"></i>
+                                <i class="far fa-square me-2 unchecked-icon"></i>
+                                ۵۰ درصد آماده
+                            </label>
+                        </div>
+                        <div class="col-md-4 col-6">
+                            <input type="checkbox" class="btn-check" id="filter-prepared" autocomplete="off" onchange="applyFilters()">
+                            <label class="btn btn-sm btn-outline-success w-100 py-2 d-flex align-items-center justify-content-center filter-btn-label" for="filter-prepared">
+                                <i class="fas fa-check-square me-2 checked-icon" style="display: none;"></i>
+                                <i class="far fa-square me-2 unchecked-icon"></i>
+                                کاملاً آماده
+                            </label>
+                        </div>
+                        <div class="col-md-4 col-6">
+                            <input type="checkbox" class="btn-check" id="filter-points5" autocomplete="off" onchange="applyFilters()">
+                            <label class="btn btn-sm btn-outline-secondary w-100 py-2 d-flex align-items-center justify-content-center filter-btn-label" for="filter-points5">
+                                <i class="fas fa-check-square me-2 checked-icon" style="display: none;"></i>
+                                <i class="far fa-square me-2 unchecked-icon"></i>
+                                ۵ امتیازی
+                            </label>
+                        </div>
                     </div>
 
                     <div id="questionsContainer">
@@ -737,6 +764,30 @@ foreach ($tags as $tag) {
         .dark-style h3 {
             color: #d8deea !important;
         }
+
+        /* Custom styles for checkbox filter buttons */
+        .btn-check:checked + .filter-btn-label .checked-icon {
+            display: inline-block !important;
+        }
+        .btn-check:checked + .filter-btn-label .unchecked-icon {
+            display: none !important;
+        }
+        .filter-btn-label {
+            font-size: 0.85rem !important;
+            font-weight: 500 !important;
+            transition: all 0.2s ease !important;
+            border-width: 1.5px !important;
+        }
+        .filter-container .col-md-4, .filter-container .col-6 {
+            display: flex;
+        }
+        .filter-container label.btn {
+            height: 100%;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            border-radius: 0.375rem;
+        }
     </style>
 
     <script>
@@ -919,6 +970,7 @@ foreach ($tags as $tag) {
             loadQuestions();
         }
         // Load questions via AJAX
+        // Load questions via AJAX
         function loadQuestions() {
             const container = document.getElementById('questionsContainer');
 
@@ -931,6 +983,11 @@ foreach ($tags as $tag) {
                     <div class="mt-2">در حال بارگذاری سوالات...</div>
                 </div>
             `;
+
+            // Reset all filter checkboxes
+            document.querySelectorAll('.btn-check').forEach(cb => {
+                cb.checked = false;
+            });
 
             let url;
             if (selectedType === 'subcategory') {
@@ -951,14 +1008,7 @@ foreach ($tags as $tag) {
                 .then(data => {
                     container.innerHTML = data;
                     setupQuestionCheckboxes();
-                    
-                    // Reset filter button to "All"
-                    const allBtn = document.querySelector('.filter-btn[data-filter="all"]');
-                    if (allBtn) {
-                        applyQuestionFilter('all', allBtn);
-                    } else {
-                        updateQuestionCounts();
-                    }
+                    updateQuestionCounts();
                 })
                 .catch(error => {
                     console.error('خطا در بارگذاری سوالات:', error);
@@ -1019,32 +1069,14 @@ foreach ($tags as $tag) {
             updateQuestionCounts();
         }
 
-        // Apply question filter
-        let currentActiveFilter = 'all';
-        function applyQuestionFilter(filterType, btn) {
-            currentActiveFilter = filterType;
-            
-            // Highlight active button
-            const buttons = document.querySelectorAll('.filter-btn');
-            buttons.forEach(b => {
-                b.classList.remove('active');
-                if (b.classList.contains('btn-primary')) { b.classList.remove('btn-primary'); b.classList.add('btn-outline-primary'); }
-                else if (b.classList.contains('btn-info')) { b.classList.remove('btn-info'); b.classList.add('btn-outline-info'); }
-                else if (b.classList.contains('btn-danger')) { b.classList.remove('btn-danger'); b.classList.add('btn-outline-danger'); }
-                else if (b.classList.contains('btn-warning')) { b.classList.remove('btn-warning'); b.classList.add('btn-outline-warning'); }
-                else if (b.classList.contains('btn-success')) { b.classList.remove('btn-success'); b.classList.add('btn-outline-success'); }
-                else if (b.classList.contains('btn-secondary')) { b.classList.remove('btn-secondary'); b.classList.add('btn-outline-secondary'); }
-                else if (b.classList.contains('btn-dark')) { b.classList.remove('btn-dark'); b.classList.add('btn-outline-dark'); }
-            });
-            
-            btn.classList.add('active');
-            if (btn.classList.contains('btn-outline-primary')) { btn.classList.remove('btn-outline-primary'); btn.classList.add('btn-primary'); }
-            else if (btn.classList.contains('btn-outline-info')) { btn.classList.remove('btn-outline-info'); btn.classList.add('btn-info'); }
-            else if (btn.classList.contains('btn-outline-danger')) { btn.classList.remove('btn-outline-danger'); btn.classList.add('btn-danger'); }
-            else if (btn.classList.contains('btn-outline-warning')) { btn.classList.remove('btn-outline-warning'); btn.classList.add('btn-warning'); }
-            else if (btn.classList.contains('btn-outline-success')) { btn.classList.remove('btn-outline-success'); btn.classList.add('btn-success'); }
-            else if (btn.classList.contains('btn-outline-secondary')) { btn.classList.remove('btn-outline-secondary'); btn.classList.add('btn-secondary'); }
-            else if (btn.classList.contains('btn-outline-dark')) { btn.classList.remove('btn-outline-dark'); btn.classList.add('btn-dark'); }
+        // Apply multiple question filters (combines filters with AND/OR logic)
+        function applyFilters() {
+            const filterImage = document.getElementById('filter-image').checked;
+            const filterVideo = document.getElementById('filter-video').checked;
+            const filterNotPrepared = document.getElementById('filter-not-prepared').checked;
+            const filterHalfPrepared = document.getElementById('filter-half-prepared').checked;
+            const filterPrepared = document.getElementById('filter-prepared').checked;
+            const filterPoints5 = document.getElementById('filter-points5').checked;
 
             const questionItems = document.querySelectorAll('.question-item');
             questionItems.forEach(item => {
@@ -1052,39 +1084,40 @@ foreach ($tags as $tag) {
                 const isImage = item.getAttribute('data-is-image') === '1';
                 const isVideo = item.getAttribute('data-is-video') === '1';
                 const status = item.getAttribute('data-status') || 'gray';
-                
-                let show = false;
-                switch (filterType) {
-                    case 'all':
-                        show = true;
-                        break;
-                    case 'image':
-                        show = isImage;
-                        break;
-                    case 'video':
-                        show = isVideo;
-                        break;
-                    case 'not-prepared':
-                        show = (status === 'red' || status === 'gray');
-                        break;
-                    case 'half-prepared':
-                        show = (status === 'yellow' || status === 'blue');
-                        break;
-                    case 'prepared':
-                        show = (status === 'green');
-                        break;
-                    case 'points5':
-                        show = (points === 5);
-                        break;
+
+                // 1. Type Filter (Image/Video)
+                let matchesType = true;
+                if (filterImage || filterVideo) {
+                    matchesType = false;
+                    if (filterImage && isImage) matchesType = true;
+                    if (filterVideo && isVideo) matchesType = true;
                 }
-                
+
+                // 2. Status Filter
+                let matchesStatus = true;
+                if (filterNotPrepared || filterHalfPrepared || filterPrepared) {
+                    matchesStatus = false;
+                    if (filterNotPrepared && (status === 'red' || status === 'gray')) matchesStatus = true;
+                    if (filterHalfPrepared && (status === 'yellow' || status === 'blue')) matchesStatus = true;
+                    if (filterPrepared && status === 'green') matchesStatus = true;
+                }
+
+                // 3. Points Filter
+                let matchesPoints = true;
+                if (filterPoints5) {
+                    matchesPoints = (points === 5);
+                }
+
+                // Combine conditions
+                const show = matchesType && matchesStatus && matchesPoints;
+
                 if (show) {
                     item.style.setProperty('display', 'flex', 'important');
                 } else {
                     item.style.setProperty('display', 'none', 'important');
                 }
             });
-            
+
             updateQuestionCounts();
         }
 
