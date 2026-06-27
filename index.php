@@ -90,7 +90,7 @@ header('X-LiteSpeed-Cache-Control: no-cache'); // LiteSpeed Server
     <link rel="preload" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'"><noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css"></noscript>
     <link rel="preload" href="https://cdn.jsdelivr.net/gh/lipis/flag-icons@7.2.3/css/flag-icons.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'"><noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/lipis/flag-icons@7.2.3/css/flag-icons.min.css"></noscript>
     <link href="assets/css/font-ir.css" rel="stylesheet">
-    <link rel="stylesheet" href="/chat/widget.css?v=2.3">
+    <link rel="stylesheet" href="/chat/widget.css?v=2.4">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Rajdhani:wght@300;400;500;600;700&family=Rubik:ital,wght@0,300..900;1,300..900&display=swap" rel="stylesheet">
 
     <link rel="manifest" href="/manifest.json">
@@ -1056,7 +1056,7 @@ header('X-LiteSpeed-Cache-Control: no-cache'); // LiteSpeed Server
             }
         });
 </script>
-<script src="/chat/widget.js?v=2.3" async></script>
+<script src="/chat/widget.js?v=2.4" async></script>
 
     <?php if (isset($_COOKIE['concurrent_login']) && $_COOKIE['concurrent_login'] === '1'): ?>
     <script>

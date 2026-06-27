@@ -68,7 +68,7 @@ $recent_logins = $stmt->fetchAll();
     </style>
 
     <!-- Vendors CSS -->
-    <link rel="stylesheet" href="/chat/widget.css?v=2.3">
+    <link rel="stylesheet" href="/chat/widget.css?v=2.4">
     <link rel="stylesheet" href="assets/vendor/libs/perfect-scrollbar/perfect-scrollbar.css">
     <link rel="stylesheet" href="assets/vendor/libs/typeahead-js/typeahead.css">
     <link rel="stylesheet" href="assets/vendor/libs/apex-charts/apex-charts.css">
