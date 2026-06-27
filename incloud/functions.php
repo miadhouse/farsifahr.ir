@@ -719,6 +719,9 @@ function render_announcements($page_name)
     
     <!-- جاوااسکریپت کنترل نمایش و ذخیره آمار -->
     <script>
+        // شناسه کاربر لاگین شده برای ایزوله‌سازی لوکال‌استوریج
+        const currentUserId = <?= (int)($_SESSION['user_id'] ?? 0) ?>;
+
         // کمکی جهت جلوگیری از بروز خطای SecurityError در حالت Private یا در صورت مسدود بودن LocalStorage
         const safeStorage = {
             getItem: function(key) {
@@ -775,7 +778,7 @@ function render_announcements($page_name)
 
         // بستن دائمی اعلان (دیگر نشان نده)
         function dismissAnnouncementPermanently(id) {
-            safeStorage.setItem('dismissed_announcement_' + id, '1');
+            safeStorage.setItem('dismissed_announcement_' + currentUserId + '_' + id, '1');
             dismissAnnouncement(id);
         }
 
@@ -788,8 +791,8 @@ function render_announcements($page_name)
                 const displayType = el.getAttribute('data-display-type');
                 
                 // افزایش و ثبت شمارش بازدید فقط زمانی که اعلان واقعاً به کاربر نشان داده می‌شود
-                const views = parseInt(safeStorage.getItem('announcement_views_' + id) || '0', 10);
-                safeStorage.setItem('announcement_views_' + id, views + 1);
+                const views = parseInt(safeStorage.getItem('announcement_views_' + currentUserId + '_' + id) || '0', 10);
+                safeStorage.setItem('announcement_views_' + currentUserId + '_' + id, views + 1);
                 console.log('Showing announcement ID:', id, 'views updated to:', views + 1);
                 
                 // نمایش اعلان با اولویت بالا جهت جلوگیری از تداخل CSS
@@ -814,22 +817,22 @@ function render_announcements($page_name)
                 const updatedAt = el.getAttribute('data-updated-at') || '0';
                 
                 // بررسی نسخه اعلان جهت فعالسازی مجدد (Reactivation)
-                const storedUpdated = safeStorage.getItem('announcement_updated_' + id) || '0';
+                const storedUpdated = safeStorage.getItem('announcement_updated_' + currentUserId + '_' + id) || '0';
                 if (storedUpdated !== updatedAt) {
-                    safeStorage.removeItem('dismissed_announcement_' + id);
-                    safeStorage.setItem('announcement_views_' + id, '0');
-                    safeStorage.setItem('announcement_updated_' + id, updatedAt);
+                    safeStorage.removeItem('dismissed_announcement_' + currentUserId + '_' + id);
+                    safeStorage.setItem('announcement_views_' + currentUserId + '_' + id, '0');
+                    safeStorage.setItem('announcement_updated_' + currentUserId + '_' + id, updatedAt);
                 }
                 
                 // بررسی بسته شدن دستی اعلان
-                const dismissed = safeStorage.getItem('dismissed_announcement_' + id);
+                const dismissed = safeStorage.getItem('dismissed_announcement_' + currentUserId + '_' + id);
                 if (dismissed === '1') {
                     el.remove();
                     return;
                 }
                 
                 // شمارش تعداد بازدیدهای ذخیره شده در مرورگر کاربر
-                const views = parseInt(safeStorage.getItem('announcement_views_' + id) || '0', 10);
+                const views = parseInt(safeStorage.getItem('announcement_views_' + currentUserId + '_' + id) || '0', 10);
                 
                 let show = true;
                 if (displayType === 'once' && views >= 1) {
