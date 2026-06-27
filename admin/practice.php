@@ -1,6 +1,7 @@
 <!-- Load Data Files -->
 
 <?php include("common/head.php"); ?>
+<?php render_announcements('practice'); ?>
 
 <!-- Layout wrapper -->
 <div class="layout-wrapper layout-content-navbar">

@@ -449,3 +449,312 @@ function log_visitor_to_telegram()
 // اجرای خودکار لاگ بازدیدکننده
 // log_visitor_to_telegram();
 
+/**
+ * دریافت اعلان‌های فعال برای یک صفحه خاص
+ */
+function get_active_announcements($page_name)
+{
+    global $pdo;
+    
+    // تشخیص وضعیت لاگین کاربر
+    $is_logged = is_logged_in();
+    $audience = $is_logged ? 'members' : 'guests';
+    $now = date('Y-m-d H:i:s');
+    
+    try {
+        // واکشی اعلان‌های فعال که با مخاطب و تاریخ سازگارند
+        $stmt = $pdo->prepare("
+            SELECT * FROM announcements 
+            WHERE is_active = 1 
+              AND (end_date IS NULL OR end_date > ?)
+              AND (audience = 'all' OR audience = ?)
+            ORDER BY id DESC
+        ");
+        $stmt->execute([$now, $audience]);
+        $announcements = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        $filtered = [];
+        foreach ($announcements as $ann) {
+            // فیلتر کردن صفحات هدف (فیلد target_pages ذخیره شده به صورت JSON در لاراول)
+            $pages = json_decode($ann['target_pages'], true) ?: [];
+            if (in_array($page_name, $pages)) {
+                $filtered[] = $ann;
+            }
+        }
+        return $filtered;
+    } catch (PDOException $e) {
+        error_log("Error fetching announcements: " . $e->getMessage());
+        return [];
+    }
+}
+
+/**
+ * رندر کردن کدهای HTML/CSS/JS اعلان‌های فعال
+ */
+function render_announcements($page_name)
+{
+    $announcements = get_active_announcements($page_name);
+    if (empty($announcements)) return;
+    
+    // گروه بندی اعلان ها بر اساس موقعیت
+    $positions = [
+        'top' => [],
+        'middle' => [],
+        'bottom' => []
+    ];
+    
+    foreach ($announcements as $ann) {
+        if (isset($positions[$ann['position']])) {
+            $positions[$ann['position']][] = $ann;
+        }
+    }
+    
+    ?>
+    <!-- کدهای استایل اعلان‌ها -->
+    <style>
+        .announcement-item {
+            display: none; /* در ابتدا پنهان تا در جاوااسکریپت بررسی شود */
+            box-sizing: border-box;
+            position: relative;
+            z-index: 99999;
+            transition: all 0.3s ease;
+        }
+        
+        /* استایل نوار بالا */
+        .announcement-top-bar {
+            width: 100%;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            padding: 12px 40px 12px 15px;
+            text-align: center;
+            font-size: 0.95rem;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        /* استایل نوار پایین */
+        .announcement-bottom-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+            color: white;
+            padding: 12px 40px 12px 15px;
+            text-align: center;
+            font-size: 0.95rem;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.15);
+        }
+        
+        /* استایل پاپ‌آپ وسط صفحه */
+        .announcement-modal-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100000;
+            backdrop-filter: blur(4px);
+        }
+        
+        .announcement-modal-card {
+            background: white;
+            color: #333;
+            width: 90%;
+            max-width: 550px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            overflow: hidden;
+            animation: announcementPopupScale 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+        
+        .dark-style .announcement-modal-card {
+            background: #232a3b;
+            color: #d8deea;
+            border: 1px solid #36445d;
+        }
+        
+        .announcement-modal-header {
+            padding: 15px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #eee;
+            font-weight: bold;
+            font-size: 1.1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .dark-style .announcement-modal-header {
+            background: #1c222f;
+            border-bottom-color: #36445d;
+        }
+        
+        .announcement-modal-body {
+            padding: 20px;
+            max-height: 70vh;
+            overflow-y: auto;
+            font-size: 1rem;
+            line-height: 1.6;
+        }
+        
+        /* دکمه بستن عمومی */
+        .announcement-close-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            right: 15px;
+            background: none;
+            border: none;
+            color: rgba(255,255,255,0.8);
+            font-size: 1.6rem;
+            cursor: pointer;
+            line-height: 1;
+            transition: color 0.2s;
+        }
+        
+        .announcement-close-btn:hover {
+            color: white;
+        }
+        
+        .announcement-modal-close-icon {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #888;
+            transition: color 0.2s;
+        }
+        
+        .announcement-modal-close-icon:hover {
+            color: #333;
+        }
+        
+        .dark-style .announcement-modal-close-icon:hover {
+            color: white;
+        }
+        
+        /* انیمیشن رندر پاپ‌آپ */
+        @keyframes announcementPopupScale {
+            from {
+                transform: scale(0.8);
+                opacity: 0;
+            }
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+        
+        /* ریسپانسیو بودن مدیا درون اعلان‌ها */
+        .announcement-item img, .announcement-item video, .announcement-item iframe {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+    </style>
+    
+    <!-- خروجی اعلان‌های بالا -->
+    <?php foreach ($positions['top'] as $ann): ?>
+        <div class="announcement-item announcement-top-bar" id="announcement-<?= $ann['id'] ?>" 
+             data-id="<?= $ann['id'] ?>"
+             data-display-type="<?= $ann['display_type'] ?>"
+             data-views-limit="<?= $ann['custom_views_limit'] ?? 0 ?>">
+            <div class="announcement-content-wrapper" style="direction: rtl;">
+                <?= $ann['content'] ?>
+            </div>
+            <button class="announcement-close-btn" onclick="dismissAnnouncement(<?= $ann['id'] ?>)">&times;</button>
+        </div>
+    <?php endforeach; ?>
+    
+    <!-- خروجی اعلان‌های پایین -->
+    <?php foreach ($positions['bottom'] as $ann): ?>
+        <div class="announcement-item announcement-bottom-bar" id="announcement-<?= $ann['id'] ?>" 
+             data-id="<?= $ann['id'] ?>"
+             data-display-type="<?= $ann['display_type'] ?>"
+             data-views-limit="<?= $ann['custom_views_limit'] ?? 0 ?>">
+            <div class="announcement-content-wrapper" style="direction: rtl;">
+                <?= $ann['content'] ?>
+            </div>
+            <button class="announcement-close-btn" onclick="dismissAnnouncement(<?= $ann['id'] ?>)">&times;</button>
+        </div>
+    <?php endforeach; ?>
+    
+    <!-- خروجی اعلان‌های وسط صفحه (پاپ‌آپ) -->
+    <?php foreach ($positions['middle'] as $ann): ?>
+        <div class="announcement-item announcement-modal-backdrop" id="announcement-<?= $ann['id'] ?>" 
+             data-id="<?= $ann['id'] ?>"
+             data-display-type="<?= $ann['display_type'] ?>"
+             data-views-limit="<?= $ann['custom_views_limit'] ?? 0 ?>">
+            <div class="announcement-modal-card">
+                <div class="announcement-modal-header" style="direction: rtl;">
+                    <span><?= htmlspecialchars($ann['title']) ?></span>
+                    <button class="announcement-modal-close-icon" onclick="dismissAnnouncement(<?= $ann['id'] ?>)">&times;</button>
+                </div>
+                <div class="announcement-modal-body" style="direction: rtl;">
+                    <?= $ann['content'] ?>
+                </div>
+            </div>
+        </div>
+    <?php endforeach; ?>
+    
+    <!-- جاوااسکریپت کنترل نمایش و ذخیره آمار -->
+    <script>
+        function dismissAnnouncement(id) {
+            localStorage.setItem('dismissed_announcement_' + id, '1');
+            const el = document.getElementById('announcement-' + id);
+            if (el) {
+                if (el.classList.contains('announcement-modal-backdrop')) {
+                    el.style.opacity = '0';
+                    setTimeout(() => el.remove(), 300);
+                } else {
+                    el.style.height = '0';
+                    el.style.padding = '0';
+                    el.style.opacity = '0';
+                    setTimeout(() => el.remove(), 300);
+                }
+            }
+        }
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.announcement-item').forEach(el => {
+                const id = el.getAttribute('data-id');
+                const displayType = el.getAttribute('data-display-type');
+                const viewsLimit = parseInt(el.getAttribute('data-views-limit') || '0', 10);
+                
+                // بررسی بسته شدن دستی اعلان
+                if (localStorage.getItem('dismissed_announcement_' + id) === '1') {
+                    el.remove();
+                    return;
+                }
+                
+                // شمارش تعداد بازدیدهای ذخیره شده در مرورگر کاربر
+                const views = parseInt(localStorage.getItem('announcement_views_' + id) || '0', 10);
+                
+                let show = true;
+                if (displayType === 'once' && views >= 1) {
+                    show = false;
+                } else if (displayType === 'three_times' && views >= 3) {
+                    show = false;
+                } else if (displayType === 'custom' && views >= viewsLimit) {
+                    show = false;
+                }
+                
+                if (show) {
+                    // افزایش و ثبت شمارش بازدید
+                    localStorage.setItem('announcement_views_' + id, views + 1);
+                    // نمایش اعلان
+                    el.style.display = el.classList.contains('announcement-modal-backdrop') ? 'flex' : 'block';
+                } else {
+                    el.remove();
+                }
+            });
+        });
+    </script>
+    <?php
+}
+

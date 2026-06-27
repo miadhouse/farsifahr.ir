@@ -402,6 +402,7 @@ $allQuestions = array_merge($grundstoffIds, $zusatzstoffIds);
 </head>
 
 <body style="height: 100%;background-color: #d3f5da;">
+    <?php render_announcements('exam'); ?>
     <div class="container" style="height: 100%;">
         <!-- Header -->
         <div class="text-white bg-success d-flex justify-content-between align-items-center p-2 px-3 px-md-4"

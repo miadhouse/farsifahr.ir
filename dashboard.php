@@ -68,6 +68,7 @@ $user_reports = $stmtReports->fetchAll();
     <link rel="stylesheet" href="assets/css/style.css">
 </head>
 <body>
+    <?php render_announcements('dashboard'); ?>
     <!-- Navbar -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
         <div class="container">

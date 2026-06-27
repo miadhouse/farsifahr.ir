@@ -254,6 +254,7 @@ header('X-LiteSpeed-Cache-Control: no-cache'); // LiteSpeed Server
 </head>
 
 <body>
+    <?php render_announcements('home'); ?>
     <!-- PWA Install Banner -->
     <div id="pwa-install-banner">
         <div class="banner-content">
