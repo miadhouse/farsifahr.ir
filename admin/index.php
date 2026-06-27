@@ -1,4 +1,5 @@
 <?php include("common/head.php"); ?>
+<?php render_announcements('dashboard'); ?>
 <!-- Layout wrapper -->
 <div class="layout-wrapper layout-content-navbar">
     <div class="layout-container">
