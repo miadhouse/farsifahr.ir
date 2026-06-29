@@ -1662,9 +1662,6 @@ $isAdmin = is_super_admin();
         }
         
         showTranslationContent();
-        setTimeout(() => {
-            window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' });
-        }, 100);
     }
 }
 function toggleExplanation() {
@@ -1691,9 +1688,6 @@ function toggleExplanation() {
 
         showTranslationContent();
         showExplanationContent();
-        setTimeout(() => {
-            window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' });
-        }, 100);
     }
 }
 
