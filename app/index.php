@@ -631,14 +631,29 @@ $isAdmin = is_super_admin();
         
         /* Translation/Explanation Content Box */
         .translation-box, .explanation-box {
-            margin-top: 15px;
-            padding: 15px;
-            border-radius: 10px;
+            margin-top: 6px;
+            padding: 6px 10px;
+            border-radius: 8px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            animation: slideDown 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
             position: relative;
+            font-size: 0.82rem;
+            /* collapse animation */
+            overflow: hidden;
+            max-height: 0;
+            opacity: 0;
+            transition: max-height 0.35s ease, opacity 0.3s ease, padding 0.3s ease, margin 0.3s ease;
+            padding-top: 0;
+            padding-bottom: 0;
+            margin-top: 0;
+        }
+
+        .translation-box.open, .explanation-box.open {
+            max-height: 600px;
+            opacity: 1;
+            padding: 6px 10px;
+            margin-top: 6px;
         }
 
         .explanation-box {
@@ -646,24 +661,26 @@ $isAdmin = is_super_admin();
         }
 
         .translation-box h6, .explanation-box h6 {
-            margin: 0 0 10px 0;
+            margin: 0 0 6px 0;
             font-weight: bold;
+            font-size: 0.8rem;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
         }
 
         .translation-box p, .explanation-box p {
             margin: 0;
-            line-height: 1.6;
+            line-height: 1.5;
             direction: rtl;
             text-align: right;
+            font-size: 0.82rem;
         }
 
         @keyframes slideDown {
             from {
                 opacity: 0;
-                transform: translateY(-10px);
+                transform: translateY(-8px);
             }
             to {
                 opacity: 1;
@@ -673,19 +690,33 @@ $isAdmin = is_super_admin();
 
         /* Answer Translation/Explanation Styles */
         .answer-translation, .answer-explanation {
-            margin-top: 8px;
-            padding: 10px;
-            border-radius: 8px;
-            background-color: rgba(102, 126, 234, 0.1);
+            margin-top: 3px;
+            padding: 4px 8px;
+            border-radius: 6px;
+            background-color: rgba(102, 126, 234, 0.08);
             border-right: 3px solid #667eea;
             direction: rtl;
             text-align: right;
-            font-size: 0.9rem;
-            animation: fadeIn 0.3s ease;
+            font-size: 0.78rem;
+            /* collapse animation */
+            overflow: hidden;
+            max-height: 0;
+            opacity: 0;
+            transition: max-height 0.35s ease, opacity 0.3s ease, padding 0.3s ease, margin 0.3s ease;
+            padding-top: 0;
+            padding-bottom: 0;
+            margin-top: 0;
+        }
+
+        .answer-translation.open, .answer-explanation.open {
+            max-height: 400px;
+            opacity: 1;
+            padding: 4px 8px;
+            margin-top: 3px;
         }
 
         .answer-explanation {
-            background-color: rgba(240, 147, 251, 0.1);
+            background-color: rgba(240, 147, 251, 0.08);
             border-right-color: #f093fb;
         }
 
@@ -729,18 +760,36 @@ $isAdmin = is_super_admin();
 
         /* Pretext Translation */
         .pretext-translation, .pretext-explanation {
-            margin-top: 10px;
-            padding: 12px;
-            border-radius: 8px;
-            background: linear-gradient(135deg, rgba(102, 126, 234, 0.15) 0%, rgba(118, 75, 162, 0.15) 100%);
-            border-right: 4px solid #667eea;
+            margin-top: 5px;
+            padding: 5px 10px;
+            border-radius: 6px;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.12) 0%, rgba(118, 75, 162, 0.12) 100%);
+            border-right: 3px solid #667eea;
             direction: rtl;
             text-align: right;
+            font-size: 0.8rem;
         }
 
         .pretext-explanation {
-            background: linear-gradient(135deg, rgba(240, 147, 251, 0.15) 0%, rgba(245, 87, 108, 0.15) 100%);
+            background: linear-gradient(135deg, rgba(240, 147, 251, 0.12) 0%, rgba(245, 87, 108, 0.12) 100%);
             border-right-color: #f5576c;
+        }
+
+        /* Spacing between question text and translation/explanation */
+        #question-translation-container:not(:empty),
+        #question-explanation-container:not(:empty) {
+            margin-top: 8px;
+        }
+
+        /* Spacing between image/video (inside media column) and pretext translation */
+        #pretext-translation-container:not(:empty),
+        #pretext-explanation-container:not(:empty) {
+            margin-top: 14px;
+        }
+
+        /* Row containing image gets top margin when translation is present */
+        .row:has(#media) {
+            margin-top: 14px;
         }
         /* در بخش style اضافه کنید: */
 .answer-item {
@@ -878,7 +927,7 @@ $isAdmin = is_super_admin();
 
         </div>
         <div class="mt-4 p-4" style="padding-bottom: 350px !important;">
-            <h6 id="text" class="fw-bold mb-4 question-text"></h6>
+            <h6 id="text" class="fw-bold mb-1 question-text"></h6>
             
             <!-- Question Translation/Explanation Container -->
             <div id="question-translation-container"></div>
@@ -1910,8 +1959,19 @@ function showTranslationContent() {
                 <p>${content}</p>
             </div>
         `;
+        // trigger open animation
+        requestAnimationFrame(() => {
+            const box = questionTransContainer.querySelector('.translation-box');
+            if (box) box.classList.add('open');
+        });
     } else {
-        questionTransContainer.innerHTML = '';
+        const box = questionTransContainer.querySelector('.translation-box.open');
+        if (box) {
+            box.classList.remove('open');
+            setTimeout(() => { questionTransContainer.innerHTML = ''; }, 360);
+        } else {
+            questionTransContainer.innerHTML = '';
+        }
     }
     
     // Show pretext translation if exists
@@ -1939,7 +1999,7 @@ function showTranslationContent() {
                     
                     const additionalClass = explanationActive ? 'with-explanation' : '';
                     const translationDiv = document.createElement('div');
-                    translationDiv.className = `answer-translation mt-2 ${additionalClass}`;
+                    translationDiv.className = `answer-translation ${additionalClass}`;
                     
                     const content = makeEditableHTML(answer.farsi_text, 'answer', 'farsi_text', answer.id);
                     translationDiv.innerHTML = `<strong>ترجمه:</strong> ${content}`;
@@ -1951,6 +2011,8 @@ function showTranslationContent() {
                     } else {
                         answerContainer.appendChild(translationDiv);
                     }
+                    // trigger open animation
+                    requestAnimationFrame(() => translationDiv.classList.add('open'));
                 }
             }
         });
@@ -1974,8 +2036,18 @@ function showExplanationContent() {
                 <p>${content}</p>
             </div>
         `;
+        requestAnimationFrame(() => {
+            const box = questionExplainContainer.querySelector('.explanation-box');
+            if (box) box.classList.add('open');
+        });
     } else {
-        questionExplainContainer.innerHTML = '';
+        const box = questionExplainContainer.querySelector('.explanation-box.open');
+        if (box) {
+            box.classList.remove('open');
+            setTimeout(() => { questionExplainContainer.innerHTML = ''; }, 360);
+        } else {
+            questionExplainContainer.innerHTML = '';
+        }
     }
     
     // Show answer explanations - زیر متن پاسخ
@@ -1990,37 +2062,57 @@ function showExplanationContent() {
                     if (existingExpl) existingExpl.remove();
                     
                     const explanationDiv = document.createElement('div');
-                    explanationDiv.className = translationActive ? 'answer-explanation mt-2 with-translation' : 'answer-explanation mt-2';
+                    explanationDiv.className = translationActive ? 'answer-explanation with-translation' : 'answer-explanation';
                     
                     const content = makeEditableHTML(answer.info, 'answer', 'info', answer.id);
                     explanationDiv.innerHTML = `<strong>توضیح:</strong> ${content}`;
                     answerContainer.appendChild(explanationDiv);
+                    requestAnimationFrame(() => explanationDiv.classList.add('open'));
                 }
             }
         });
     }
-    
 
 }
 
 function hideTranslationContent() {
     // فقط اگر explanationActive فعال نباشد، ترجمه را مخفی کن
     if (!explanationActive) {
-        document.getElementById('question-translation-container').innerHTML = '';
+        const qBox = document.querySelector('#question-translation-container .translation-box.open');
+        if (qBox) {
+            qBox.classList.remove('open');
+            setTimeout(() => { document.getElementById('question-translation-container').innerHTML = ''; }, 360);
+        } else {
+            document.getElementById('question-translation-container').innerHTML = '';
+        }
         document.getElementById('pretext-translation-container').innerHTML = '';
         
-        // Remove all answer translations
-        document.querySelectorAll('.answer-translation').forEach(el => el.remove());
+        // Remove all answer translations with animation
+        document.querySelectorAll('.answer-translation.open').forEach(el => {
+            el.classList.remove('open');
+            setTimeout(() => el.remove(), 360);
+        });
+        document.querySelectorAll('.answer-translation:not(.open)').forEach(el => el.remove());
     }
 }
 
-        function hideExplanationContent() {
-            document.getElementById('question-explanation-container').innerHTML = '';
-            document.getElementById('pretext-explanation-container').innerHTML = '';
-            
-            // Remove all answer explanations
-            document.querySelectorAll('.answer-explanation').forEach(el => el.remove());
-        }
+function hideExplanationContent() {
+    const qBox = document.querySelector('#question-explanation-container .explanation-box.open');
+    if (qBox) {
+        qBox.classList.remove('open');
+        setTimeout(() => { document.getElementById('question-explanation-container').innerHTML = ''; }, 360);
+    } else {
+        document.getElementById('question-explanation-container').innerHTML = '';
+    }
+    document.getElementById('pretext-explanation-container').innerHTML = '';
+    
+    // Remove all answer explanations with animation
+    document.querySelectorAll('.answer-explanation.open').forEach(el => {
+        el.classList.remove('open');
+        setTimeout(() => el.remove(), 360);
+    });
+    document.querySelectorAll('.answer-explanation:not(.open)').forEach(el => el.remove());
+}
 
         // ============================================
         // ادامه کد اصلی...
