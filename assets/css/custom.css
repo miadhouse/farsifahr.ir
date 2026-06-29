@@ -261,3 +261,22 @@ footer .social-links a:hover {
     color: rgb(255, 191, 0) !important;
 }
 
+/* Adjust button sizes and header padding */
+.header-bar { padding-top: 0.25rem !important; padding-bottom: 0.25rem !important; }
+/* Center middle button group */
+.header-bar .header-middle-buttons { margin-left: auto; margin-right: auto; }
+.header-bar .btn { padding: 0.25rem 0.5rem !important; font-size: 0.75rem; }
+.header-bar .code-exit-wrapper .btn-circle {
+    margin-right: 3px !important;
+}
+.header-bar .header-middle-buttons {
+    margin-left: auto !important;
+    margin-right: auto !important;
+    /* keep flex layout */
+    display: flex;
+    align-items: center;
+    gap: 0.2rem;
+}
+
+.header-bar .gap-2 { gap: 0.1rem !important; }
+   .header-bar #code { margin-left: 0.05rem !important; font-size: .7rem !important; }

@@ -1,4 +1,4 @@
-<?php
+  <?php
 require_once __DIR__ . '/../incloud/questions.php';
 require_once __DIR__ . '/../incloud/functions.php';
 // در ابتدای فایل PHP بعد از require_once
@@ -805,6 +805,17 @@ $isAdmin = is_super_admin();
     }
 }
     </style>
+<style>
+/* Adjust button sizes and header padding */
+.header-bar { padding-top: 0.25rem !important; padding-bottom: 0.25rem !important; }
+/* Center middle button group */
+.header-bar .header-middle-buttons { margin-left: auto; margin-right: auto; }
+.header-bar .btn { padding: 0.25rem 0.5rem !important; font-size: 0.75rem; }
+.header-bar .code-exit-wrapper .btn-circle { margin-right: 3px !important; }
+.header-bar .header-middle-buttons { margin-left: auto !important; margin-right: auto !important; display: flex; align-items: center; gap: 0.2rem; }
+.header-bar .gap-2 { gap: 0.1rem !important; }
+.header-bar #code { margin-left: 0.05rem !important; font-size: .7rem !important; }
+</style>
 </head>
 
 <body style="min-height: 100vh; background-color: #d3f5da;" class="<?= $mode === 'practice' ? 'practice-mode' : '' ?>">
@@ -829,6 +840,7 @@ $isAdmin = is_super_admin();
                 <button id="sheet-save-btn" class="btn btn-warning btn-lg px-4" onclick="saveWord()" style="display: none;">
                     <i class="fas fa-save"></i> ذخیره در کلکشن
                 </button>
+                
                 <button class="btn btn-outline-secondary btn-lg px-3" onclick="closeVocabSheet()">
                     <i class="fas fa-times"></i>
                 </button>
@@ -836,20 +848,17 @@ $isAdmin = is_super_admin();
         </div>
     </div>
     <div class="container" style="min-height: 100vh;">
-        <div class="text-white bg-success d-flex justify-content-between align-items-center p-2 px-4"
-            style="border-bottom-right-radius: 30px;border-bottom-left-radius: 30px;position: sticky;top: 0;z-index: 1000;">
-            <div class="d-flex align-items-center gap-2">
-                <a class="btn btn-warning btn-sm btn-danger btn-circle" href="../admin/practice.php"> <i
-                        class="fas fa-times"></i></a>
-                <span id="code"></span>
-                
-                <!-- Translation & Explanation Buttons -->
-                <button class="btn btn-sm btn-light" id="translateBtn" onclick="toggleTranslation()" title="ترجمه سوال و پاسخ‌ها">
-                    <i class="fas fa-language"></i>
-                </button>
-                <button class="btn btn-sm btn-info" id="explainBtn" onclick="toggleExplanation()" title="توضیح سوال و پاسخ‌ها">
-                    <i class="fas fa-info-circle"></i>
-                </button>
+        <div class="text-white bg-success d-flex justify-content-between align-items-center p-1 px-2 header-bar" style="border-bottom-right-radius: 5px;border-bottom-left-radius: 5px;position: sticky;top: 0;z-index: 1000;">
+            <div class="code-exit-wrapper d-flex align-items-center"><a class="btn btn-warning btn-sm btn-danger btn-circle" href="../admin/practice.php"> <i class="fas fa-times"></i></a><span id="code"></span></div>
+            <div class="header-middle-buttons d-flex align-items-center gap-2 mx-auto">
+                <button class="btn btn-sm btn-light" id="translateBtn" onclick="toggleTranslation()" title="ترجمه سوال و پاسخ‌ها">ترجمه</button>
+                <button class="btn btn-sm btn-info" id="explainBtn" onclick="toggleExplanation()" title="توضیح سوال و پاسخ‌ها">توضیح</button>
+                <button class="btn btn-sm btn-secondary" id="runmaBtn" onclick="startGuidedTour()" title="رانما"><i class="fas fa-question-circle"></i></button>
+           <span id="report-btn " class=" mx-1 btn-sm p-0"
+                            onclick="openReportModal()" title="گزارش مشکل در سوال">
+                            <i class="fas fa-exclamation-circle"></i>
+</span>
+            </div>
                 <?php if ($isAdmin): ?>
                 <button class="btn btn-sm btn-primary" id="geminiFetchBtn" onclick="geminiFetchInfo()" title="درک مطلب و ترجمه با هوش مصنوعی (Gemini)">
                     <i class="fas fa-brain"></i>
@@ -864,11 +873,12 @@ $isAdmin = is_super_admin();
                     <i class="fas fa-tags"></i>
                 </button>
                 <?php endif; ?>
-            </div>
-            <span>Punkte: <span id="punkt"></span></span>
+                    
+                <span>نمره: <span id="punkt"></span></span>
+
         </div>
         <div class="mt-4 p-4" style="padding-bottom: 350px !important;">
-            <h1 id="text" class="fw-bold h6 mb-4 question-text"></h1>
+            <h6 id="text" class="fw-bold mb-4 question-text"></h6>
             
             <!-- Question Translation/Explanation Container -->
             <div id="question-translation-container"></div>
@@ -881,7 +891,7 @@ $isAdmin = is_super_admin();
                     <div class="d-flex flex-column gap-3">
                         <div class="d-flex align-items-center">
                         </div>
-                        <div id="asw_pretext" class="fw-bold text-end" style="width: 100%; direction: rtl;"><!-- اگر موجود بود --> </div>
+                        <div id="asw_pretext" class="fw-bold text-start" style="width: 100%; direction: rtl;"><!-- اگر موجود بود --> </div>
                         
                         <!-- Pretext Translation/Explanation Container -->
                         <div id="pretext-translation-container"></div>
@@ -921,21 +931,23 @@ $isAdmin = is_super_admin();
                 <div class="col-4 fw-bold text-start p-0">
                     <span class="badge bg-warning text-dark" style="direction: rtl;"> <?= $totalQuestions ?> سوال
                     </span>
+                      <button id="help-request" class="btn btn-primary btn-sm" style="font-size: .6rem;" onclick="openHelpModal()">کمک</button>
+                            </button>
                 </div>
                 <div class="col-8 text-end">
                     <div class="text-end">
 
                         <?php if ($mode === 'practice'): ?>
                             <button id="solve-btn" class="btn btn-warning btn-sm p-1" onclick="solveQuestion()"
-                                style="display: none;">
+                                style="display: none;"> مشاهده پاسخ
                                 <i class="fas fa-lightbulb"></i>
                             </button>
                             <button id="next-btn" class="btn btn-success mx-1 btn-sm p-1" onclick="nextQuestion()"
                                 style="display: none;">
-                                Weiter <i class="fas fa-arrow-right"></i>
+                                بعدی <i class="fas fa-arrow-right"></i>
                             </button>
                         <?php else: ?>
-                            <button class="btn btn-success mx-1 btn-sm p-1" onclick="nextQuestion()">Weiter <i
+                            <button class="btn btn-success mx-1 btn-sm p-1" onclick="nextQuestion()">بعدی <i
                                     class="fas fa-arrow-right"></i></button>
                         <?php endif; ?>
 
@@ -943,10 +955,7 @@ $isAdmin = is_super_admin();
                             onclick="toggleBookmark()" title="علامت گذاری سوال">
                             <i id="bookmark-icon" class="far fa-star text-warning"></i>
                         </button>
-                        <button id="report-btn" class="btn btn-danger mx-1 btn-sm p-1"
-                            onclick="openReportModal()" title="گزارش مشکل در سوال">
-                            <i class="fas fa-exclamation-circle"></i>
-                        </button>
+                
                     </div>
                 </div>
             </div>
@@ -1009,6 +1018,24 @@ $isAdmin = is_super_admin();
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">لغو</button>
                     <button type="button" class="btn btn-danger" onclick="submitReport()">ارسال گزارش</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Help Request Modal -->
+    <div class="modal fade" id="helpModal" tabindex="-1" aria-hidden="true" style="z-index: 99999;">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">درخواست راهنمایی</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" style="direction: rtl; text-align: right;">
+                    <p>برای توضیح بیشتر دربارهٔ سؤال شما، مستقیماً به پشتیبان متصل خواهید شد. پشتیبان در اسرع وقت سؤال شما را توضیح خواهد داد.</p>
+                </div>
+                <div class="modal-footer justify-content-center">
+                    <button type="button" class="btn btn-primary" onclick="sendHelpRequest()">موافقم</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
                 </div>
             </div>
         </div>
@@ -1892,9 +1919,7 @@ function showTranslationContent() {
     if ((question.asw_farsi && question.asw_farsi.trim()) || isAdmin) {
         const content = makeEditableHTML(question.asw_farsi, 'question', 'asw_farsi', question.id);
         pretextTransContainer.innerHTML = `
-            <div class="pretext-translation">
-                <strong><i class="fas fa-language"></i> ترجمه:</strong>
-                <p class="mb-0 mt-2">${content}</p>
+            <div class="pretext-translation"><p class="mb-0 mt-2">${content}</p></div>
             </div>
         `;
     } else {
@@ -3195,11 +3220,71 @@ function answerBuilder(answers = null) {
     
         // Report Issue JS
         function openReportModal() {
-            if (!currentQuestionData) return;
-            const modal = new bootstrap.Modal(document.getElementById('reportModal'));
-            modal.show();
+    if (!currentQuestionData) return;
+    const modal = new bootstrap.Modal(document.getElementById('reportModal'));
+    modal.show();
+}
+// stray help modal line removed
+// stray closing brace removed
+            function sendHelpRequest() {
+                const questionText = document.getElementById('text').innerText.trim();
+                const answers = [];
+                const answerElems = document.querySelectorAll('#answers .answer-item .flex-grow-1');
+                answerElems.forEach((el, idx) => {
+                    const txt = el.innerText.trim();
+                    if (txt) answers.push(`${idx + 1}. ${txt}`);
+                });
+                let imageUrl = '';
+                const imgEl = document.getElementById('image');
+                if (imgEl && imgEl.src) {
+                    imageUrl = imgEl.src;
+                }
+                let message = `سؤال: ${questionText}\n`;
+                if (answers.length) {
+                    message += 'پاسخ‌ها:\n' + answers.join('\n') + '\n';
+                }
+                if (imageUrl) {
+                    message += `تصویر: ${imageUrl}\n`;
+                }
+                const telegramUrl = 'https://t.me/YourAdminUsername?text=' + encodeURIComponent(message);
+                window.open(telegramUrl, '_blank');
+                const modalInst = bootstrap.Modal.getInstance(document.getElementById('helpModal'));
+                if (modalInst) modalInst.hide();
+            }
             document.getElementById('report-message').value = '';
-        }
+
+// Global Help Request functions
+function openHelpModal() {
+    const helpModal = new bootstrap.Modal(document.getElementById('helpModal'));
+    helpModal.show();
+}
+
+function sendHelpRequest() {
+    const questionText = document.getElementById('text').innerText.trim();
+    const answers = [];
+    const answerElems = document.querySelectorAll('#answers .answer-item .flex-grow-1');
+    answerElems.forEach((el, idx) => {
+        const txt = el.innerText.trim();
+        if (txt) answers.push(`${idx + 1}. ${txt}`);
+    });
+    let imageUrl = '';
+    const imgEl = document.getElementById('image');
+    if (imgEl && imgEl.src) {
+        imageUrl = imgEl.src;
+    }
+    let message = `سؤال: ${questionText}\n`;
+    if (answers.length) {
+        message += 'پاسخ‌ها:\n' + answers.join('\n') + '\n';
+    }
+    if (imageUrl) {
+        message += `تصویر: ${imageUrl}\n`;
+    }
+    const telegramUrl = 'https://t.me/farsifahr?text=' + encodeURIComponent(message);
+    window.open(telegramUrl, '_blank');
+    const modalInst = bootstrap.Modal.getInstance(document.getElementById('helpModal'));
+    if (modalInst) modalInst.hide();
+}
+// stray extra closing brace removed
 
         function submitReport() {
             const message = document.getElementById('report-message').value.trim();
@@ -3684,7 +3769,7 @@ function answerBuilder(answers = null) {
     }
 
     // شروع تور با کمی تاخیر برای لود کامل سوال
-    setTimeout(startGuidedTour, 1500);
+    // setTimeout(startGuidedTour, 1500); // Disabled auto start, user triggers via رانما button
     </script>
 </body>
 

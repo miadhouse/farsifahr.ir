@@ -112,6 +112,9 @@ function handle_login($pdo, $ip)
 
     // ثبت لاگ
     log_user_action($user['id'], $email, 'login', 'success', $pdo);
+    // ارسال اعلان ورود به تلگرام
+    $tg_msg = "🔐 <b>ورود موفق کاربر</b>\n\n👤 نام: {$user['name']}\n📧 ایمیل: {$email}\n🌐 آی‌پی: {$ip}\n🕒 زمان: " . date('Y-m-d H:i:s');
+    send_telegram_admin_message($tg_msg);
 
     echo json_encode([
         'success' => true,
