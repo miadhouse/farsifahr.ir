@@ -779,6 +779,7 @@ $isAdmin = is_super_admin();
         #question-translation-container:not(:empty),
         #question-explanation-container:not(:empty) {
             margin-top: 8px;
+            margin-bottom: 12px;
         }
 
         /* Spacing between image/video (inside media column) and pretext translation */
