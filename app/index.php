@@ -784,12 +784,8 @@ $isAdmin = is_super_admin();
         /* Spacing between image/video (inside media column) and pretext translation */
         #pretext-translation-container:not(:empty),
         #pretext-explanation-container:not(:empty) {
-            margin-top: 14px;
-        }
-
-        /* Row containing image gets top margin when translation is present */
-        .row:has(#media) {
-            margin-top: 14px;
+            margin-top: 2px;
+            margin-bottom: 2px;
         }
         /* در بخش style اضافه کنید: */
 .answer-item {
@@ -937,7 +933,7 @@ $isAdmin = is_super_admin();
                 <div class="col-12 col-md-6 " id="media">
                 </div>
                 <div class="col-12 col-md-6">
-                    <div class="d-flex flex-column gap-3">
+                    <div class="d-flex flex-column gap-1">
                         <div class="d-flex align-items-center">
                         </div>
                         <div id="asw_pretext" class="fw-bold text-start" style="width: 100%; direction: rtl;"><!-- اگر موجود بود --> </div>
