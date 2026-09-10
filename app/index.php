@@ -87,6 +87,16 @@ $user_id = $_SESSION['user_id'] ?? null;
 $isVip = is_user_vip($user_id, $pdo);
 $questionLimit = get_user_question_limit($user_id, $pdo);
 
+$shuffleAnswers = 1;
+if ($user_id) {
+    $stmtShuffle = $pdo->prepare("SELECT shuffle_answers FROM users WHERE id = ?");
+    $stmtShuffle->execute([$user_id]);
+    $resShuffle = $stmtShuffle->fetchColumn();
+    if ($resShuffle !== false && $resShuffle !== null) {
+        $shuffleAnswers = (int)$resShuffle;
+    }
+}
+
 $maxAccessibleId = 999999999; // پیش‌فرض نامحدود
 if (!$isVip && $questionLimit !== null) {
     $examDateType = getUserExamDateType($pdo, $user_id);
@@ -927,6 +937,52 @@ html[data-bs-theme="dark"] .bottom-nav-bar {
     border-top: 1px solid rgba(163, 207, 187, 0.25) !important;
 }
 
+/* Shuffle toggle button */
+.shuffle-toggle-btn {
+    width: 26px !important;
+    height: 26px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 0 !important;
+    border-radius: 6px !important;
+    outline: none !important;
+    font-size: 11px !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease-in-out !important;
+}
+
+.shuffle-toggle-btn.active {
+    border: 1px solid #28a745 !important;
+    background: #28a745 !important;
+    color: #ffffff !important;
+    box-shadow: 0 0 6px rgba(40, 167, 69, 0.6) !important;
+}
+
+.shuffle-toggle-btn:not(.active) {
+    border: 1px solid rgba(255, 255, 255, 0.25) !important;
+    background: rgba(255, 255, 255, 0.08) !important;
+    color: rgba(255, 255, 255, 0.45) !important;
+}
+
+.shuffle-toggle-btn:not(.active):hover {
+    color: rgba(255, 255, 255, 0.8) !important;
+    background: rgba(255, 255, 255, 0.15) !important;
+}
+
+[data-bs-theme="dark"] .shuffle-toggle-btn.active {
+    border: 1px solid #20c997 !important;
+    background: rgba(32, 201, 151, 0.25) !important;
+    color: #20c997 !important;
+    box-shadow: 0 0 6px rgba(32, 201, 151, 0.5) !important;
+}
+
+[data-bs-theme="dark"] .shuffle-toggle-btn:not(.active) {
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    background: rgba(255, 255, 255, 0.05) !important;
+    color: rgba(255, 255, 255, 0.35) !important;
+}
+
 /* Highlight current active pagination button in dark mode */
 html[data-bs-theme="dark"] #question-buttons .btn-dark {
     background-color: #ffc107 !important;
@@ -1482,6 +1538,9 @@ html[data-bs-theme="dark"] .keyword-translation-inline {
                 <?php endif; ?>
                     
                 <div class="d-flex align-items-center gap-2">
+                    <button class="btn btn-sm shuffle-toggle-btn <?= $shuffleAnswers ? 'active' : '' ?>" id="shuffleToggleBtn" onclick="toggleShuffleAnswers()" title="<?= $shuffleAnswers ? 'چینش تصادفی گزینه‌ها (روشن)' : 'چینش تصادفی گزینه‌ها (خاموش)' ?>">
+                        <i class="fas fa-random"></i>
+                    </button>
                     <button class="btn btn-sm btn-outline-light theme-toggle-btn" id="themeToggleBtn" onclick="toggleTheme()" title="تغییر تم (روشن/تاریک)" style="border: 1px solid rgba(255, 255, 255, 0.25) !important; background: rgba(255, 255, 255, 0.08) !important; color: #ffffff !important; width: 26px; height: 26px; display: inline-flex; align-items: center; justify-content: center; padding: 0 !important; border-radius: 6px !important; outline: none !important;">
                         <i class="fas fa-moon"></i>
                     </button>
@@ -1734,6 +1793,7 @@ html[data-bs-theme="dark"] .keyword-translation-inline {
 
         const selectedQuestions = <?= json_encode($selectedQuestions) ?>;
         const mode = '<?= $mode ?>';
+        let shuffleAnswersActive = <?= $shuffleAnswers ? 'true' : 'false' ?>;
         const isVip = <?= json_encode($isVip) ?>;
         const questionLimit = <?= json_encode($questionLimit) ?>;
         const maxAccessibleId = <?= $maxAccessibleId ?>;
@@ -2685,6 +2745,10 @@ function saveAdminEdit(element, type, field, id) {
             } else if (type === 'answer') {
                 const answer = currentQuestionData.answers.find(a => a.id == id);
                 if (answer) answer[field] = newContent;
+                if (currentQuestionData.original_answers) {
+                    const origAnswer = currentQuestionData.original_answers.find(a => a.id == id);
+                    if (origAnswer) origAnswer[field] = newContent;
+                }
             }
         } else {
             showVocabToast('خطا: ' + data.message, 'error');
@@ -2798,7 +2862,7 @@ function showTranslationContent() {
     // Show answer translations - زیر متن پاسخ
     if (answers && answers.length > 0) {
         answers.forEach((answer, index) => {
-            const answerItem = document.querySelector(`[data-answer-index="${index}"]`);
+            const answerItem = document.querySelector(`.answer-item[data-answer-id="${answer.id}"]`) || document.querySelector(`[data-answer-index="${index}"]`);
             if (answerItem && ((answer.farsi_text && answer.farsi_text.trim()) || isAdmin)) {
                 const answerContainer = answerItem.querySelector('.flex-grow-1');
                 if (answerContainer) {
@@ -2862,7 +2926,7 @@ function showExplanationContent() {
     // Show answer explanations - زیر متن پاسخ
     if (answers && answers.length > 0) {
         answers.forEach((answer, index) => {
-            const answerItem = document.querySelector(`[data-answer-index="${index}"]`);
+            const answerItem = document.querySelector(`.answer-item[data-answer-id="${answer.id}"]`) || document.querySelector(`[data-answer-index="${index}"]`);
             if (answerItem && ((answer.info && answer.info.trim()) || isAdmin)) {
                 const answerContainer = answerItem.querySelector('.flex-grow-1');
                 if (answerContainer) {
@@ -2978,6 +3042,15 @@ function hideExplanationContent() {
                         console.error('Question data is missing in response:', data);
                         showErrorMessage('اطلاعات سوال یافت نشد');
                         return;
+                    }
+
+                    if (!data.original_answers && data.answers) {
+                        data.original_answers = [...data.answers];
+                    }
+                    if (shuffleAnswersActive && data.answers && data.answers.length > 1 && data.answers[0].asw_type != 2) {
+                        data.answers = shuffleArray(data.original_answers);
+                    } else if (data.original_answers) {
+                        data.answers = [...data.original_answers];
                     }
 
                     currentQuestionData = data;
@@ -3411,13 +3484,11 @@ function solveQuestion() {
         }
 
         function showCheckboxAnswerResults() {
-            const answerItems = document.querySelectorAll('.answer-item');
-
-            currentQuestionData.answers.forEach((answer, index) => {
+            currentQuestionData.answers.forEach((answer) => {
                 const checkbox = document.querySelector(`input[data-answer-id="${answer.id}"]`);
-                const answerItem = answerItems[index];
-
-                if (!checkbox || !answerItem) return;
+                if (!checkbox) return;
+                const answerItem = checkbox.closest('.answer-item');
+                if (!answerItem) return;
 
                 const isCorrect = answer.asw_corr == 1;
                 const isSelected = checkbox.checked;
@@ -3762,8 +3833,13 @@ function answerBuilder(answers = null) {
                         }
                     }
                     disabled = 'disabled';
-                } else if (mode === 'practice' && questionSolved) {
-                    disabled = 'disabled';
+                } else if (mode === 'practice') {
+                    if (userAnswers[answer['id']] === true) {
+                        status = 'checked';
+                    }
+                    if (questionSolved) {
+                        disabled = 'disabled';
+                    }
                 }
 
                 const isImage = answer['is_image'] == 1;
@@ -3823,7 +3899,7 @@ function answerBuilder(answers = null) {
                 }
 
                 answersText += `
-                    <div class="d-flex mb-3 align-items-start answer-item" data-answer-index="${index}">
+                    <div class="d-flex mb-3 align-items-start answer-item" data-answer-id="${answer['id']}" data-answer-index="${index}">
                         <label class="form-label me-2 custom-checkbox">
                             <input type="checkbox" class="checkbox" data-answer-id="${answer['id']}" 
                                    ${status} ${disabled} 
@@ -4579,6 +4655,10 @@ function sendHelpRequest() {
                             } else if (type === 'answer') {
                                 const answer = currentQuestionData.answers.find(a => a.id == id);
                                 if (answer) answer[field] = newContent;
+                                if (currentQuestionData.original_answers) {
+                                    const origAnswer = currentQuestionData.original_answers.find(a => a.id == id);
+                                    if (origAnswer) origAnswer[field] = newContent;
+                                }
                             }
                             
                             const editorModal = bootstrap.Modal.getInstance(document.getElementById('editorModal'));
@@ -4985,6 +5065,89 @@ function sendHelpRequest() {
         .catch(() => {
             showVocabToast('خطا در ارتباط با سرور', 'error');
         });
+    }
+
+    // Shuffle Answers Functionality
+    function shuffleArray(arr) {
+        if (!arr || arr.length <= 1) return arr ? [...arr] : [];
+        let shuffled = [...arr];
+        let attempts = 0;
+        do {
+            for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+            attempts++;
+        } while (attempts < 5 && shuffled.length > 1 && shuffled.every((item, idx) => item.id === arr[idx].id));
+        return shuffled;
+    }
+
+    function toggleShuffleAnswers() {
+        shuffleAnswersActive = !shuffleAnswersActive;
+
+        const btn = document.getElementById('shuffleToggleBtn');
+        if (btn) {
+            if (shuffleAnswersActive) {
+                btn.classList.add('active');
+                btn.title = 'چینش تصادفی گزینه‌ها (روشن)';
+            } else {
+                btn.classList.remove('active');
+                btn.title = 'چینش تصادفی گزینه‌ها (خاموش)';
+            }
+        }
+
+        const formData = createFormDataWithCSRF({
+            shuffle_answers: shuffleAnswersActive ? 1 : 0
+        });
+
+        fetch('../incloud/toggle_shuffle_answers.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: formData
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (!data.success) {
+                console.warn('Could not save shuffle preference:', data.message || data.error);
+            }
+        })
+        .catch(err => console.error('Error saving shuffle preference:', err));
+
+        // Re-shuffle or restore current question's answers
+        if (currentQuestionData && currentQuestionData.answers && currentQuestionData.answers.length > 1 && currentQuestionData.answers[0].asw_type != 2) {
+            const original = currentQuestionData.original_answers || currentQuestionData.answers;
+            if (shuffleAnswersActive) {
+                currentQuestionData.answers = shuffleArray(original);
+            } else {
+                currentQuestionData.answers = [...original];
+            }
+
+            const answersContainer = document.getElementById('answers');
+            if (answersContainer && answersContainer.style.display !== 'none') {
+                answerBuilder(currentQuestionData.answers);
+
+                if (mode === 'practice' && !questionSolved) {
+                    applyUserAnswers();
+                }
+
+                if (questionSolved || mode === 'review') {
+                    showAnswerResults();
+                }
+
+                if (translationActive) {
+                    showTranslationContent();
+                }
+                if (explanationActive) {
+                    showExplanationContent();
+                }
+
+                if (typeof reinitializeVocabularySelection === 'function') {
+                    reinitializeVocabularySelection();
+                }
+            }
+        }
     }
 
     // Theme Toggle Functionality
