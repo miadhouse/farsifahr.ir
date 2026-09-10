@@ -102,9 +102,9 @@ try {
                 . "5. IMPORTANT: Translate the 'info' fields ONLY if they contain text in the provided JSON. Do NOT add or make up explanations if the original 'info' field is empty. If an 'info' field contains German text, you MUST translate it completely.\n\n"
                 . "Here is the JSON to translate:\n" . json_encode($promptData, JSON_UNESCAPED_UNICODE);
 
-    $apiKey = "AIzaSyADjcpet-WVDpeMlZtIoXo2BZsjDPRfuh8";
-    $model = "gemini-1.5-flash";
-    $url = "https://generativelanguage.googleapis.com/v1beta/models/{$model}:generateContent?key={$apiKey}";
+    $apiKey = defined('GEMINI_API_KEY') && !empty(GEMINI_API_KEY) ? GEMINI_API_KEY : getenv('GEMINI_API_KEY');
+    $model = "gemini-flash-latest";
+    $url = "https://generativelanguage.googleapis.com/v1beta/models/{$model}:generateContent";
 
     $payload = [
         "contents" => [
@@ -121,7 +121,8 @@ try {
     curl_setopt($ch, CURLOPT_POST, true);
     curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
     curl_setopt($ch, CURLOPT_HTTPHEADER, [
-        'Content-Type: application/json'
+        'Content-Type: application/json',
+        'X-goog-api-key: ' . $apiKey
     ]);
     curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
     curl_setopt($ch, CURLOPT_TIMEOUT, 60);

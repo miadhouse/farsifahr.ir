@@ -35,6 +35,14 @@ class UserResource extends Resource
                             ->label('ایمیل')
                             ->email()
                             ->required(),
+                        Forms\Components\TextInput::make('password')
+                            ->label('رمز عبور')
+                            ->password()
+                            ->dehydrated(fn ($state) => filled($state))
+                            ->dehydrateStateUsing(fn ($state) => \Illuminate\Support\Facades\Hash::make($state))
+                            ->required(fn (string $context): bool => $context === 'create')
+                            ->placeholder(fn (string $context): ?string => $context === 'edit' ? 'فقط در صورت نیاز به تغییر رمز، این فیلد را پر کنید' : null)
+                            ->maxLength(255),
                         Forms\Components\Select::make('role')
                             ->label('نقش')
                             ->options([
@@ -44,6 +52,14 @@ class UserResource extends Resource
                             ->required(),
                         Forms\Components\Toggle::make('email_verified')
                             ->label('تایید ایمیل'),
+                        Forms\Components\Toggle::make('is_blocked')
+                            ->label('مسدود شده')
+                            ->live(),
+                        Forms\Components\Textarea::make('block_message')
+                            ->label('پیام اختصاصی مسدودسازی')
+                            ->placeholder('در صورت مسدود بودن، این پیام به کاربر نمایش داده می‌شود...')
+                            ->visible(fn ($get): bool => (bool) $get('is_blocked'))
+                            ->columnSpanFull(),
                     ])->columns(2)
             ]);
     }
@@ -82,6 +98,10 @@ class UserResource extends Resource
                     ->sortable(),
                 Tables\Columns\IconColumn::make('email_verified')
                     ->label('تایید')
+                    ->boolean()
+                    ->sortable(),
+                Tables\Columns\IconColumn::make('is_blocked')
+                    ->label('مسدود')
                     ->boolean()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('progress')

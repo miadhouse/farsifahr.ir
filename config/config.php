@@ -1,10 +1,15 @@
 <?php
 // config.php
+define('SESSION_LIFETIME', 7776000); // 90 روز (۳ ماه) به ثانیه
+ini_set('session.gc_maxlifetime', 7776000);
+ini_set('session.cookie_lifetime', 7776000);
+
 if (session_status() === PHP_SESSION_NONE) {
+    $is_cookie_secure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (isset($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] == 443);
     session_set_cookie_params([
-        'lifetime' => 604800,
+        'lifetime' => SESSION_LIFETIME,
         'path' => '/',
-        'secure' => true,
+        'secure' => $is_cookie_secure,
         'httponly' => true,
         'samesite' => 'Lax'
     ]);
@@ -48,12 +53,12 @@ define('SMTP_FROM', getenv('SMTP_FROM') ?: '');
 // تنظیمات امنیتی
 define('TURNSTILE_SITE_KEY', getenv('TURNSTILE_SITE_KEY') ?: '');
 define('TURNSTILE_SECRET_KEY', getenv('TURNSTILE_SECRET_KEY') ?: '');
+define('GEMINI_API_KEY', getenv('GEMINI_API_KEY') ?: '');
 
 define('MAX_LOGIN_ATTEMPTS', 5);
 define('LOGIN_ATTEMPT_TIMEOUT', 15); // دقیقه
-define('SESSION_LIFETIME', 604800); // ثانیه
 define('PASSWORD_RESET_EXPIRY', 3600); // ثانیه
-define('EURO_TO_TOMAN_RATE', 215000); // نرخ تبدیل یورو به تومان پیش‌فرض
+define('EURO_TO_TOMAN_RATE', 200000); // نرخ تبدیل یورو به تومان پیش‌فرض
 
 // لود کردن تنظیمات داینامیک از فایل JSON
 $settingsFile = __DIR__ . '/settings.json';
@@ -80,12 +85,12 @@ if (!defined('FOOTER_DESCRIPTION')) define('FOOTER_DESCRIPTION', '');
 if (!defined('COPYRIGHT_TEXT')) define('COPYRIGHT_TEXT', '');
 
 // تنظیمات گوگل
-define('GOOGLE_CLIENT_ID', getenv('GOOGLE_CLIENT_ID') ?: '');
-define('GOOGLE_CLIENT_SECRET', getenv('GOOGLE_CLIENT_SECRET') ?: '');
-define('GOOGLE_REDIRECT_URI', SITE_URL . 'auth/google-callback.php');
+if (!defined('GOOGLE_CLIENT_ID')) define('GOOGLE_CLIENT_ID', getenv('GOOGLE_CLIENT_ID') ?: '');
+if (!defined('GOOGLE_CLIENT_SECRET')) define('GOOGLE_CLIENT_SECRET', getenv('GOOGLE_CLIENT_SECRET') ?: '');
+if (!defined('GOOGLE_REDIRECT_URI')) define('GOOGLE_REDIRECT_URI', SITE_URL . 'auth/google-callback.php');
 
-define('TELEGRAM_BOT_TOKEN', getenv('TELEGRAM_BOT_TOKEN') ?: '');
-define('TELEGRAM_ADMIN_CHAT_ID', getenv('TELEGRAM_ADMIN_CHAT_ID') ?: '');
+if (!defined('TELEGRAM_BOT_TOKEN')) define('TELEGRAM_BOT_TOKEN', getenv('TELEGRAM_BOT_TOKEN') ?: '');
+if (!defined('TELEGRAM_ADMIN_CHAT_ID')) define('TELEGRAM_ADMIN_CHAT_ID', getenv('TELEGRAM_ADMIN_CHAT_ID') ?: '');
 
 // اتصال به دیتابیس
 try {

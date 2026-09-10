@@ -114,18 +114,19 @@ function handle_exam_submit($pdo, $userId) {
     $passed = (int)($input['passed'] ?? 0);
     $wrong_questions = json_encode($input['wrong_questions'] ?? []);
     $all_questions = json_encode($input['all_questions'] ?? []);
+    $user_answers = isset($input['user_answers']) ? json_encode($input['user_answers']) : null;
 
     try {
         $stmt = $pdo->prepare("
             INSERT INTO exam_history (
                 user_id, score, total_questions, correct_count, error_points, 
-                five_point_errors, passed, wrong_questions, all_questions
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                five_point_errors, passed, wrong_questions, all_questions, user_answers
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ");
         
         $stmt->execute([
             $userId, $score, $total_questions, $correct_count, $error_points,
-            $five_point_errors, $passed, $wrong_questions, $all_questions
+            $five_point_errors, $passed, $wrong_questions, $all_questions, $user_answers
         ]);
 
         Response::success(['id' => $pdo->lastInsertId()], 'Exam history saved');

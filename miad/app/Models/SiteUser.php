@@ -13,11 +13,18 @@ class SiteUser extends Model
     protected $fillable = [
         'name',
         'email',
+        'password',
         'role',
         'google_id',
         'email_verified',
         'referral_code',
         'referred_by_id',
+        'is_blocked',
+        'block_message',
+    ];
+
+    protected $casts = [
+        'is_blocked' => 'boolean',
     ];
 
     public function referredUsers()

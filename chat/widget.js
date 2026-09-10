@@ -22,6 +22,9 @@
     let isClosed = false;
     let isPolling = false;
     let unreadCount = 0;
+    let lastActivityTime = Date.now();
+    let isInactive = false;
+    const INACTIVITY_TIMEOUT = 180000; // 3 minutes
 
     // ========= BUILD HTML =========
     function buildWidget() {
@@ -390,6 +393,12 @@
             return;
         }
 
+        if (Date.now() - lastActivityTime > INACTIVITY_TIMEOUT) {
+            isInactive = true;
+            isPolling = false;
+            return;
+        }
+
         isPolling = true;
         fetch(CHAT_API, {
             method: 'POST',
@@ -425,23 +434,42 @@
     }
 
     // ========= HEARTBEAT =========
+    function sendHeartbeat() {
+        if (!chatToken) return;
+        fetch(CHAT_API, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body: `action=heartbeat&token=${encodeURIComponent(chatToken)}`
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.status === 'closed') {
+                isClosed = true;
+                disableInput('چت توسط پشتیبانی بسته شد.');
+            }
+        }).catch(() => {});
+    }
+
     function startHeartbeat() {
         clearInterval(heartbeatTimer);
         heartbeatTimer = setInterval(() => {
-            if (!chatToken) return;
-            fetch(CHAT_API, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-                body: `action=heartbeat&token=${encodeURIComponent(chatToken)}`
-            })
-            .then(r => r.json())
-            .then(data => {
-                if (data.status === 'closed') {
-                    isClosed = true;
-                    disableInput('چت توسط پشتیبانی بسته شد.');
-                }
-            }).catch(() => {});
+            if (isInactive || isClosed) return;
+            if (Date.now() - lastActivityTime > INACTIVITY_TIMEOUT) {
+                isInactive = true;
+                return;
+            }
+            sendHeartbeat();
         }, HEARTBEAT_INTERVAL);
+    }
+
+    function resetActivity() {
+        lastActivityTime = Date.now();
+        if (isInactive) {
+            isInactive = false;
+            sendHeartbeat();
+            startPolling();
+            startHeartbeat();
+        }
     }
 
     // ========= SOUND & BADGE =========
@@ -559,6 +587,11 @@
         chatInput?.addEventListener('input', function() {
             this.style.height = 'auto';
             this.style.height = Math.min(this.scrollHeight, 80) + 'px';
+        });
+
+        // Inactivity listeners
+        ['mousemove', 'mousedown', 'keydown', 'scroll', 'touchstart'].forEach(name => {
+            window.addEventListener(name, resetActivity, { passive: true });
         });
 
         initSession();

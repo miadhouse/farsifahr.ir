@@ -64,4 +64,10 @@ public function tags()
 {
     return $this->belongsToMany(QuestionTag::class);
 }
+
+// رابطه با ویدیو آموزشی مرتبط
+public function video()
+{
+    return $this->hasOne(QuestionVideo::class, 'question_id');
+}
 }

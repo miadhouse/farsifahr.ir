@@ -42,9 +42,10 @@ class PostResource extends Resource
                             ->label('نامک (Slug)')
                             ->required()
                             ->unique(ignoreRecord: true),
-                        RichEditor::make('content')
-                            ->label('محتوا')
+                        Forms\Components\Textarea::make('content')
+                            ->label('محتوا (HTML/متن)')
                             ->required()
+                            ->rows(20)
                             ->columnSpanFull(),
                         FileUpload::make('image')
                             ->label('تصویر شاخص')

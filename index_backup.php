@@ -32,17 +32,6 @@ $eyetest_desc = $services['eyetest']['description'] ?? 'یکی از پیش‌ن�
 $firstaid_title = $services['firstaid']['title'] ?? 'کورس کمک‌های اولیه (Erste Hilfe)';
 $firstaid_desc = $services['firstaid']['description'] ?? 'شرکت در دوره کمک‌های اولیه برای گرفتن گواهینامه آلمانی اجباری است.';
 
-// دریافت اسلایدهای صفحه اصلی
-try {
-    $stmt_sliders = $pdo->prepare("SELECT * FROM home_sliders WHERE is_active = 1 ORDER BY sort_order ASC");
-    $stmt_sliders->execute();
-    $db_sliders = $stmt_sliders->fetchAll();
-} catch (PDOException $e) {
-    $db_sliders = [];
-}
-
-$first_slide_title = !empty($db_sliders) ? htmlspecialchars($db_sliders[0]['title']) : 'Wilderness';
-
 // جلوگیری از کش شدن صفحه (هم برای مهمان‌ها به دلیل CSRF و هم برای جلوگیری از نمایش محتوای قدیمی)
 header('Vary: Cookie');
 header('Cache-Control: no-cache, no-store, must-revalidate'); // HTTP 1.1
@@ -262,7 +251,6 @@ header('X-LiteSpeed-Cache-Control: no-cache'); // LiteSpeed Server
             }
         }
     </style>
-    <link href="assets/css/iphone-slider.css?v=<?= filemtime(__DIR__ . '/assets/css/iphone-slider.css') ?>" rel="stylesheet">
 </head>
 
 <body>
@@ -493,433 +481,21 @@ header('X-LiteSpeed-Cache-Control: no-cache'); // LiteSpeed Server
             <div class="banner-two-main-wrapper">
                 <div class="row align-items-center">
                     <div class="col-lg-6 order-lg-2">
-                                                <div class="banner-right-content">
-                            <!-- 3D iPhone Gesture Slider -->
-                            <div id="iphone-slider-root">
-                              <div class="isl-stars" id="islStars"></div>
-                              <div class="isl-scene">
-                                <div class="isl-slide-title" id="islSlideTitle"><span id="islTitleText"><?= $first_slide_title ?></span></div>
-                                <div class="isl-phone-wrapper" id="islPhoneWrapper">
-                                  <div class="isl-side-images" id="islSidePanels">
-                                    <div class="isl-side-panel left" id="islLeftPanel">
-                                      <canvas class="isl-side-canvas" id="islLeftCanvas" width="100" height="200"></canvas>
-                                    </div>
-                                    <div class="isl-side-panel right" id="islRightPanel">
-                                      <canvas class="isl-side-canvas" id="islRightCanvas" width="100" height="200"></canvas>
-                                    </div>
-                                  </div>
-                                  <div class="isl-phone">
-                                    <div class="isl-btn-power"></div>
-                                    <div class="isl-btn-vol1"></div>
-                                    <div class="isl-btn-vol2"></div>
-                                    <div class="isl-btn-mute"></div>
-                                    <div class="isl-screen">
-                                      <div class="isl-carousel">
-                                        <div class="isl-carousel-track" id="islTrack"></div>
-                                        <div class="isl-dots" id="islDots"></div>
-                                      </div>
-                                      <div class="isl-home-bar"></div>
-                                    </div>
-                                  </div>
+                        <div class="banner-right-content">
+                            <div class="main-img"><img alt="banner-img"
+                                    class="tmp-scroll-trigger tmp-zoom-in animation-order-1"
+                                    src="assets/images/banner/banner-user-image-two2.webp">
+                                <h2 class="banner-big-text-1 up-down-2">FARSI-FAHR</h2>
+                                <h2 class="banner-big-text-2 up-down">FARSI-FAHR</h2>
+                                <div class="benner-two-bg-red-img"><img alt="red-img"
+                                        src="assets/images/banner/banner-user-image-two-red-bg.png">
                                 </div>
-                                <div class="isl-hand-area">
-                                  <div class="isl-hand-container" id="islHandContainer">
-                                    <img class="isl-hand-img" src="https://farsifahr.com/assets/hand.webp" alt="hand gesture" draggable="false">
-                                    <div class="isl-wrist-ring"></div>
-                                  </div>
+                                <div class="logo-under-img-wrap">
+                                    <div class="logo-under-img"><img alt="logo-under-image" style="opacity: .3"
+                                            src="assets/images/banner/logo-under-image.png"></div>
+
                                 </div>
-                                <div class="isl-swipe-text">
-                                  <span>←</span>
-                                  دست را به چپ و راست بکشید
-                                  <span>→</span>
-                                </div>
-                              </div>
                             </div>
-
-                            <script>
-                            (function(){
-                              // Starfield
-                              var sc=document.getElementById('islStars');
-                              if (sc) {
-                                for(var i=0;i<60;i++){
-                                  var s=document.createElement('div');
-                                  s.className='isl-star';
-                                  s.style.cssText='left:'+Math.random()*100+'%;top:'+Math.random()*100+'%;--d:'+(2+Math.random()*4)+'s;--delay:'+Math.random()*5+'s;--max-op:'+(0.2+Math.random()*0.5)+';width:'+(Math.random()<0.8?1:2)+'px;height:'+(Math.random()<0.8?1:2)+'px;';
-                                  sc.appendChild(s);
-                                }
-                              }
-
-                              // Slide data
-                              var dbSliders = <?php echo json_encode($db_sliders); ?>;
-                              var islSlides = [];
-
-                              // آرایه Image preloaders برای canvas side panels
-                              var islImgCache = [];
-
-                              if (dbSliders && dbSliders.length > 0) {
-                                 dbSliders.forEach(function(slide) {
-                                   var src = '/panel/storage/' + slide.image_path;
-                                   var preload = new Image();
-                                   preload.onload = function() { islUpdateSidePanels(); };
-                                   preload.src = src;
-                                   islImgCache.push(preload);
-                                   islSlides.push({
-                                     label: slide.title || '',
-                                     imgSrc: src
-                                   });
-                                 });
-                              } else {
-                                islSlides = [
-                                  {label:'Wilderness',draw:function(ctx,w,h){var sky=ctx.createLinearGradient(0,0,0,h*0.65);sky.addColorStop(0,'#1a0a2e');sky.addColorStop(0.3,'#ff6b35');sky.addColorStop(0.6,'#ffd166');sky.addColorStop(1,'#e8c57a');ctx.fillStyle=sky;ctx.fillRect(0,0,w,h*0.65);var sun=ctx.createRadialGradient(w*0.5,h*0.35,0,w*0.5,h*0.35,h*0.25);sun.addColorStop(0,'rgba(255,220,100,0.9)');sun.addColorStop(0.3,'rgba(255,180,60,0.6)');sun.addColorStop(1,'rgba(255,120,30,0)');ctx.fillStyle=sun;ctx.fillRect(0,0,w,h);ctx.fillStyle='#2d4a3e';ctx.beginPath();ctx.moveTo(0,h*0.65);ctx.lineTo(w*0.15,h*0.3);ctx.lineTo(w*0.35,h*0.55);ctx.lineTo(w*0.55,h*0.25);ctx.lineTo(w*0.75,h*0.5);ctx.lineTo(w,h*0.35);ctx.lineTo(w,h*0.65);ctx.closePath();ctx.fill();ctx.fillStyle='#1a3028';ctx.beginPath();ctx.moveTo(0,h*0.65);ctx.lineTo(w*0.25,h*0.45);ctx.lineTo(w*0.5,h*0.6);ctx.lineTo(w*0.7,h*0.38);ctx.lineTo(w,h*0.55);ctx.lineTo(w,h*0.65);ctx.closePath();ctx.fill();var ground=ctx.createLinearGradient(0,h*0.65,0,h);ground.addColorStop(0,'#2d4a3e');ground.addColorStop(1,'#0d1f18');ctx.fillStyle=ground;ctx.fillRect(0,h*0.65,w,h*0.35);ctx.fillStyle='#0a0a0a';var px=w*0.5,py=h*0.43;ctx.beginPath();ctx.ellipse(px,py+14,5,8,0,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.arc(px,py,5,0,Math.PI*2);ctx.fill();ctx.fillRect(px+3,py+6,7,10);ctx.beginPath();ctx.moveTo(px-3,py+22);ctx.lineTo(px-5,py+34);ctx.lineTo(px-3,py+34);ctx.fill();ctx.beginPath();ctx.moveTo(px+3,py+22);ctx.lineTo(px+5,py+34);ctx.lineTo(px+3,py+34);ctx.fill();ctx.fillStyle='#3a3a4a';ctx.beginPath();ctx.ellipse(px,py+36,18,6,0,0,Math.PI*2);ctx.fill();}},
-                                  {label:'Ocean Wave',draw:function(ctx,w,h){var sky=ctx.createLinearGradient(0,0,0,h*0.35);sky.addColorStop(0,'#0a3d6b');sky.addColorStop(1,'#1a6ea8');ctx.fillStyle=sky;ctx.fillRect(0,0,w,h*0.35);var ocean=ctx.createLinearGradient(0,h*0.35,0,h);ocean.addColorStop(0,'#006994');ocean.addColorStop(0.4,'#0a4a6e');ocean.addColorStop(1,'#021a2e');ctx.fillStyle=ocean;ctx.fillRect(0,h*0.35,w,h*0.65);var wave=ctx.createRadialGradient(w*0.4,h*0.5,10,w*0.4,h*0.5,w*0.5);wave.addColorStop(0,'rgba(0,180,220,0.9)');wave.addColorStop(0.5,'rgba(0,150,190,0.7)');wave.addColorStop(1,'rgba(0,100,140,0)');ctx.fillStyle=wave;ctx.beginPath();ctx.moveTo(0,h*0.7);ctx.quadraticCurveTo(w*0.1,h*0.3,w*0.35,h*0.2);ctx.quadraticCurveTo(w*0.55,h*0.15,w*0.7,h*0.3);ctx.quadraticCurveTo(w*0.85,h*0.45,w,h*0.5);ctx.lineTo(w,h);ctx.lineTo(0,h);ctx.closePath();ctx.fill();ctx.strokeStyle='rgba(255,255,255,0.85)';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(w*0.05,h*0.62);ctx.quadraticCurveTo(w*0.2,h*0.25,w*0.45,h*0.18);ctx.quadraticCurveTo(w*0.62,h*0.14,w*0.75,h*0.28);ctx.stroke();ctx.strokeStyle='rgba(255,255,255,0.5)';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(w*0.08,h*0.58);ctx.quadraticCurveTo(w*0.22,h*0.28,w*0.48,h*0.21);ctx.stroke();for(var i=0;i<12;i++){var sx=w*(0.3+Math.random()*0.3),sy=h*(0.15+Math.random()*0.1);ctx.fillStyle='rgba(255,255,255,'+(0.3+Math.random()*0.5)+')';ctx.beginPath();ctx.arc(sx,sy,Math.random()*2+0.5,0,Math.PI*2);ctx.fill();}ctx.fillStyle='#0a0a1a';var sx2=w*0.45,sy2=h*0.32;ctx.beginPath();ctx.arc(sx2,sy2-8,4,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.moveTo(sx2-8,sy2+2);ctx.lineTo(sx2+8,sy2+2);ctx.lineTo(sx2+6,sy2+8);ctx.lineTo(sx2-6,sy2+8);ctx.closePath();ctx.fill();ctx.fillStyle='#ff5500';ctx.fillRect(sx2-7,sy2-3,14,6);}},
-                                  {label:'City Skyline',draw:function(ctx,w,h){var sky=ctx.createLinearGradient(0,0,0,h*0.6);sky.addColorStop(0,'#0d0d2b');sky.addColorStop(0.5,'#1a1a4a');sky.addColorStop(1,'#2d1b4e');ctx.fillStyle=sky;ctx.fillRect(0,0,w,h);for(var i=0;i<30;i++){ctx.fillStyle='rgba(255,255,255,'+(0.3+Math.random()*0.5)+')';ctx.beginPath();ctx.arc(Math.random()*w,Math.random()*h*0.5,Math.random()*1.2,0,Math.PI*2);ctx.fill();}var glow=ctx.createLinearGradient(0,h*0.5,0,h*0.65);glow.addColorStop(0,'rgba(255,120,60,0.4)');glow.addColorStop(1,'transparent');ctx.fillStyle=glow;ctx.fillRect(0,h*0.5,w,h*0.2);var river=ctx.createLinearGradient(0,h*0.72,0,h);river.addColorStop(0,'#0d1a3a');river.addColorStop(1,'#06101e');ctx.fillStyle=river;ctx.fillRect(0,h*0.72,w,h*0.28);var drawBuilding=function(x,bw,bh,win){var g=ctx.createLinearGradient(x,h*0.72-bh,x+bw,h*0.72-bh);g.addColorStop(0,'#1a2040');g.addColorStop(1,'#0e1530');ctx.fillStyle=g;ctx.fillRect(x,h*0.72-bh,bw,bh);if(win){ctx.fillStyle='rgba(255,220,100,0.55)';for(var r=0;r<Math.floor(bh/12);r++)for(var c=0;c<Math.floor(bw/8);c++)if(Math.random()>0.3)ctx.fillRect(x+3+c*8,h*0.72-bh+6+r*12,4,5);}};drawBuilding(w*0.1,20,h*0.25,true);drawBuilding(w*0.18,14,h*0.2,true);drawBuilding(w*0.26,18,h*0.32,true);drawBuilding(w*0.38,12,h*0.18,true);drawBuilding(w*0.44,22,h*0.48,true);ctx.fillStyle='#d4a040';ctx.beginPath();ctx.moveTo(w*0.455,h*0.72-h*0.48);ctx.lineTo(w*0.455-3,h*0.72-h*0.48+20);ctx.lineTo(w*0.455+3,h*0.72-h*0.48+20);ctx.closePath();ctx.fill();drawBuilding(w*0.56,16,h*0.28,true);drawBuilding(w*0.64,20,h*0.22,true);drawBuilding(w*0.72,14,h*0.3,true);drawBuilding(w*0.8,18,h*0.19,true);}},
-                                  {label:'Aurora',draw:function(ctx,w,h){ctx.fillStyle='#000818';ctx.fillRect(0,0,w,h);for(var i=0;i<60;i++){var op=0.3+Math.random()*0.6;ctx.fillStyle='rgba(255,255,255,'+op+')';ctx.beginPath();ctx.arc(Math.random()*w,Math.random()*h*0.7,Math.random()*1.2,0,Math.PI*2);ctx.fill();}var colors=['rgba(0,255,150,','rgba(0,200,255,','rgba(100,0,255,','rgba(0,255,100,'];for(var i=0;i<4;i++){var grd=ctx.createLinearGradient(0,0,0,h*0.6);grd.addColorStop(0,colors[i]+'0)');grd.addColorStop(0.2,colors[i]+'0.15)');grd.addColorStop(0.5,colors[i]+'0.3)');grd.addColorStop(1,colors[i]+'0)');ctx.fillStyle=grd;ctx.beginPath();var offset=w*(0.1+i*0.25);ctx.moveTo(offset,0);for(var x=0;x<=w;x+=20){var wave=Math.sin((x+offset)/60)*30*Math.sin(i*1.5);ctx.lineTo(x,h*0.08+wave+i*15);}ctx.lineTo(w,h*0.65);ctx.lineTo(0,h*0.65);ctx.closePath();ctx.fill();}var groundG=ctx.createLinearGradient(0,h*0.65,0,h);groundG.addColorStop(0,'#e8f4f8');groundG.addColorStop(1,'#c8dce4');ctx.fillStyle=groundG;ctx.fillRect(0,h*0.65,w,h*0.35);var drawTree=function(x,th){ctx.fillStyle='#0a1820';ctx.beginPath();ctx.moveTo(x,h*0.65-th);ctx.lineTo(x-th*0.3,h*0.65);ctx.lineTo(x+th*0.3,h*0.65);ctx.closePath();ctx.fill();ctx.beginPath();ctx.moveTo(x,h*0.65-th*1.3);ctx.lineTo(x-th*0.2,h*0.65-th*0.5);ctx.lineTo(x+th*0.2,h*0.65-th*0.5);ctx.closePath();ctx.fill();};[w*0.05,w*0.15,w*0.22,w*0.7,w*0.8,w*0.9,w*0.96].forEach(function(x,i){drawTree(x,20+i%3*10);});}}
-                                ];
-                              }
-
-                              var isRTL = document.documentElement.dir === 'rtl';
-                              var islCurrentIndex=0;
-                              var islTrack=document.getElementById('islTrack');
-                              var islDotsContainer=document.getElementById('islDots');
-                              var totalSlidesCount = islSlides.length;
-
-                              // لیستی که اسلایدها و کپی‌های کناری را نگه می‌دارد (برای حرکت لوپ بی‌نهایت)
-                              var renderSlidesList = [];
-                              if (totalSlidesCount > 1) {
-                                // کپی اسلاید آخر در ابتدا
-                                renderSlidesList.push({ slide: islSlides[totalSlidesCount - 1], isClone: true });
-                                // اسلایدهای واقعی
-                                islSlides.forEach(function(s) {
-                                  renderSlidesList.push({ slide: s, isClone: false });
-                                });
-                                // کپی اسلاید اول در انتها
-                                renderSlidesList.push({ slide: islSlides[0], isClone: true });
-                              } else {
-                                islSlides.forEach(function(s) {
-                                  renderSlidesList.push({ slide: s, isClone: false });
-                                });
-                              }
-
-                              var totalElements = renderSlidesList.length;
-                              if (islTrack && totalElements > 0) {
-                                islTrack.style.width = (totalElements * 100) + '%';
-                              }
-
-                              // ساخت کادر اسلایدها در صفحه
-                              if (islTrack) {
-                                islTrack.innerHTML = '';
-                              }
-                              if (islDotsContainer) {
-                                islDotsContainer.innerHTML = '';
-                              }
-
-                              renderSlidesList.forEach(function(item, idx){
-                                var s = item.slide;
-                                var slide=document.createElement('div');
-                                slide.className='isl-slide';
-                                slide.style.width = (100 / totalElements) + '%';
-
-                                if (s.imgSrc) {
-                                  var img = document.createElement('img');
-                                  img.src = s.imgSrc;
-                                  img.style.width = '100%';
-                                  img.style.height = '100%';
-                                  img.style.objectFit = 'cover';
-                                  img.style.objectPosition = 'center';
-                                  img.style.display = 'block';
-                                  img.setAttribute('draggable', 'false');
-                                  slide.appendChild(img);
-                                } else {
-                                  var canvas=document.createElement('canvas');
-                                  canvas.width=200;
-                                  canvas.height=430;
-                                  canvas.className='isl-slide-canvas';
-                                  slide.appendChild(canvas);
-                                }
-                                islTrack.appendChild(slide);
-
-                                // فقط برای اسلایدهای اصلی دات می‌سازیم
-                                if (!item.isClone) {
-                                  var realIdx = totalSlidesCount > 1 ? idx - 1 : idx;
-                                  var dot=document.createElement('div');
-                                  dot.className='isl-dot'+(realIdx===0?' active':'');
-                                  islDotsContainer.appendChild(dot);
-                                }
-                              });
-
-                              function islRenderSlides(){
-                                var canvases=islTrack.querySelectorAll('.isl-slide-canvas');
-                                canvases.forEach(function(canvas){
-                                  var idx=Array.prototype.indexOf.call(islTrack.children,canvas.parentNode);
-                                  var s;
-                                  if (totalSlidesCount > 1) {
-                                    if (idx === 0) s = islSlides[totalSlidesCount - 1];
-                                    else if (idx === totalElements - 1) s = islSlides[0];
-                                    else s = islSlides[idx - 1];
-                                  } else {
-                                    s = islSlides[idx];
-                                  }
-                                  if(s&&s.draw){var ctx=canvas.getContext('2d');s.draw(ctx,canvas.width,canvas.height);}
-                                });
-                              }
-                              islRenderSlides();
-
-                              function islRenderSidePanel(id,slideIdx){
-                                var canvas=document.getElementById(id);
-                                if(!canvas)return;
-                                var ctx=canvas.getContext('2d');
-                                ctx.clearRect(0,0,canvas.width,canvas.height);
-                                var realIdx=((slideIdx%islSlides.length)+islSlides.length)%islSlides.length;
-                                var s=islSlides[realIdx];
-                                if(!s)return;
-                                if(s.imgSrc){
-                                  var ci=islImgCache[realIdx];
-                                  if(ci&&ci.complete&&ci.naturalWidth>0){
-                                    ctx.drawImage(ci,0,0,canvas.width,canvas.height);
-                                  } else {
-                                    ctx.fillStyle='#0d1525';ctx.fillRect(0,0,canvas.width,canvas.height);
-                                    if(ci){ci.addEventListener('load',function(){ctx.clearRect(0,0,canvas.width,canvas.height);ctx.drawImage(ci,0,0,canvas.width,canvas.height);},{once:true});}
-                                  }
-                                } else if(s.draw){
-                                  ctx.save();ctx.scale(0.5,0.5);s.draw(ctx,canvas.width*2,canvas.height*2);ctx.restore();
-                                }
-                              }
-                              function islUpdateSidePanels(){
-                                var leftIndex = isRTL ? islCurrentIndex + 1 : islCurrentIndex - 1;
-                                var rightIndex = isRTL ? islCurrentIndex - 1 : islCurrentIndex + 1;
-                                islRenderSidePanel('islLeftCanvas', leftIndex);
-                                  islRenderSidePanel('islRightCanvas', rightIndex);
-                              }
-                              islUpdateSidePanels();
-
-                              function islShowSidePanels(show){
-                                var lp = document.getElementById('islLeftPanel');
-                                var rp = document.getElementById('islRightPanel');
-                                if (lp) lp.classList.toggle('visible',show);
-                                if (rp) rp.classList.toggle('visible',show);
-                              }
-
-                              function islAnimateTitle(newLabel){
-                                var container=document.getElementById('islSlideTitle');
-                                var old=document.getElementById('islTitleText');
-                                if(!container || !old){return;}
-                                old.classList.add('out');
-                                setTimeout(function(){
-                                  var span=document.createElement('span');
-                                  span.id='islTitleText';
-                                  span.textContent=newLabel;
-                                  if(old.parentNode)old.parentNode.removeChild(old);
-                                  container.appendChild(span);
-                                },260);
-                              }
-
-                              var islIsTransitioning = false;
-
-                              function islGoToSlide(targetIndex,direction,immediate){
-                                var total=islSlides.length;
-                                if (total === 0) return;
-
-                                var directionMultiplier = isRTL ? 1 : -1;
-
-                                if (immediate) {
-                                  islCurrentIndex=((targetIndex%total)+total)%total;
-                                  var visualIndex = total > 1 ? islCurrentIndex + 1 : 0;
-                                  var translatePercent = directionMultiplier * visualIndex * (100 / totalElements);
-                                  if (islTrack) {
-                                    islTrack.style.transition='none';
-                                    islTrack.style.transform='translateX('+translatePercent+'%)';
-                                  }
-                                  document.querySelectorAll('#iphone-slider-root .isl-dot').forEach(function(d,i){d.classList.toggle('active',i===islCurrentIndex);});
-                                  islUpdateSidePanels();
-                                  var titleText = document.getElementById('islTitleText');
-                                  if (titleText) titleText.textContent = islSlides[islCurrentIndex].label;
-                                  return;
-                                }
-
-                                if (islIsTransitioning) return;
-                                islIsTransitioning = true;
-
-                                var visualTargetIndex;
-                                if (total > 1) {
-                                  if (targetIndex === total) {
-                                    visualTargetIndex = total + 1; // Clone of Slide 0
-                                  } else if (targetIndex === -1) {
-                                    visualTargetIndex = 0; // Clone of Slide N-1
-                                  } else {
-                                    visualTargetIndex = targetIndex + 1;
-                                  }
-                                } else {
-                                  visualTargetIndex = 0;
-                                }
-
-                                var translatePercent = directionMultiplier * visualTargetIndex * (100 / totalElements);
-                                if (islTrack) {
-                                  islTrack.style.transition='transform 0.5s cubic-bezier(0.4,0,0.2,1)';
-                                  islTrack.style.transform='translateX('+translatePercent+'%)';
-                                }
-
-                                var nextIndex = ((targetIndex%total)+total)%total;
-                                islCurrentIndex = nextIndex;
-
-                                document.querySelectorAll('#iphone-slider-root .isl-dot').forEach(function(d,i){d.classList.toggle('active',i===islCurrentIndex);});
-                                islUpdateSidePanels();
-                                islAnimateTitle(islSlides[islCurrentIndex].label);
-
-                                var pw=document.getElementById('islPhoneWrapper');
-                                if (pw) {
-                                  var tiltDir=direction==='left'?4:-4;
-                                  pw.style.transition='none';
-                                  pw.style.transform='rotateX(0deg) rotateY('+tiltDir+'deg) rotateZ(0deg)';
-                                  setTimeout(function(){
-                                    pw.style.transition='transform 0.6s cubic-bezier(0.34,1.56,0.64,1)';
-                                    pw.style.transform='rotateX(0deg) rotateY(0deg) rotateZ(0deg)';
-                                  },50);
-                                }
-
-                                // بررسی سرریز شدن و پرش غیرمحسوس به اسلاید واقعی
-                                setTimeout(function(){
-                                  if (total > 1) {
-                                    if (targetIndex === total) {
-                                      var jumpTranslate = directionMultiplier * 1 * (100 / totalElements);
-                                      if (islTrack) {
-                                        islTrack.style.transition = 'none';
-                                        islTrack.style.transform = 'translateX(' + jumpTranslate + '%)';
-                                      }
-                                    } else if (targetIndex === -1) {
-                                      var jumpTranslate = directionMultiplier * total * (100 / totalElements);
-                                      if (islTrack) {
-                                        islTrack.style.transition = 'none';
-                                        islTrack.style.transform = 'translateX(' + jumpTranslate + '%)';
-                                      }
-                                    }
-                                  }
-                                  islIsTransitioning = false;
-                                }, 500);
-                              }
-
-                              var islHand=document.getElementById('islHandContainer');
-                              var islArrowLeft=document.getElementById('islArrowLeft');
-                              var islArrowRight=document.getElementById('islArrowRight');
-                              var islSwipeHint=document.getElementById('islSwipeHint');
-                              var islIsDragging=false,islStartX=0,islCurrentAngle=0,islHasSwiped=false,islSwipeTriggered=false;
-                              var ISL_MAX_ANGLE=38,ISL_SWIPE_THRESHOLD=22;
-
-                              function islGetEventX(e){return e.touches?e.touches[0].clientX:e.clientX;}
-                              function islOnDragStart(e){
-                                if (islIsTransitioning) return;
-                                islIsDragging=true;
-                                islStartX=islGetEventX(e);
-                                islSwipeTriggered=false;
-                                if (islHand) islHand.classList.remove('snap-back');
-                                islShowSidePanels(true);
-                                e.preventDefault();
-                              }
-                              function islOnDragMove(e){
-                                if(!islIsDragging)return;
-                                var dx=islGetEventX(e)-islStartX;
-                                var angle=Math.max(-ISL_MAX_ANGLE,Math.min(ISL_MAX_ANGLE,dx*0.5));
-                                islCurrentAngle=angle;
-                                if (islHand) islHand.style.transform='rotate('+angle+'deg)';
-                                if (islArrowLeft) islArrowLeft.classList.toggle('lit',angle<-ISL_SWIPE_THRESHOLD*0.5);
-                                if (islArrowRight) islArrowRight.classList.toggle('lit',angle>ISL_SWIPE_THRESHOLD*0.5);
-                                if(!islSwipeTriggered){
-                                  if(angle>ISL_SWIPE_THRESHOLD){
-                                    islGoToSlide(isRTL ? islCurrentIndex+1 : islCurrentIndex-1, isRTL ? 'left' : 'right');
-                                    islSwipeTriggered=true;
-                                    islHasSwiped=true;
-                                  }else if(angle<-ISL_SWIPE_THRESHOLD){
-                                    islGoToSlide(isRTL ? islCurrentIndex-1 : islCurrentIndex+1, isRTL ? 'right' : 'left');
-                                    islSwipeTriggered=true;
-                                    islHasSwiped=true;
-                                  }
-                                }
-                                if(islHasSwiped && islSwipeHint) islSwipeHint.classList.add('hidden');
-                                e.preventDefault();
-                              }
-                              function islOnDragEnd(e){
-                                if(!islIsDragging)return;
-                                islIsDragging=false;
-                                if (islHand) {
-                                  islHand.classList.add('snap-back');
-                                  islHand.style.transform='rotate(0deg)';
-                                }
-                                islCurrentAngle=0;
-                                if (islArrowLeft) islArrowLeft.classList.remove('lit');
-                                if (islArrowRight) islArrowRight.classList.remove('lit');
-                              }
-
-                              if (islHand) {
-                                islHand.addEventListener('mousedown',islOnDragStart);
-                                islHand.addEventListener('touchstart',islOnDragStart,{passive:false});
-                                islHand.addEventListener('mousedown',function(){islPauseAutoPlay(5000);});
-                                islHand.addEventListener('touchstart',function(){islPauseAutoPlay(5000);},{passive:true});
-                              }
-                              document.addEventListener('mousemove',islOnDragMove);
-                              document.addEventListener('mouseup',islOnDragEnd);
-                              document.addEventListener('touchmove',islOnDragMove,{passive:false});
-                              document.addEventListener('touchend',islOnDragEnd);
-
-                              // تنظیم اولیه اسلایدر روی اسلاید اول (بعد از اسلاید کپی شده)
-                              var directionMultiplier = isRTL ? 1 : -1;
-                              if (islTrack) {
-                                var initTranslate = directionMultiplier * (totalSlidesCount > 1 ? 1 : 0) * (100 / totalElements);
-                                islTrack.style.transform='translateX('+initTranslate+'%)';
-                              }
-                              islShowSidePanels(true);
-
-                              // Auto-play
-                              var islAutoTimer=null,islIsAnimating=false,islAutoPaused=false;
-                              var ISL_AUTO_INTERVAL=2800,ISL_SWING_DURATION=700;
-
-                              function islAnimateHandAndSlide(){
-                                if(islIsDragging||islAutoPaused||islIsTransitioning)return;
-                                islIsAnimating=true;
-                                var targetAngle = isRTL ? 32 : -32;
-                                var dir = isRTL ? 'left' : 'right';
-                                islShowSidePanels(true);
-                                if (islHand) {
-                                  islHand.classList.remove('snap-back');
-                                  islHand.style.transition='transform '+(ISL_SWING_DURATION*0.55)+'ms cubic-bezier(0.4,0,0.2,1)';
-                                  islHand.style.transform='rotate('+targetAngle+'deg)';
-                                }
-                                if (isRTL) {
-                                  if (islArrowRight) islArrowRight.classList.add('lit');
-                                } else {
-                                  if (islArrowLeft) islArrowLeft.classList.add('lit');
-                                }
-                                setTimeout(function(){islGoToSlide(islCurrentIndex+1,dir);},ISL_SWING_DURATION*0.45);
-                                setTimeout(function(){
-                                  if (islHand) {
-                                    islHand.classList.add('snap-back');
-                                    islHand.style.transition='';
-                                    islHand.style.transform='rotate(0deg)';
-                                  }
-                                  if (islArrowLeft) islArrowLeft.classList.remove('lit');
-                                  if (islArrowRight) islArrowRight.classList.remove('lit');
-                                  islIsAnimating=false;
-                                },ISL_SWING_DURATION+80);
-                              }
-
-                              function islStartAutoPlay(){
-                                if(islAutoTimer)return;
-                                  islAutoTimer=setInterval(function(){
-                                    if(!islIsDragging&&!islAutoPaused)islAnimateHandAndSlide();
-                                  },ISL_AUTO_INTERVAL);
-                              }
-                              function islPauseAutoPlay(resumeAfter){
-                                resumeAfter=resumeAfter||4000;
-                                islAutoPaused=true;
-                                clearInterval(islAutoTimer);
-                                islAutoTimer=null;
-                                setTimeout(function(){
-                                  islAutoPaused=false;
-                                  islStartAutoPlay();
-                                },resumeAfter);
-                              }
-
-                              setTimeout(islStartAutoPlay,1200);
-                            })();
-                            </script>
                         </div>
                     </div>
                     <div class="col-lg-6 order-lg-1 mt--100">
@@ -963,7 +539,6 @@ header('X-LiteSpeed-Cache-Control: no-cache'); // LiteSpeed Server
     </div>
 
     <!-- App Preview Section Start -->
-    <?php /*
     <section class="app-preview-section tmp-section-gapTop" id="app-preview">
         <div class="container">
             <h2 class="app-preview-title tmp-scroll-trigger tmp-fade-in animation-order-1"><?= __('test_app_title', 'در اینجا میتونی قابلیت های farsifahr رو تست کنی') ?></h2>
@@ -975,7 +550,6 @@ header('X-LiteSpeed-Cache-Control: no-cache'); // LiteSpeed Server
             </div>
         </div>
     </section>
-    */ ?>
     <div class="about-content-area">
         <div class="container tmp-section-gap">
             <div class="text-para-doc-wrap">
@@ -1462,29 +1036,26 @@ header('X-LiteSpeed-Cache-Control: no-cache'); // LiteSpeed Server
             ok: '<?= __("ok", "باشه") ?>'
         };
     </script>
-    <script defer src="assets/js/script.js?v=<?= filemtime(__DIR__ . '/assets/js/script.js') ?>"></script>
+    <script defer src="assets/js/script.js"></script>
 
     <!-- Billing Toggle Script -->
     <script>
         // تابع برای تغییر نمایش قیمت‌ها بین ماهانه و سالانه
-        const billingToggle = document.getElementById('billingToggle');
-        if (billingToggle) {
-            billingToggle.addEventListener('change', function () {
-                const monthlyPrices = document.querySelectorAll('.monthly-price');
-                const yearlyPrices = document.querySelectorAll('.yearly-price');
-                const perMonthTexts = document.querySelectorAll('.per-month');
+        document.getElementById('billingToggle').addEventListener('change', function () {
+            const monthlyPrices = document.querySelectorAll('.monthly-price');
+            const yearlyPrices = document.querySelectorAll('.yearly-price');
+            const perMonthTexts = document.querySelectorAll('.per-month');
 
-                if (this.checked) {
-                    monthlyPrices.forEach(el => el.classList.add('d-none'));
-                    yearlyPrices.forEach(el => el.classList.remove('d-none'));
-                    perMonthTexts.forEach(el => el.textContent = '<?= __("yearly_discounted", "سالانه (با تخفیف)") ?>');
-                } else {
-                    monthlyPrices.forEach(el => el.classList.remove('d-none'));
-                    yearlyPrices.forEach(el => el.classList.add('d-none'));
-                    perMonthTexts.forEach(el => el.textContent = '<?= __("monthly", "ماهانه") ?>');
-                }
-            });
-        }
+            if (this.checked) {
+                monthlyPrices.forEach(el => el.classList.add('d-none'));
+                yearlyPrices.forEach(el => el.classList.remove('d-none'));
+                perMonthTexts.forEach(el => el.textContent = '<?= __("yearly_discounted", "سالانه (با تخفیف)") ?>');
+            } else {
+                monthlyPrices.forEach(el => el.classList.remove('d-none'));
+                yearlyPrices.forEach(el => el.classList.add('d-none'));
+                perMonthTexts.forEach(el => el.textContent = '<?= __("monthly", "ماهانه") ?>');
+            }
+        });
 </script>
 <script src="/chat/widget.js?v=2.8" async></script>
 
@@ -1627,7 +1198,7 @@ header('X-LiteSpeed-Cache-Control: no-cache'); // LiteSpeed Server
         }
     </script>
 <script>
-    window.addEventListener('DOMContentLoaded', function() {
+    $(document).ready(function() {
         // Odometer initialization - optimized for performance
         let odometerTriggered = false;
         function triggerOdometer() {

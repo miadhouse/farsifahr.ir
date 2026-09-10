@@ -1,5 +1,30 @@
 <?php
 // functions.php
+
+// IP Blacklist - Block specific abusive/malicious IP addresses or subnets (ending with .)
+$blocked_ips = ['195.178.110.157', '207.154.197.113', '185.177.72.'];
+$user_ip = $_SERVER['HTTP_CF_CONNECTING_IP'] ?? $_SERVER['HTTP_CLIENT_IP'] ?? $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? '';
+if (strpos($user_ip, ',') !== false) {
+    $ips = array_map('trim', explode(',', $user_ip));
+    foreach ($ips as $single_ip) {
+        if ($single_ip !== '127.0.0.1' && $single_ip !== '::1' && !empty($single_ip)) {
+            $user_ip = $single_ip;
+            break;
+        }
+    }
+}
+$is_blocked = false;
+foreach ($blocked_ips as $blocked) {
+    if (strpos($user_ip, $blocked) === 0) {
+        $is_blocked = true;
+        break;
+    }
+}
+if ($is_blocked) {
+    header('HTTP/1.1 403 Forbidden');
+    exit('Access Denied');
+}
+
 require_once(__DIR__ . '/../config/config.php');
 require_once(__DIR__ . '/i18n.php');
 
@@ -95,13 +120,203 @@ function log_user_action($user_id, $email, $action, $status, $pdo)
     $stmt->execute([$user_id, $email, $action, $ip, $location, $user_agent, $status]);
 }
 
+// ایجاد یا تمدید توکن ماندگاری لاگین (۳ ماهه)
+function create_remember_token($user_id, $pdo)
+{
+    try {
+        if (!$pdo || empty($user_id)) {
+            return false;
+        }
+
+        $stmtUser = $pdo->prepare("SELECT email, is_blocked FROM users WHERE id = ?");
+        $stmtUser->execute([$user_id]);
+        $user = $stmtUser->fetch();
+        if (!$user || (isset($user['is_blocked']) && $user['is_blocked'] == 1)) {
+            return false;
+        }
+
+        $is_super = ($user['email'] === 'miadaleali@gmail.com');
+
+        // حذف توکن‌های قبلی کاربر عادی (جلوگیری از استفاده همزمان در چند دستگاه)
+        if (!$is_super) {
+            $stmtDel = $pdo->prepare("DELETE FROM remember_tokens WHERE user_id = ?");
+            $stmtDel->execute([$user_id]);
+        }
+
+        $raw_token = bin2hex(random_bytes(32));
+        $token_hash = hash('sha256', $raw_token);
+        $lifetime = defined('SESSION_LIFETIME') ? SESSION_LIFETIME : 7776000;
+        $expires_at = date('Y-m-d H:i:s', time() + $lifetime);
+
+        $stmt = $pdo->prepare("
+            INSERT INTO remember_tokens (user_id, token_hash, expires_at) 
+            VALUES (?, ?, ?)
+        ");
+        $stmt->execute([$user_id, $token_hash, $expires_at]);
+
+        if (!headers_sent()) {
+            $is_secure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (isset($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] == 443);
+            setcookie('remember_token', $raw_token, [
+                'expires' => time() + $lifetime,
+                'path' => '/',
+                'domain' => '',
+                'secure' => $is_secure,
+                'httponly' => true,
+                'samesite' => 'Lax'
+            ]);
+            $_COOKIE['remember_token'] = $raw_token;
+        }
+
+        return $raw_token;
+    } catch (Exception $e) {
+        error_log("create_remember_token error: " . $e->getMessage());
+        return false;
+    }
+}
+
+// پاک کردن کوکی و توکن ماندگاری لاگین
+function clear_remember_token($pdo = null)
+{
+    if (!empty($_COOKIE['remember_token']) && $pdo) {
+        try {
+            $token_hash = hash('sha256', $_COOKIE['remember_token']);
+            $stmt = $pdo->prepare("DELETE FROM remember_tokens WHERE token_hash = ?");
+            $stmt->execute([$token_hash]);
+        } catch (Exception $e) {
+            error_log("clear_remember_token error: " . $e->getMessage());
+        }
+    }
+
+    if (!headers_sent()) {
+        $is_secure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (isset($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] == 443);
+        setcookie('remember_token', '', [
+            'expires' => time() - 3600,
+            'path' => '/',
+            'domain' => '',
+            'secure' => $is_secure,
+            'httponly' => true,
+            'samesite' => 'Lax'
+        ]);
+    }
+    unset($_COOKIE['remember_token']);
+}
+
+// بازگردانی سشن با توکن ماندگاری لاگین
+function restore_session_from_remember_token($pdo)
+{
+    if (empty($_COOKIE['remember_token']) || !$pdo) {
+        return false;
+    }
+
+    try {
+        $raw_token = $_COOKIE['remember_token'];
+        $token_hash = hash('sha256', $raw_token);
+
+        $stmt = $pdo->prepare("
+            SELECT rt.id AS token_id, rt.user_id, u.* 
+            FROM remember_tokens rt 
+            JOIN users u ON rt.user_id = u.id 
+            WHERE rt.token_hash = ? AND rt.expires_at > NOW() 
+            LIMIT 1
+        ");
+        $stmt->execute([$token_hash]);
+        $user = $stmt->fetch();
+
+        if (!$user) {
+            clear_remember_token($pdo);
+            return false;
+        }
+
+        if (isset($user['is_blocked']) && $user['is_blocked'] == 1) {
+            clear_remember_token($pdo);
+            return false;
+        }
+
+        if (isset($user['email_verified']) && $user['email_verified'] == 0) {
+            clear_remember_token($pdo);
+            return false;
+        }
+
+        if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
+            session_start();
+        }
+
+        $_SESSION['user_id'] = $user['id'];
+        $_SESSION['email'] = $user['email'];
+        $_SESSION['name'] = $user['name'];
+        $_SESSION['role'] = $user['role'];
+        $_SESSION['logged_in'] = true;
+
+        // ذخیره سشن در دیتابیس
+        save_session($user['id'], $pdo);
+
+        // بروزرسانی زمان آخرین استفاده
+        $stmtUpdate = $pdo->prepare("UPDATE remember_tokens SET last_used_at = CURRENT_TIMESTAMP WHERE id = ?");
+        $stmtUpdate->execute([$user['token_id']]);
+
+        return true;
+    } catch (Exception $e) {
+        error_log("restore_session_from_remember_token error: " . $e->getMessage());
+        return false;
+    }
+}
+
 // بررسی ورود کاربر
 function is_logged_in()
 {
-    if (session_status() === PHP_SESSION_NONE) {
+    global $pdo;
+
+    if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
         session_start();
     }
-    return isset($_SESSION['user_id']) && isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true;
+    
+    $logged = isset($_SESSION['user_id']) && isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true;
+    
+    // اگر در سشن نبود، بازیابی خودکار با توکن ماندگاری ۳ ماهه
+    if (!$logged && !empty($_COOKIE['remember_token']) && isset($pdo)) {
+        if (restore_session_from_remember_token($pdo)) {
+            $logged = true;
+        }
+    }
+
+    if ($logged) {
+        // بررسی اینکه آیا کاربر مسدود شده است یا خیر
+        static $block_checked = null; // برای اینکه در یک اجرای PHP فقط یکبار کوئری بزنیم
+        if ($block_checked === null && isset($pdo)) {
+            $stmt = $pdo->prepare("SELECT is_blocked, block_message FROM users WHERE id = ?");
+            $stmt->execute([$_SESSION['user_id']]);
+            $user = $stmt->fetch();
+            if ($user && isset($user['is_blocked']) && $user['is_blocked'] == 1) {
+                // کاربر مسدود شده است! سشن را پاک می‌کنیم
+                $block_msg = !empty($user['block_message']) ? $user['block_message'] : 'حساب کاربری شما مسدود شده است. لطفاً با پشتیبانی تماس بگیرید.';
+                
+                clear_remember_token($pdo);
+
+                // پاک کردن سشن
+                $_SESSION = [];
+                if (ini_get("session.use_cookies")) {
+                    $params = session_get_cookie_params();
+                    setcookie(session_name(), '', time() - 42000,
+                        $params["path"], $params["domain"],
+                        $params["secure"], $params["httponly"]
+                    );
+                }
+                session_destroy();
+                
+                // تنظیم کوکی یادآور مسدودسازی برای نمایش به کاربر
+                setcookie('blocked_msg', $block_msg, time() + 60, '/');
+                header('Location: ' . SITE_URL . 'login.php?blocked=1');
+                exit;
+            }
+            $block_checked = true;
+        }
+
+        // برای کاربران فعال که هنوز کوکی ماندگاری ندارند، آن را خودکار تنظیم می‌کنیم
+        if (empty($_COOKIE['remember_token']) && !headers_sent() && isset($pdo) && !empty($_SESSION['user_id'])) {
+            create_remember_token($_SESSION['user_id'], $pdo);
+        }
+    }
+    return $logged;
 }
 
 // بررسی نقش کاربر
@@ -119,9 +334,15 @@ function is_super_admin()
 // خروج از حساب
 function logout()
 {
+    global $pdo;
+
+    // پاک کردن توکن ماندگاری لاگین
+    if (isset($pdo)) {
+        clear_remember_token($pdo);
+    }
+
     // پاک کردن سشن از دیتابیس
-    if (isset($_SESSION['session_id'])) {
-        global $pdo;
+    if (isset($_SESSION['session_id']) && isset($pdo)) {
         $stmt = $pdo->prepare("DELETE FROM sessions WHERE id = ?");
         $stmt->execute([$_SESSION['session_id']]);
     }
@@ -227,8 +448,8 @@ function save_session($user_id, $pdo)
     }
 
     $session_id = session_id();
-    $ip = $_SERVER['REMOTE_ADDR'];
-    $user_agent = $_SERVER['HTTP_USER_AGENT'];
+    $ip = get_user_ip();
+    $user_agent = $_SERVER['HTTP_USER_AGENT'] ?? '';
 
     $stmt = $pdo->prepare("
         INSERT INTO sessions (id, user_id, ip_address, user_agent) 
@@ -263,6 +484,7 @@ function validate_session($pdo)
             if ($stmtCheck->rowCount() > 0) {
                 setcookie('concurrent_login', '1', time() + 60, '/');
                 $GLOBALS['concurrent_login_flag'] = true;
+                clear_remember_token($pdo);
             }
         }
         
@@ -335,7 +557,8 @@ function send_telegram_admin_message($message)
     $data = [
         'chat_id' => $chat_id,
         'text' => $message,
-        'parse_mode' => 'HTML'
+        'parse_mode' => 'HTML',
+        'disable_web_page_preview' => true
     ];
 
     $ch = curl_init();
@@ -390,36 +613,80 @@ function log_visitor_to_telegram()
     if (php_sapi_name() === 'cli') return;
     if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') return;
 
-    $is_logged = is_logged_in();
     $uri = $_SERVER['REQUEST_URI'] ?? '/';
+    
+    // نادیده گرفتن درخواست‌های API و فایل‌های پردازشی پس‌زمینه
+    if (strpos($uri, 'handler.php') !== false || 
+        strpos($uri, '/api/') !== false || 
+        strpos($uri, 'webhook.php') !== false || 
+        strpos($uri, 'auth/') !== false ||
+        strpos($uri, 'sw.js') !== false) {
+        return;
+    }
+
+    $is_logged = is_logged_in();
+    if ($is_logged) {
+        return; // بازدید کاربران لاگین شده (قدیمی) نیازی به اعلان ندارد
+    }
+    
     $is_important_page = (strpos($uri, 'dashboard') !== false || strpos($uri, '/admin/') !== false);
 
     // منطق هوشمند ارسال نوتیفیکیشن:
     // ۱. اگر ۳۰ دقیقه از آخرین نوتیف گذشته باشد
-    // ۲. یا اگر کاربر قبلاً مهمان بوده و حالا لاگین کرده است
-    // ۳. یا اگر کاربر برای اولین بار در این نشست وارد بخش داشبورد/ادمین شده است
     
     $should_notify = false;
     if (!isset($_SESSION['last_tg_notif'])) {
         $should_notify = true;
     } elseif ((time() - $_SESSION['last_tg_notif']) > 1800) {
         $should_notify = true;
-    } elseif ($is_logged && !($_SESSION['last_tg_was_logged'] ?? false)) {
-        $should_notify = true;
-    } elseif ($is_important_page && !($_SESSION['last_tg_was_important'] ?? false)) {
-        $should_notify = true;
     }
 
     if (!$should_notify) return;
 
-    // تشخیص بات‌ها
+    // اگر کاربر مهمان است و می‌خواهد به صفحات اپلیکیشن یا مدیریت دسترسی پیدا کند، چون ریدایرکت می‌شود نیازی به اعلان نیست
+    if (!$is_logged && (strpos($uri, '/app') !== false || strpos($uri, '/admin') !== false)) {
+        return;
+    }
+
+    // تشخیص بات‌ها و اسکنرهای مشکوک
     $ua = $_SERVER['HTTP_USER_AGENT'] ?? '';
-    if (empty($ua) || preg_match('/bot|crawl|slurp|spider|mediapartners|google|bing|yandex|duckduckgo|whatsapp|telegram|facebook|twitter/i', $ua)) {
+    if (empty($ua) || 
+        preg_match('/bot|crawl|slurp|spider|mediapartners|google|bing|yandex|duckduckgo|whatsapp|telegram|facebook|twitter|scan/i', $ua) ||
+        (strpos($ua, 'Firefox/24.0') !== false && strpos($ua, 'Chrome/') !== false)) {
         return;
     }
 
     $ip = get_user_ip();
+    
+    // محدودیت زمانی ارسال نوتیفیکیشن برای هر آی‌پی (حداکثر یک بار در ۱۰ دقیقه)
+    $ip_clean = preg_replace('/[^a-zA-Z0-9_.-]/', '_', $ip);
+    $cache_dir = sys_get_temp_dir() . '/tg_cache';
+    if (!is_dir($cache_dir)) {
+        @mkdir($cache_dir, 0777, true);
+        @chmod($cache_dir, 0777);
+    }
+    $cache_file = $cache_dir . '/' . $ip_clean . '.time';
+    if (file_exists($cache_file) && (time() - filemtime($cache_file)) < 600) {
+        return; // این آی‌پی در ۱۰ دقیقه گذشته اعلان داشته است
+    }
+
     $location = get_visitor_location($ip);
+    
+    // فیلتر کردن مهمان‌ها بر اساس کشورهای هدف جهت مهار ربات‌های اسکنر خارجی
+    if (!$is_logged) {
+        $allowed_countries = ['Germany', 'Deutschland', 'Iran', 'Austria', 'Switzerland', 'Localhost'];
+        $is_allowed = false;
+        foreach ($allowed_countries as $country) {
+            if (stripos($location, $country) !== false) {
+                $is_allowed = true;
+                break;
+            }
+        }
+        if (!$is_allowed) {
+            return; // مهمان خارج از محدوده جغرافیایی هدف است، تلگرام را شلوغ نمی‌کنیم
+        }
+    }
+
     $host = $_SERVER['HTTP_HOST'] ?? 'farsifahr.com';
     $url = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://{$host}{$uri}";
     
@@ -438,6 +705,7 @@ function log_visitor_to_telegram()
     $message .= "🕒 زمان: " . date('Y-m-d H:i:s');
 
     if (send_telegram_admin_message($message)) {
+        @file_put_contents($cache_file, time()); // ثبت زمان ارسال برای جلوگیری از اسپم آی‌پی
         $_SESSION['last_tg_notif'] = time();
         $_SESSION['last_tg_was_logged'] = $is_logged;
         if ($is_important_page) {

@@ -115,6 +115,16 @@ function handle_api_register($pdo) {
         $user = $stmt->fetch();
         
         unset($user['password']);
+
+        // ارسال پیام ثبت‌نام جدید (اپلیکیشن) به مدیر در تلگرام
+        $ip = get_user_ip();
+        $telegram_message = "🆕 <b>ثبت نام جدید در سایت (اپلیکیشن)</b>\n\n";
+        $telegram_message .= "👤 نام: {$user['name']}\n";
+        $telegram_message .= "📧 ایمیل: {$user['email']}\n";
+        $telegram_message .= "🌐 آی‌پی: {$ip}\n";
+        $telegram_message .= "🕒 زمان: " . date('Y-m-d H:i:s');
+        send_telegram_admin_message($telegram_message);
+
         Response::success($user, 'Registration successful');
 
     } catch (PDOException $e) {

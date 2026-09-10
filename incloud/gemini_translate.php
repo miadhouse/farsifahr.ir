@@ -18,16 +18,65 @@ if (!isset($_POST['word']) || empty(trim($_POST['word']))) {
 }
 
 $word = trim($_POST['word']);
+$word = trim($word, " \t\n\r\0\x0B.,?!;:\"'()[]{}«»");
 $context = trim($_POST['context'] ?? '');
 $user_id = $_SESSION['user_id'] ?? null;
 
-// اگر کلمه در دیتابیس موجود است و کانتکست نداریم، می‌توانیم همان را برگردانیم
-// اما طبق درخواست کاربر، ترجمه‌ها خوب نیستند، پس ترجیحاً از جمینای استفاده می‌کنیم
+if (!function_exists('saveToVocabularyWords')) {
+    function saveToVocabularyWords($word, $translation) {
+        global $pdo;
+        try {
+            $stmt = $pdo->prepare("SELECT id FROM vocabulary_words WHERE word = ?");
+            $stmt->execute([$word]);
+            $existing = $stmt->fetch(PDO::FETCH_ASSOC);
 
+            if ($existing) {
+                $stmt = $pdo->prepare("UPDATE vocabulary_words SET translation = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?");
+                $stmt->execute([$translation, $existing['id']]);
+                return $existing['id'];
+            } else {
+                $stmt = $pdo->prepare("INSERT INTO vocabulary_words (word, translation) VALUES (?, ?)");
+                $stmt->execute([$word, $translation]);
+                return $pdo->lastInsertId();
+            }
+        } catch (PDOException $e) {
+            return null;
+        }
+    }
+}
+
+// ۱. ابتدا بررسی وجود کلمه در دیتابیس (اولویت اول با دیتابیس است)
 try {
-    $apiKey = "AIzaSyADjcpet-WVDpeMlZtIoXo2BZsjDPRfuh8";
-    $model = "gemini-2.5-flash"; // استفاده از همان مدل موجود در پروژه
-    $url = "https://generativelanguage.googleapis.com/v1beta/models/{$model}:generateContent?key={$apiKey}";
+    $stmt = $pdo->prepare("SELECT id, translation FROM vocabulary_words WHERE word = ? AND translation IS NOT NULL AND TRIM(translation) != '' LIMIT 1");
+    $stmt->execute([$word]);
+    $cached = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if ($cached && !empty(trim($cached['translation']))) {
+        $in_user_collection = false;
+        if ($user_id) {
+            $stmtUser = $pdo->prepare("SELECT id FROM user_vocabulary WHERE user_id = ? AND word_id = ?");
+            $stmtUser->execute([$user_id, $cached['id']]);
+            $in_user_collection = $stmtUser->fetch(PDO::FETCH_ASSOC) !== false;
+        }
+
+        echo json_encode([
+            'success' => true,
+            'translation' => trim($cached['translation']),
+            'word_id' => $cached['id'],
+            'in_user_collection' => $in_user_collection,
+            'from_database' => true
+        ]);
+        exit;
+    }
+} catch (PDOException $e) {
+    error_log("Database lookup error in gemini_translate: " . $e->getMessage());
+}
+
+// ۲. در صورت عدم وجود در دیتابیس، ترجمه با هوش مصنوعی (Gemini)
+try {
+    $apiKey = defined('GEMINI_API_KEY') && !empty(GEMINI_API_KEY) ? GEMINI_API_KEY : getenv('GEMINI_API_KEY');
+    $model = "gemini-flash-latest";
+    $url = "https://generativelanguage.googleapis.com/v1beta/models/{$model}:generateContent";
 
     $promptText = "You are an expert German to Persian translator for driving license exams.\n";
     if (!empty($context)) {
@@ -43,9 +92,10 @@ try {
         ],
         "generationConfig" => [
             "temperature" => 0.1,
-            "topP" => 1,
-            "topK" => 1,
-            "maxOutputTokens" => 20,
+            "maxOutputTokens" => 300,
+            "thinkingConfig" => [
+                "thinkingBudget" => 0
+            ]
         ]
     ];
 
@@ -53,7 +103,10 @@ try {
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_POST, true);
     curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
-    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, [
+        'Content-Type: application/json',
+        'X-goog-api-key: ' . $apiKey
+    ]);
     curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
     curl_setopt($ch, CURLOPT_TIMEOUT, 10);
 
@@ -89,28 +142,5 @@ try {
 
 } catch (Exception $e) {
     error_log("Gemini translation error: " . $e->getMessage());
-    echo json_encode(['success' => false, 'message' => 'خطا در ترجمه هوشمند']);
-}
-
-// تابع برای ذخیره در vocabulary_words
-function saveToVocabularyWords($word, $translation) {
-    global $pdo;
-    try {
-        $stmt = $pdo->prepare("SELECT id FROM vocabulary_words WHERE word = ?");
-        $stmt->execute([$word]);
-        $existing = $stmt->fetch(PDO::FETCH_ASSOC);
-
-        if ($existing) {
-            // اگر قبلاً بوده، فقط آیدی را برمی‌گردانیم (یا می‌توانیم آپدیت کنیم)
-            // در اینجا آپدیت نمی‌کنیم چون شاید ترجمه جمینای فقط برای این کانتکست خاص باشد
-            // اما سیستم فعلی طوری است که کلمه را در vocabulary_words ذخیره می‌کند
-            return $existing['id'];
-        } else {
-            $stmt = $pdo->prepare("INSERT INTO vocabulary_words (word, translation) VALUES (?, ?)");
-            $stmt->execute([$word, $translation]);
-            return $pdo->lastInsertId();
-        }
-    } catch (PDOException $e) {
-        return null;
-    }
+    echo json_encode(['success' => false, 'message' => 'خطا در ارتباط با هوش مصنوعی']);
 }

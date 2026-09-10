@@ -17,12 +17,13 @@ if (!isset($_POST['word']) || empty(trim($_POST['word']))) {
 }
 
 $word = trim($_POST['word']);
+$word = trim($word, " \t\n\r\0\x0B.,?!;:\"'()[]{}«»");
 $user_id = $_SESSION['user_id'] ?? null;
 
-// بررسی اینکه فقط یک کلمه باشد
-$words = explode(' ', $word);
-if (count($words) > 1) {
-    echo json_encode(['success' => false, 'error' => 'فقط یک کلمه قابل ترجمه است']);
+// بررسی تعداد کلمات
+$words = preg_split('/\s+/', $word);
+if (count($words) > 6) {
+    echo json_encode(['success' => false, 'error' => 'حداکثر تا ۶ کلمه قابل ترجمه است']);
     exit;
 }
 

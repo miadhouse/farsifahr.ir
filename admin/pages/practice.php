@@ -108,9 +108,7 @@ foreach ($tags as $tag) {
         <div class="header">
             <h1>
                 <i class="fas fa-car car-icon"></i>
-                دسته‌بندی امتحان گواهینامه آلمان
             </h1>
-            <p>ساختار کامل موضوعات و دسته‌بندی سوالات امتحان تئوری</p>
         </div>
 
         <div class="row g-4">

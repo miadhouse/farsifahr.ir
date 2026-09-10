@@ -60,13 +60,16 @@ if ($userConfig) {
                     <!-- Settings info -->
                     <div class="d-flex align-items-center gap-3 settings-info-container flex-grow-1">
                         <!-- Exam Date Item -->
-                        <div class="d-flex align-items-center text-nowrap">
-                            <i class="bx bx-calendar text-primary me-1 fs-5"></i>
-                            <span class="fw-semibold me-1">تاریخ امتحان:</span>
-                            <span class="badge bg-label-primary text-uppercase">
-                                <?php echo $isConfigured ? $examDateText : 'تنظیم نشده'; ?>
-                                (<?php echo date('d.m.Y', strtotime($referenceDate)); ?>)
-                            </span>
+                        <div class="d-flex flex-column text-nowrap justify-content-center">
+                            <div class="d-flex align-items-center">
+                                <i class="bx bx-calendar text-primary me-1 fs-5"></i>
+                                <span class="fw-semibold me-1">تاریخ امتحان:</span>
+                                <span class="badge bg-label-primary text-uppercase">
+                                    <?php echo $isConfigured ? $examDateText : 'تنظیم نشده'; ?>
+                                    (<?php echo date('d.m.Y', strtotime($referenceDate)); ?>)
+                                </span>
+                            </div>
+                            <span class="text-muted mt-1" style="font-size: 8px; margin-right: 22px; display: block; direction: rtl;">تاریخ به روز رسانی بعدی سوالات 01.10.2026 است.</span>
                         </div>
                         
                         <!-- Separator Line -->
@@ -369,7 +372,7 @@ if ($userConfig) {
                                     <div class="d-flex align-items-center mb-2">
                                         <div class="avatar avatar-sm flex-shrink-0 me-2">
                                             <span class="avatar-initial rounded bg-label-success"><i
-                                                    class="bx bx-dollar"></i></span>
+                                                    class="bx bx-history"></i></span>
                                         </div>
                                         <div class="d-flex align-items-center justify-content-between w-100">
                                             <p class="mb-0 text-muted text-nowrap label-text">هفته گذشته</p>
@@ -400,7 +403,7 @@ if ($userConfig) {
                         <li class="col-md-6 col-6 d-flex align-items-center mb-4 pb-2">
                             <div class="avatar avatar-sm flex-shrink-0 me-3">
                                 <span class="avatar-initial rounded-circle bg-label-primary"><i
-                                        class="bx bx-cube"></i></span>
+                                        class="bx bx-list-check"></i></span>
                             </div>
                             <div class="d-flex flex-column w-100">
                                 <div class="d-flex justify-content-between mb-2">
@@ -416,7 +419,7 @@ if ($userConfig) {
                         <li class="col-md-6 col-6 d-flex align-items-center mb-4 pb-2">
                             <div class="avatar avatar-sm flex-shrink-0 me-3">
                                 <span class="avatar-initial rounded-circle bg-label-success"><i
-                                        class="bx bx-dollar"></i></span>
+                                        class="bx bx-badge-check"></i></span>
                             </div>
                             <div class="d-flex flex-column w-100">
                                 <div class="d-flex justify-content-between mb-2">
@@ -432,7 +435,7 @@ if ($userConfig) {
                         <li class="col-md-6 col-6 d-flex align-items-center mb-4 pb-2">
                             <div class="avatar avatar-sm flex-shrink-0 me-3">
                                 <span class="avatar-initial rounded-circle bg-label-warning"><i
-                                        class="bx bx-error"></i></span>
+                                        class="bx bx-adjust"></i></span>
                             </div>
                             <div class="d-flex flex-column w-100">
                                 <div class="d-flex justify-content-between mb-2">
@@ -883,6 +886,7 @@ if ($userConfig) {
             html: `
             <div class="text-center mb-3">
                 <p class="mb-3">تاریخ امتحان شما نسبت به <strong>${referenceDate}</strong> کی است؟</p>
+                <div class="mt-2 text-muted" style="font-size: 9px;">آخرین به روزرسانی امسال ۲۰۲۶ در تاریخ ۰۱.۱۰.۲۰۲۶ انجام خواهد شد</div>
             </div>
         `,
             icon: 'question',

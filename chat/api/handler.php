@@ -30,6 +30,20 @@ function get_or_create_session($pdo, $token = null) {
         $stmt->execute([$token]);
         $session = $stmt->fetch();
         if ($session) {
+            // اگر جلسه دارای شناسه کاربر است، بررسی می‌کنیم مسدود نباشد
+            if (!empty($session['user_id'])) {
+                $userStmt = $pdo->prepare("SELECT is_blocked FROM users WHERE id = ?");
+                $userStmt->execute([$session['user_id']]);
+                $isBlocked = $userStmt->fetchColumn();
+                if ($isBlocked == 1) {
+                    // قطع ارتباط کاربر مسدود شده با این جلسه چت
+                    $pdo->prepare("UPDATE chat_sessions SET user_id = NULL, guest_name = NULL, guest_email = NULL WHERE id = ?")
+                        ->execute([$session['id']]);
+                    $session['user_id'] = null;
+                    $session['guest_name'] = null;
+                    $session['guest_email'] = null;
+                }
+            }
             // Update last seen
             $pdo->prepare("UPDATE chat_sessions SET last_seen = NOW(), is_online = 1 WHERE id = ?")
                 ->execute([$session['id']]);

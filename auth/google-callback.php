@@ -32,6 +32,14 @@ if (isset($_GET['code'])) {
         $user = $stmt->fetch();
         
         if ($user) {
+            // بررسی وضعیت مسدود بودن کاربر
+            if (isset($user['is_blocked']) && $user['is_blocked'] == 1) {
+                $block_msg = !empty($user['block_message']) ? $user['block_message'] : 'حساب کاربری شما مسدود شده است. لطفاً با پشتیبانی تماس بگیرید.';
+                setcookie('blocked_msg', $block_msg, time() + 60, '/');
+                header("Location: " . SITE_URL . "login.php?blocked=1");
+                exit();
+            }
+
             // کاربر موجود - بروزرسانی google_id اگر لازم باشد
             if (empty($user['google_id'])) {
                 $stmt = $pdo->prepare("UPDATE users SET google_id = ? WHERE id = ?");
@@ -75,6 +83,9 @@ if (isset($_GET['code'])) {
         
         // ذخیره سشن در دیتابیس
         save_session($user['id'], $pdo);
+        
+        // ماندگاری لاگین ۳ ماهه
+        create_remember_token($user['id'], $pdo);
         
         // ثبت لاگ
         log_user_action($user['id'], $email, 'google_login', 'success', $pdo);

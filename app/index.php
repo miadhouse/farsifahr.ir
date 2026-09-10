@@ -31,6 +31,13 @@ if (empty($selectedQuestions)) {
     exit;
 }
 
+$examUserAnswers = null;
+if (isset($_GET['exam_id']) && $user_id) {
+    $stmt = $pdo->prepare("SELECT user_answers FROM exam_history WHERE id = ? AND user_id = ?");
+    $stmt->execute([$_GET['exam_id'], $user_id]);
+    $examUserAnswers = $stmt->fetchColumn() ?: null;
+}
+
 // Initialize or get user answers from session
 if (!isset($_SESSION['user_answers'])) {
     $_SESSION['user_answers'] = [];
@@ -104,6 +111,20 @@ $isAdmin = is_super_admin();
 <html data-bs-theme="light" lang="en" style="height: 100%;">
 
 <head>
+    <script>
+        (function() {
+            const savedTheme = localStorage.getItem('farsifahr_theme');
+            if (savedTheme === 'dark' || (savedTheme === null && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.setAttribute('data-bs-theme', 'dark');
+            } else {
+                document.documentElement.setAttribute('data-bs-theme', 'light');
+            }
+            const showIncorrect = localStorage.getItem('show_incorrect_unselected') === 'true';
+            if (showIncorrect) {
+                document.documentElement.classList.add('show-incorrect-green');
+            }
+        })();
+    </script>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
     <title>questions-page</title>
@@ -162,6 +183,12 @@ $isAdmin = is_super_admin();
         /* استایل تصاویر داخل توضیحات و ترجمه‌ها */
         .note-modal { z-index: 100001 !important; }
         .note-modal-backdrop { z-index: 100000 !important; }
+        
+        /* حل مشکل اورلپ مدال‌ها، پاپ‌آپ‌ها و نوبار پایین */
+        .fixed-bottom { z-index: 1000 !important; }
+        .modal { z-index: 100000 !important; }
+        .modal-backdrop { z-index: 99999 !important; }
+        .swal2-container { z-index: 100002 !important; }
         
         .explanation-box img, .translation-box img, .answer-explanation img, .answer-translation img {
             max-width: 180px !important;
@@ -431,6 +458,10 @@ $isAdmin = is_super_admin();
         }
 
         .answer-incorrect-unselected {
+            /* No custom background or border */
+        }
+
+        .show-incorrect-green .answer-incorrect-unselected {
             background-color: #d4edda !important;
             border: 2px solid #28a745 !important;
         }
@@ -850,21 +881,553 @@ $isAdmin = is_super_admin();
         user-select: none;
     }
 }
+
+/* Dark Mode Override Rules */
+html[data-bs-theme="dark"] body {
+    background-color: #0b140e !important;
+    color: #e2e8f0 !important;
+}
+
+html[data-bs-theme="dark"] #text, 
+html[data-bs-theme="dark"] .question-text {
+    color: #ffffff !important;
+}
+
+html[data-bs-theme="dark"] .answer-item,
+html[data-bs-theme="dark"] #asw_pretext {
+    color: #e2e8f0 !important;
+}
+
+html[data-bs-theme="dark"] .checkmark {
+    border-color: rgba(255, 255, 255, 0.3) !important;
+    background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+html[data-bs-theme="dark"] .custom-checkbox input:checked ~ .checkmark {
+    background-color: #198754 !important;
+    border-color: #198754 !important;
+}
+
+html[data-bs-theme="dark"] .custom-checkbox .checkmark:after {
+    border-color: #ffffff !important;
+    box-shadow: none !important;
+}
+
+/* Practice Bottom Panels and Nav Bar */
+html[data-bs-theme="dark"] .practice-actions-panel {
+    background-color: rgba(15, 65, 30, 0.95) !important;
+    backdrop-filter: blur(15px) !important;
+    -webkit-backdrop-filter: blur(15px) !important;
+    border: 1px solid rgba(163, 207, 187, 0.25) !important;
+    border-bottom: none !important;
+}
+
+html[data-bs-theme="dark"] .bottom-nav-bar {
+    background: linear-gradient(135deg, rgba(12, 53, 25, 0.98) 0%, rgba(6, 32, 14, 0.95) 100%) !important;
+    border-top: 1px solid rgba(163, 207, 187, 0.25) !important;
+}
+
+/* Highlight current active pagination button in dark mode */
+html[data-bs-theme="dark"] #question-buttons .btn-dark {
+    background-color: #ffc107 !important;
+    color: #000000 !important;
+    border-color: #ffc107 !important;
+    font-weight: bold !important;
+}
+
+/* Vocabulary bottom sheet in dark mode */
+html[data-bs-theme="dark"] .vocab-bottom-sheet {
+    background-color: #0d1a10 !important;
+    border-top: 1px solid rgba(163, 207, 187, 0.2) !important;
+    box-shadow: 0 -5px 30px rgba(0, 0, 0, 0.6) !important;
+}
+
+html[data-bs-theme="dark"] .sheet-handle {
+    background: #3a5040 !important;
+}
+
+html[data-bs-theme="dark"] .vocab-word-display {
+    color: #ffffff !important;
+}
+
+html[data-bs-theme="dark"] .translation-editable {
+    color: #ffffff !important;
+    background-color: rgba(255, 255, 255, 0.06) !important;
+    border-color: rgba(255, 255, 255, 0.15) !important;
+}
+
+html[data-bs-theme="dark"] .vocab-translation-display {
+    background-color: rgba(25, 135, 84, 0.12) !important;
+    border-color: rgba(163, 207, 187, 0.25) !important;
+    color: #ffffff !important;
+}
+
+html[data-bs-theme="dark"] .vocab-translation-display .edit-hint {
+    color: rgba(255, 255, 255, 0.5) !important;
+}
+
+/* Highlight translation and explanations inside dark theme */
+html[data-bs-theme="dark"] .answer-translation,
+html[data-bs-theme="dark"] #question-translation-container .translation-box,
+html[data-bs-theme="dark"] #pretext-translation-container .pretext-translation {
+    background-color: rgba(102, 126, 234, 0.15) !important;
+    border-right-color: #818cf8 !important;
+    color: #e0e7ff !important;
+}
+
+html[data-bs-theme="dark"] .answer-explanation,
+html[data-bs-theme="dark"] #question-explanation-container .explanation-box,
+html[data-bs-theme="dark"] #pretext-explanation-container .pretext-explanation {
+    background-color: rgba(240, 147, 251, 0.15) !important;
+    border-right-color: #f472b6 !important;
+    color: #fce7f3 !important;
+}
+
+/* Modals and general panels */
+html[data-bs-theme="dark"] .modal-content {
+    background-color: #0f1c12 !important;
+    color: #ffffff !important;
+    border: 1px solid rgba(163, 207, 187, 0.2) !important;
+}
+html[data-bs-theme="dark"] .modal-header,
+html[data-bs-theme="dark"] .modal-footer {
+    border-color: rgba(163, 207, 187, 0.1) !important;
+}
+html[data-bs-theme="dark"] .modal-title {
+    color: #ffffff !important;
+}
+html[data-bs-theme="dark"] .form-control {
+    background-color: rgba(255, 255, 255, 0.05) !important;
+    color: #ffffff !important;
+    border-color: rgba(255, 255, 255, 0.15) !important;
+}
+html[data-bs-theme="dark"] .form-control:focus {
+    border-color: #198754 !important;
+    box-shadow: 0 0 0 0.25rem rgba(25, 135, 84, 0.25) !important;
+}
+
+/* Solved answer items text visibility overrides */
+html[data-bs-theme="dark"] .answer-correct-selected {
+    background-color: rgba(25, 135, 84, 0.18) !important;
+    border: 2px solid #198754 !important;
+    color: #d1f2e1 !important;
+}
+
+html[data-bs-theme="dark"] .answer-correct-selected * {
+    color: #d1f2e1 !important;
+}
+
+html[data-bs-theme="dark"].show-incorrect-green .answer-incorrect-unselected {
+    background-color: rgba(25, 135, 84, 0.18) !important;
+    border: 2px solid #198754 !important;
+    color: #d1f2e1 !important;
+}
+
+html[data-bs-theme="dark"].show-incorrect-green .answer-incorrect-unselected * {
+    color: #d1f2e1 !important;
+}
+
+html[data-bs-theme="dark"] .answer-incorrect-selected,
+html[data-bs-theme="dark"] .answer-correct-unselected {
+    background-color: rgba(220, 53, 69, 0.18) !important;
+    border: 2px solid #dc3545 !important;
+    color: #ffc2c7 !important;
+}
+
+html[data-bs-theme="dark"] .answer-incorrect-selected *,
+html[data-bs-theme="dark"] .answer-correct-unselected * {
+    color: #ffc2c7 !important;
+}
+
+html[data-bs-theme="dark"] .answer-correct-unselected .checkmark:after {
+    border-color: rgba(163, 207, 187, 0.45) !important;
+}
+/* Checkmark Solved Styles - User's Checked State is preserved */
+.answer-correct-selected .checkmark {
+    background-color: #198754 !important;
+    border-color: #198754 !important;
+}
+.answer-correct-selected .checkmark:after {
+    border-color: #ffffff !important;
+    display: block !important;
+}
+
+.answer-incorrect-selected .checkmark {
+    background-color: #dc3545 !important;
+    border-color: #dc3545 !important;
+}
+.answer-incorrect-selected .checkmark:after {
+    border-color: #ffffff !important;
+    display: block !important;
+}
+
+.answer-correct-unselected .checkmark {
+    border: 2px dashed #dc3545 !important;
+    background-color: transparent !important;
+}
+.answer-correct-unselected .checkmark:after {
+    display: block !important;
+    border-color: rgba(40, 167, 69, 0.4) !important;
+    border-width: 0 2px 2px 0 !important;
+    box-shadow: none !important;
+    width: 6px !important;
+    height: 13px !important;
+    left: 8px !important;
+    top: 1px !important;
+}
+
+.answer-incorrect-unselected .checkmark {
+    /* No custom border or background */
+}
+.answer-incorrect-unselected .checkmark:after {
+    display: none !important;
+}
+
+.show-incorrect-green .answer-incorrect-unselected .checkmark {
+    border: 2px solid #198754 !important;
+    background-color: transparent !important;
+}
+
+/* Keyword Highlight Styles */
+@keyframes keyword-glow {
+    0%, 100% { background-color: rgba(255, 193, 7, 0.15); box-shadow: 0 0 4px rgba(255, 193, 7, 0.2); }
+    50% { background-color: rgba(255, 193, 7, 0.35); box-shadow: 0 0 12px rgba(255, 193, 7, 0.4); }
+}
+
+.keyword-highlight {
+    display: inline;
+    position: relative;
+    padding: 1px 4px;
+    border-radius: 4px;
+    cursor: pointer;
+    animation: keyword-glow 2.5s ease-in-out infinite;
+    border-bottom: 2px solid rgba(255, 193, 7, 0.6);
+    transition: all 0.3s ease;
+}
+.keyword-highlight:hover {
+    background-color: rgba(255, 193, 7, 0.45) !important;
+    box-shadow: 0 0 16px rgba(255, 193, 7, 0.5) !important;
+}
+
+.keyword-translation-inline {
+    display: block;
+    font-size: 0.65rem;
+    color: #856404;
+    direction: rtl;
+    text-align: right;
+    margin-top: 1px;
+    font-weight: 600;
+    opacity: 0.85;
+    line-height: 1.2;
+}
+
+/* Dark theme keyword styles */
+html[data-bs-theme="dark"] .keyword-highlight {
+    border-bottom-color: rgba(255, 193, 7, 0.5);
+}
+html[data-bs-theme="dark"] .keyword-translation-inline {
+    color: #ffc107;
+    opacity: 0.7;
+}
+
     </style>
 <style>
-/* Adjust button sizes and header padding */
-.header-bar { padding-top: 0.25rem !important; padding-bottom: 0.25rem !important; }
-/* Center middle button group */
-.header-bar .header-middle-buttons { margin-left: auto; margin-right: auto; }
-.header-bar .btn { padding: 0.25rem 0.5rem !important; font-size: 0.75rem; }
-.header-bar .code-exit-wrapper .btn-circle { margin-right: 3px !important; }
-.header-bar .header-middle-buttons { margin-left: auto !important; margin-right: auto !important; display: flex; align-items: center; gap: 0.2rem; }
-.header-bar .gap-2 { gap: 0.1rem !important; }
-.header-bar #code { margin-left: 0.05rem !important; font-size: .7rem !important; }
+/* Premium Glassmorphic Header Style */
+.header-bar {
+    background: linear-gradient(135deg, rgba(15, 65, 30, 0.9) 0%, rgba(8, 45, 20, 0.8) 100%) !important;
+    backdrop-filter: blur(15px) !important;
+    -webkit-backdrop-filter: blur(15px) !important;
+    border-bottom: 1px solid rgba(163, 207, 187, 0.25) !important;
+    border-bottom-right-radius: 12px !important;
+    border-bottom-left-radius: 12px !important;
+    padding: 5px 12px !important; /* Decreased height */
+    display: flex;
+    justify-content: between;
+    align-items: center;
+}
+
+/* Exit button custom style */
+.header-bar .btn-danger.btn-circle {
+    width: 22px; /* Smaller exit button */
+    height: 22px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50% !important;
+    background: rgba(220, 53, 69, 0.2) !important;
+    border: 1px solid rgba(220, 53, 69, 0.4) !important;
+    color: #ff8793 !important;
+    font-size: 0.65rem !important; /* Smaller icon font */
+    transition: all 0.2s ease;
+    margin-right: 3px !important;
+}
+.header-bar .btn-danger.btn-circle:hover {
+    background: rgba(220, 53, 69, 0.9) !important;
+    color: #ffffff !important;
+    transform: scale(1.05);
+}
+
+/* Question Code Badge */
+.header-bar #code {
+    background: rgba(255, 255, 255, 0.08) !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    color: #d1f2e1 !important;
+    padding: 2px 6px !important; /* Tighter padding */
+    border-radius: 5px !important;
+    font-family: monospace !important;
+    font-weight: bold !important;
+    font-size: 0.65rem !important; /* Smaller font */
+    margin-left: 8px !important;
+}
+
+/* Punkt Display */
+.header-bar .punkt-display {
+    background: rgba(255, 255, 255, 0.08) !important;
+    border: 1px solid rgba(163, 207, 187, 0.25) !important;
+    padding: 2px 8px !important; /* Tighter padding */
+    border-radius: 6px !important;
+    font-size: 0.7rem !important; /* Smaller font */
+    font-weight: 600 !important;
+    color: #ffffff !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 3px !important;
+}
+.header-bar .punkt-display #punkt {
+    color: #ffc107 !important;
+    font-weight: 800 !important;
+}
+
+/* Admin buttons styling in header */
+.header-bar .btn-sm {
+    border-radius: 5px !important;
+    padding: 2px 6px !important; /* Tighter padding */
+    font-size: 0.65rem !important; /* Smaller font */
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    transition: all 0.2s ease !important;
+}
+.header-bar .btn-sm:hover {
+    transform: translateY(-1px);
+}
+
+/* Modern 3D Green Glassmorphic Sidebar Style */
+.glass-sidebar {
+    position: fixed;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 42px; /* Extremely narrow sidebar */
+    background: linear-gradient(135deg, rgba(15, 65, 30, 0.9) 0%, rgba(8, 45, 20, 0.8) 100%);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: 0 20px 20px 0;
+    border: 1px solid rgba(163, 207, 187, 0.25);
+    border-left: none;
+    box-shadow: none;
+    padding: 18px 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    z-index: 2500; /* stays on top of page content but below heavy modal backdrops (which are 99999) */
+    opacity: 0;
+    animation: slideInFromLeft 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes slideInFromLeft {
+    0% {
+        transform: translateY(-50%) translateX(-42px);
+        opacity: 0;
+    }
+    100% {
+        transform: translateY(-50%) translateX(0);
+        opacity: 1;
+    }
+}
+
+.glass-sidebar:hover {
+    box-shadow: none;
+    background: linear-gradient(135deg, rgba(20, 80, 40, 0.95) 0%, rgba(12, 60, 28, 0.85) 100%);
+    border-color: rgba(163, 207, 187, 0.35);
+}
+
+.glass-sidebar .sidebar-btn {
+    width: 26px;
+    height: auto;
+    min-height: 40px;
+    padding: 10px 0;
+    border-radius: 8px;
+    border: 1px solid rgba(163, 207, 187, 0.3);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.14) 0%, rgba(255, 255, 255, 0.04) 100%);
+    color: #d1f2e1; /* lighter mint green text for better contrast */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    box-shadow: none;
+    position: relative;
+    outline: none;
+}
+
+.glass-sidebar .sidebar-btn .btn-text {
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    transform: rotate(180deg);
+    white-space: nowrap;
+    font-size: 10px;
+    font-family: 'Tahoma', 'Vazir', sans-serif;
+    font-weight: bold;
+    line-height: 1;
+}
+
+.glass-sidebar .sidebar-btn:hover {
+    transform: translateX(2px) scale(1.05);
+    background: linear-gradient(135deg, rgba(25, 135, 84, 0.8) 0%, rgba(20, 108, 67, 0.6) 100%);
+    color: #ffffff;
+    border-color: rgba(163, 207, 187, 0.45);
+    box-shadow: none;
+}
+
+.glass-sidebar .sidebar-btn:hover .btn-text {
+    color: #ffffff;
+}
+
+.glass-sidebar .sidebar-btn:active {
+    transform: translateX(1px) scale(0.95);
+    background: linear-gradient(135deg, rgba(20, 108, 67, 0.9) 0%, rgba(15, 81, 50, 0.8) 100%);
+    color: #ffffff;
+    box-shadow: none;
+}
+
+.glass-sidebar .sidebar-btn:active .btn-text {
+    color: #ffffff;
+}
+
+.glass-sidebar #translateBtn.active {
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.85) 0%, rgba(76, 75, 162, 0.7) 100%) !important;
+    color: #ffffff !important;
+    border-color: rgba(255, 255, 255, 0.4) !important;
+    box-shadow: none !important;
+}
+
+.glass-sidebar #explainBtn.active {
+    background: linear-gradient(135deg, rgba(245, 87, 108, 0.85) 0%, rgba(240, 147, 251, 0.7) 100%) !important;
+    color: #ffffff !important;
+    border-color: rgba(255, 255, 255, 0.4) !important;
+    box-shadow: none !important;
+}
+
+.glass-sidebar #translateBtn.active .btn-text,
+.glass-sidebar #explainBtn.active .btn-text {
+    color: #ffffff !important;
+}
+
+/* Info button specific style for 'i' */
+.glass-sidebar .sidebar-btn.info-btn {
+    font-size: 13px;
+    font-family: 'Georgia', serif;
+    font-style: italic;
+    font-weight: bold;
+    min-height: 26px;
+    height: 26px;
+    padding: 0;
+    color: #d1f2e1;
+    border-color: rgba(163, 207, 187, 0.25);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%);
+    box-shadow: none;
+}
+
+.glass-sidebar .sidebar-btn.info-btn:hover {
+    color: #ffffff;
+    background: linear-gradient(135deg, rgba(25, 135, 84, 0.8) 0%, rgba(20, 108, 67, 0.7) 100%);
+    box-shadow: none;
+}
+
+@media (max-width: 992px) {
+    .content-shift {
+        padding-left: 50px !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .content-shift {
+        padding-left: 42px !important;
+    }
+    .glass-sidebar {
+        left: 0;
+        width: 36px;
+        padding: 12px 0;
+        gap: 8px;
+        border-radius: 0 14px 14px 0;
+    }
+    .glass-sidebar .sidebar-btn {
+        width: 22px;
+        min-height: 30px;
+        padding: 6px 0;
+        border-radius: 6px;
+    }
+    .glass-sidebar .sidebar-btn .btn-text {
+        font-size: 9px;
+    }
+    .glass-sidebar .sidebar-btn.info-btn {
+        min-height: 22px;
+        height: 22px;
+        font-size: 11px;
+    }
+}
+
+@keyframes pulse-gold {
+    0% {
+        box-shadow: 0 0 0 0 rgba(255, 193, 7, 0.7);
+        border-color: rgba(255, 193, 7, 1);
+        background: linear-gradient(135deg, rgba(255, 193, 7, 0.5) 0%, rgba(255, 152, 0, 0.4) 100%);
+    }
+    70% {
+        box-shadow: 0 0 0 10px rgba(255, 193, 7, 0);
+        border-color: rgba(255, 193, 7, 0.5);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(255, 193, 7, 0);
+        border-color: rgba(255, 193, 7, 0.3);
+    }
+}
+.video-btn-active {
+    animation: pulse-gold 1.5s infinite !important;
+    color: #ffc107 !important;
+    border-color: rgba(255, 193, 7, 0.6) !important;
+}
+.video-btn-active .btn-text {
+    color: #ffc107 !important;
+}
 </style>
 </head>
 
 <body style="min-height: 100vh; background-color: #d3f5da;" class="<?= $mode === 'practice' ? 'practice-mode' : '' ?>">
+    <!-- Glassmorphic 3D Sidebar -->
+    <div class="glass-sidebar">
+        <button class="sidebar-btn" id="translateBtn" data-title="ترجمه" onclick="toggleTranslation()">
+            <span class="btn-text">ترجمه</span>
+        </button>
+        <button class="sidebar-btn" id="explainBtn" data-title="توضیح" onclick="toggleExplanation()">
+            <span class="btn-text">توضیح</span>
+        </button>
+        <button class="sidebar-btn" id="keywordsBtn" data-title="کلمات کلیدی" onclick="toggleKeywords()">
+            <span class="btn-text">کلمات کلیدی</span>
+        </button>
+        <button class="sidebar-btn" id="videoBtn" data-title="ویدیو آموزشی" onclick="handleVideoClick()">
+            <span class="btn-text">ویدیو آموزشی</span>
+        </button>
+        <button class="sidebar-btn" id="help-request" data-title="کمک" onclick="openHelpModal()">
+            <span class="btn-text">کمک</span>
+        </button>
+        <button class="sidebar-btn info-btn" id="runmaBtn" data-title="راهنما" onclick="startGuidedTour()">
+            i
+        </button>
+    </div>
     <!-- Vocabulary Bottom Sheet -->
     <div id="sheet-overlay" class="sheet-overlay" onclick="closeVocabSheet()"></div>
     <div id="vocab-sheet" class="vocab-bottom-sheet">
@@ -886,6 +1449,11 @@ $isAdmin = is_super_admin();
                 <button id="sheet-save-btn" class="btn btn-warning btn-lg px-4" onclick="saveWord()" style="display: none;">
                     <i class="fas fa-save"></i> ذخیره در کلکشن
                 </button>
+                <?php if ($isAdmin): ?>
+                <button id="sheet-keyword-btn" class="btn btn-primary btn-lg px-4" onclick="makeKeyword()" style="display: none;">
+                    <i class="fas fa-key"></i> کلمه کلیدی
+                </button>
+                <?php endif; ?>
                 
                 <button class="btn btn-outline-secondary btn-lg px-3" onclick="closeVocabSheet()">
                     <i class="fas fa-times"></i>
@@ -894,16 +1462,9 @@ $isAdmin = is_super_admin();
         </div>
     </div>
     <div class="container" style="min-height: 100vh;">
-        <div class="text-white bg-success d-flex justify-content-between align-items-center p-1 px-2 header-bar" style="border-bottom-right-radius: 5px;border-bottom-left-radius: 5px;position: sticky;top: 0;z-index: 1000;">
+        <div class="d-flex justify-content-between align-items-center header-bar" style="position: sticky; top: 0; z-index: 1000;">
             <div class="code-exit-wrapper d-flex align-items-center"><a class="btn btn-warning btn-sm btn-danger btn-circle" href="../admin/practice.php"> <i class="fas fa-times"></i></a><span id="code"></span></div>
             <div class="header-middle-buttons d-flex align-items-center gap-2 mx-auto">
-                <button class="btn btn-sm btn-light" id="translateBtn" onclick="toggleTranslation()" title="ترجمه سوال و پاسخ‌ها">ترجمه</button>
-                <button class="btn btn-sm btn-info" id="explainBtn" onclick="toggleExplanation()" title="توضیح سوال و پاسخ‌ها">توضیح</button>
-                <button class="btn btn-sm btn-secondary" id="runmaBtn" onclick="startGuidedTour()" title="رانما"><i class="fas fa-question-circle"></i></button>
-           <span id="report-btn " class=" mx-1 btn-sm p-0"
-                            onclick="openReportModal()" title="گزارش مشکل در سوال">
-                            <i class="fas fa-exclamation-circle"></i>
-</span>
             </div>
                 <?php if ($isAdmin): ?>
                 <button class="btn btn-sm btn-primary" id="geminiFetchBtn" onclick="geminiFetchInfo()" title="درک مطلب و ترجمه با هوش مصنوعی (Gemini)">
@@ -920,10 +1481,15 @@ $isAdmin = is_super_admin();
                 </button>
                 <?php endif; ?>
                     
-                <span>نمره: <span id="punkt"></span></span>
+                <div class="d-flex align-items-center gap-2">
+                    <button class="btn btn-sm btn-outline-light theme-toggle-btn" id="themeToggleBtn" onclick="toggleTheme()" title="تغییر تم (روشن/تاریک)" style="border: 1px solid rgba(255, 255, 255, 0.25) !important; background: rgba(255, 255, 255, 0.08) !important; color: #ffffff !important; width: 26px; height: 26px; display: inline-flex; align-items: center; justify-content: center; padding: 0 !important; border-radius: 6px !important; outline: none !important;">
+                        <i class="fas fa-moon"></i>
+                    </button>
+                    <span class="punkt-display">Punkt: <span id="punkt"></span></span>
+                </div>
 
         </div>
-        <div class="mt-4 p-4" style="padding-bottom: 350px !important;">
+        <div class="mt-4 p-4 content-shift" style="padding-bottom: 350px !important;">
             <h6 id="text" class="fw-bold mb-1 question-text"></h6>
             
             <!-- Question Translation/Explanation Container -->
@@ -970,15 +1536,13 @@ $isAdmin = is_super_admin();
                 </div>
             </div>
         </div>
-        <div class="fixed-bottom container-fluid"
+        <div class="fixed-bottom container-fluid practice-actions-panel"
             style="margin-bottom: 50px;padding: 5px;background-color: #aad7aa;border-radius: 30px 30px 0 0;;width: 92%;">
             <div class="d-flex align-items-center"></div>
             <div class="row px-4 py-2">
                 <div class="col-4 fw-bold text-start p-0">
                     <span class="badge bg-warning text-dark" style="direction: rtl;"> <?= $totalQuestions ?> سوال
                     </span>
-                      <button id="help-request" class="btn btn-primary btn-sm" style="font-size: .6rem;" onclick="openHelpModal()">کمک</button>
-                            </button>
                 </div>
                 <div class="col-8 text-end">
                     <div class="text-end">
@@ -1007,7 +1571,7 @@ $isAdmin = is_super_admin();
             </div>
         </div>
         <div class="fixed-bottom container-fluid p-0">
-            <div class="d-flex justify-content-between align-items-center p-2 px-md-4 px-2"
+            <div class="d-flex justify-content-between align-items-center p-2 px-md-4 px-2 bottom-nav-bar"
                 style="background: var(--bs-success);">
                 <div class="d-flex gap-1">
                     <button class="btn btn-light text-success btn-sm px-2" onclick="goToFirstQuestion()" title="سوال اول">
@@ -1173,6 +1737,7 @@ $isAdmin = is_super_admin();
         const isVip = <?= json_encode($isVip) ?>;
         const questionLimit = <?= json_encode($questionLimit) ?>;
         const maxAccessibleId = <?= $maxAccessibleId ?>;
+        const examUserAnswers = <?= json_encode($examUserAnswers ? json_decode($examUserAnswers, true) : null) ?>;
         
         let currentQuestionIndex = <?= $currentQuestionIndex ?>;
         let questionsPerPage;
@@ -1275,8 +1840,20 @@ $isAdmin = is_super_admin();
         
         // Vocabulary System Functions (Optimized)
         function initVocabularySystem() {
-            // استفاده از Event Delegation برای پایداری بیشتر
-            document.body.addEventListener('mouseup', function(event) {
+            const isMobile = window.matchMedia("(hover: none) and (pointer: coarse)").matches;
+
+            // هندلر مشترک برای بررسی selection بعد از mouseup یا touchend
+            function handleBodyInteraction(event) {
+                // مختصات را از event بگیر (touch یا mouse)
+                let clientX, clientY;
+                if (event.changedTouches && event.changedTouches.length > 0) {
+                    clientX = event.changedTouches[0].clientX;
+                    clientY = event.changedTouches[0].clientY;
+                } else {
+                    clientX = event.clientX;
+                    clientY = event.clientY;
+                }
+
                 // اگر روی پنل یا کادرهای ویرایش ادمین کلیک شده، کاری نکن
                 if (event.target.closest('#vocab-sheet') || 
                     event.target.closest('#sheet-overlay') || 
@@ -1284,9 +1861,8 @@ $isAdmin = is_super_admin();
                     return;
                 }
 
-                // فقط در بخش‌های مجاز (سوال و جواب) عمل کن
-                // دکمه‌های کیبورد عددی نباید باعث باز شدن پنل ترجمه شوند
-                if (event.target.closest('.keypad-btn') || event.target.closest('.btn-outline-danger')) {
+                // دکمه‌های کیبورد و کلمات کلیدی هندلر مخصوص دارند
+                if (event.target.closest('.keypad-btn') || event.target.closest('.btn-outline-danger') || event.target.closest('.keyword-highlight')) {
                     return;
                 }
 
@@ -1294,9 +1870,36 @@ $isAdmin = is_super_admin();
                     event.target.closest('#text') || 
                     event.target.closest('#answers')) {
                     
-                    handleTextSelection(event);
+                    handleTextSelection({ clientX, clientY });
                 }
-            });
+            }
+
+            // Desktop: mouseup
+            document.body.addEventListener('mouseup', handleBodyInteraction);
+
+            // Mobile: touchend برای گرفتن text selection بعد از drag
+            if (isMobile) {
+                document.body.addEventListener('touchend', function(event) {
+                    // با کمی تأخیر بررسی کن تا selection تثبیت شود
+                    setTimeout(() => {
+                        const selection = window.getSelection();
+                        const text = selection ? selection.toString().trim() : '';
+                        if (text && text.length >= 2 && isValidWord(text)) {
+                            // اگر روی عناصر مجاز هستیم
+                            const target = event.target;
+                            if (target.closest('.vocabulary-selection') || 
+                                target.closest('#text') || 
+                                target.closest('#answers')) {
+                                let context = '';
+                                if (selection.rangeCount > 0) {
+                                    context = selection.getRangeAt(0).startContainer.textContent;
+                                }
+                                showVocabSheet(text, context);
+                            }
+                        }
+                    }, 300);
+                }, { passive: true });
+            }
 
             // بستن با کلیک خارج
             document.addEventListener('mousedown', function (e) {
@@ -1314,31 +1917,51 @@ $isAdmin = is_super_admin();
             const isMobile = window.matchMedia("(hover: none) and (pointer: coarse)").matches;
 
             if (isMobile) {
-                let longPressTimer = null;
-                let touchStartX = 0, touchStartY = 0;
+                let touchStartX = 0, touchStartY = 0, touchStartTime = 0;
 
                 element.addEventListener('touchstart', function(e) {
+                    // اگر روی کلمه کلیدی هایلایت‌شده زدیم، کاری نکن
+                    if (e.target.closest('.keyword-highlight')) return;
+
                     const touch = e.touches[0];
                     touchStartX = touch.clientX;
                     touchStartY = touch.clientY;
+                    touchStartTime = Date.now();
+                }, { passive: true });
 
-                    longPressTimer = setTimeout(() => {
-                        const data = getWordAndContextAtPoint(touch.clientX, touch.clientY);
-                        if (data && isValidWord(data.word)) {
-                            showVocabSheet(data.word, data.context);
-                            if (navigator.vibrate) navigator.vibrate(50);
+                element.addEventListener('touchend', function(e) {
+                    if (e.target.closest('.keyword-highlight')) return;
+
+                    const touchEndTime = Date.now();
+                    const duration = touchEndTime - touchStartTime;
+                    
+                    // تپ سریع (کمتر از 350 میلی‌ثانیه و بدون جابجایی زیاد) = انتخاب تک کلمه
+                    if (duration < 350) {
+                        const touch = e.changedTouches[0];
+                        const moveX = Math.abs(touch.clientX - touchStartX);
+                        const moveY = Math.abs(touch.clientY - touchStartY);
+                        
+                        if (moveX < 15 && moveY < 15) {
+                            // تپ سریع: کلمه زیر انگشت را پیدا کن
+                            setTimeout(() => {
+                                // اول چک کن آیا مرورگر متنی انتخاب کرده
+                                const sel = window.getSelection();
+                                const selText = sel ? sel.toString().trim() : '';
+                                if (selText && selText.length >= 2) {
+                                    // مرورگر خودش متنی انتخاب کرده، بذار body touchend هندل کنه
+                                    return;
+                                }
+                                
+                                const data = getWordAndContextAtPoint(touch.clientX, touch.clientY);
+                                if (data && isValidWord(data.word)) {
+                                    showVocabSheet(data.word, data.context);
+                                }
+                            }, 100);
                         }
-                    }, 500);
-                }, { passive: true });
-
-                element.addEventListener('touchmove', function(e) {
-                    const touch = e.touches[0];
-                    if (Math.abs(touch.clientX - touchStartX) > 10 || Math.abs(touch.clientY - touchStartY) > 10) {
-                        clearTimeout(longPressTimer);
                     }
+                    // نگه داشتن طولانی (بیش از 350 میلی‌ثانیه): مرورگر خودش text selection بومی را شروع کرده
+                    // بعد از رها کردن، body touchend هندلر selection را می‌گیرد
                 }, { passive: true });
-
-                element.addEventListener('touchend', () => clearTimeout(longPressTimer), { passive: true });
             } else {
                 element.addEventListener('mouseup', handleTextSelection);
             }
@@ -1355,7 +1978,7 @@ $isAdmin = is_super_admin();
                         context = selection.getRangeAt(0).startContainer.textContent;
                     }
                     showVocabSheet(text, context);
-                } else {
+                } else if (!text || text.length < 2) {
                     // اگر متنی انتخاب نشده، کلمه‌ای که روی آن کلیک شده را پیدا کن
                     const data = getWordAndContextAtPoint(event.clientX, event.clientY);
                     if (data && isValidWord(data.word)) {
@@ -1370,15 +1993,16 @@ $isAdmin = is_super_admin();
             if (!range || range.startContainer.nodeType !== Node.TEXT_NODE) return null;
             const text = range.startContainer.textContent;
             let start = range.startOffset, end = range.startOffset;
-            while (start > 0 && /[a-zA-ZäöüßÄÖÜ]/.test(text[start - 1])) start--;
-            while (end < text.length && /[a-zA-ZäöüßÄÖÜ]/.test(text[end])) end++;
+            while (start > 0 && /[a-zA-ZäöüßÄÖÜ\-]/.test(text[start - 1])) start--;
+            while (end < text.length && /[a-zA-ZäöüßÄÖÜ\-]/.test(text[end])) end++;
             const word = text.substring(start, end);
             return word.length >= 2 ? { word: word, context: text } : null;
         }
 
         function isValidWord(text) {
             const trimmed = text.trim();
-            return trimmed.split(/\s+/).length === 1 && trimmed.length >= 2 && /[a-zA-ZäöüßÄÖÜ]/.test(trimmed);
+            // اجازه انتخاب تک کلمه و عبارت چند کلمه‌ای
+            return trimmed.length >= 2 && /[a-zA-ZäöüßÄÖÜ]/.test(trimmed);
         }
 
         function showVocabSheet(word, context = "") {
@@ -1389,15 +2013,39 @@ $isAdmin = is_super_admin();
             const translationBoxEl = document.getElementById('sheet-translation-box');
             const saveBtnEl = document.getElementById('sheet-save-btn');
             const translateBtnEl = document.getElementById('sheet-translate-btn');
+            const keywordBtnEl = document.getElementById('sheet-keyword-btn');
             const sheetEl = document.getElementById('vocab-sheet');
             const overlayEl = document.getElementById('sheet-overlay');
 
             if (originalWordEl) originalWordEl.textContent = word;
             if (translationBoxEl) translationBoxEl.classList.remove('active');
             if (saveBtnEl) saveBtnEl.style.display = 'none';
+            if (keywordBtnEl) keywordBtnEl.style.display = 'none';
             if (translateBtnEl) translateBtnEl.style.display = 'inline-block';
             if (sheetEl) sheetEl.classList.add('active');
             if (overlayEl) overlayEl.style.display = 'block';
+
+            // ابتدا بررسی وجود ترجمه در دیتابیس؛ در صورت وجود بلافاصله نمایش داده می‌شود
+            checkDatabaseTranslation(word);
+        }
+
+        function checkDatabaseTranslation(word) {
+            const cleanWord = word.trim().replace(/^[\s.,?!;:\"'()\[\]{}«»]+|[\s.,?!;:\"'()\[\]{}«»]+$/g, '');
+            if (!cleanWord) return;
+
+            const formData = createFormDataWithCSRF({ word: cleanWord });
+            fetch('../incloud/get_translation.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: formData
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success && data.translation && currentWord === word) {
+                    displaySheetTranslation(word, data.translation, data.in_user_collection);
+                }
+            })
+            .catch(() => {});
         }
 
         function closeVocabSheet() {
@@ -1425,7 +2073,7 @@ $isAdmin = is_super_admin();
 
             const btn = document.getElementById('sheet-translate-btn');
             const original = btn.innerHTML;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> در حال ترجمه...';
             btn.disabled = true;
 
             const formData = createFormDataWithCSRF({ 
@@ -1433,7 +2081,7 @@ $isAdmin = is_super_admin();
                 context: currentWordContext
             });
             
-            // ابتدا از جمینای برای ترجمه با کانتکست استفاده می‌کنیم
+            // ترجمه اختصاصی با هوش مصنوعی بر اساس متن سوال
             fetch('../incloud/gemini_translate.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -1444,55 +2092,16 @@ $isAdmin = is_super_admin();
                 if (data.success && data.translation) {
                     displaySheetTranslation(word, data.translation, data.in_user_collection);
                 } else {
-                    // اگر جمینای خطا داد، از سیستم قدیمی استفاده کن
-                    fallbackTranslation(word);
+                    showVocabToast(data.message || 'خطا در ترجمه با هوش مصنوعی', 'error');
                 }
             })
-            .catch(() => fallbackTranslation(word))
+            .catch(err => {
+                console.error('AI Translate Error:', err);
+                showVocabToast('خطا در ارتباط با هوش مصنوعی', 'error');
+            })
             .finally(() => {
                 btn.innerHTML = original;
                 btn.disabled = false;
-            });
-        }
-
-        function fallbackTranslation(word) {
-            const formData = createFormDataWithCSRF({ word: word });
-            fetch('../incloud/get_translation.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: formData
-            })
-            .then(r => r.json())
-            .then(data => {
-                if (data.success && data.translation) {
-                    displaySheetTranslation(word, data.translation, data.in_user_collection);
-                } else {
-                    googleTranslate(word);
-                }
-            })
-            .catch(() => googleTranslate(word));
-        }
-
-        function googleTranslate(text) {
-            if (!text) return;
-            const formData = createFormDataWithCSRF({ 
-                text: text, 
-                from: 'de', 
-                to: 'fa' 
-            });
-            fetch('../incloud/google_translate.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: formData
-            })
-            .then(r => r.json())
-            .then(data => {
-                if (data.success) displaySheetTranslation(text, data.translation, false);
-                else showVocabToast('خطا در ترجمه گوگل', 'error');
-            })
-            .catch(err => {
-                console.error('Google Translate Fetch Error:', err);
-                showVocabToast('خطا در ارتباط با مترجم گوگل', 'error');
             });
         }
 
@@ -1518,6 +2127,12 @@ $isAdmin = is_super_admin();
                     saveBtn.disabled = false;
                     saveBtn.className = 'btn btn-warning btn-lg px-4';
                 }
+            }
+
+            // Show keyword button for admins
+            const keywordBtn = document.getElementById('sheet-keyword-btn');
+            if (keywordBtn) {
+                keywordBtn.style.display = 'inline-block';
             }
         }
 
@@ -1808,6 +2423,210 @@ function botFetchInfo() {
     });
 }
 
+function handleVideoClick() {
+    if (!currentQuestionData || !currentQuestionData.question) return;
+    
+    const question = currentQuestionData.question;
+    const hasVideo = !!question.video_url;
+    const videoSrc = hasVideo ? '../storage/' + question.video_url : '';
+    
+    if (isAdmin) {
+        // ادمین می‌تواند ویدیو را ببیند یا آپلود کند
+        let modalHtml = '';
+        if (hasVideo) {
+            modalHtml = `
+                <div class="mb-3 text-center">
+                    <video src="${videoSrc}" controls class="w-100 rounded shadow-sm" style="max-height: 280px;"></video>
+                </div>
+                <div class="text-start mt-3">
+                    <label class="form-label fw-bold" style="font-size: 0.9em;">تغییر ویدیو آموزشی:</label>
+                    <input type="file" id="adminVideoFile" class="form-control" accept="video/*">
+                </div>
+            `;
+        } else {
+            modalHtml = `
+                <div class="alert alert-info py-2" style="font-size: 0.9em; text-align: right;">هیچ ویدیو آموزشی برای این سوال ثبت نشده است.</div>
+                <div class="text-start mt-3">
+                    <label class="form-label fw-bold" style="font-size: 0.9em;">آپلود ویدیو آموزشی جدید:</label>
+                    <input type="file" id="adminVideoFile" class="form-control" accept="video/*">
+                </div>
+            `;
+        }
+        
+        Swal.fire({
+            title: 'مدیریت ویدیو آموزشی سوال ' + (question.number || ''),
+            html: modalHtml,
+            showCancelButton: true,
+            showDenyButton: hasVideo,
+            confirmButtonText: 'ذخیره و آپلود',
+            denyButtonText: 'حذف ویدیو',
+            cancelButtonText: 'انصراف',
+            confirmButtonColor: '#198754',
+            denyButtonColor: '#dc3545',
+            preConfirm: () => {
+                const fileInput = document.getElementById('adminVideoFile');
+                if (fileInput && fileInput.files.length > 0) {
+                    return fileInput.files[0];
+                }
+                if (!hasVideo) {
+                    Swal.showValidationMessage('لطفاً ابتدا فایل ویدیو را انتخاب کنید');
+                    return false;
+                }
+                return null; // بدون فایل جدید
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                const file = result.value;
+                if (file) {
+                    uploadQuestionVideo(question.id, file);
+                }
+            } else if (result.isDenied) {
+                deleteQuestionVideo(question.id);
+            }
+        });
+    } else {
+        // برای کاربر عادی
+        if (!hasVideo) {
+            Swal.fire({
+                icon: 'info',
+                title: 'ویدیو آموزشی',
+                text: 'ویدیو آموزشی برای این سوال در دسترس نیست.',
+                confirmButtonText: 'تایید',
+                confirmButtonColor: '#198754'
+            });
+            return;
+        }
+        
+        Swal.fire({
+            title: 'ویدیو آموزشی سوال ' + (question.number || ''),
+            html: `<video src="${videoSrc}" controls autoplay class="w-100 rounded" style="max-height: 400px;"></video>`,
+            showConfirmButton: false,
+            showCloseButton: true,
+            width: '600px'
+        });
+    }
+}
+
+function uploadQuestionVideo(questionId, file) {
+    const formData = new FormData();
+    formData.append('question_id', questionId);
+    formData.append('action', 'upload');
+    formData.append('video_file', file);
+    formData.append('csrf_token', csrfToken);
+    
+    Swal.fire({
+        title: 'در حال آپلود ویدیو...',
+        text: 'لطفاً منتظر بمانید، این فرآیند ممکن است کمی طول بکشد.',
+        allowOutsideClick: false,
+        didOpen: () => {
+            Swal.showLoading();
+        }
+    });
+    
+    fetch('../incloud/update_question_video.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            Swal.fire({
+                icon: 'success',
+                title: 'موفقیت‌آمیز',
+                text: data.message,
+                confirmButtonText: 'تایید'
+            }).then(() => {
+                if (currentQuestionData && currentQuestionData.question && currentQuestionData.question.id == questionId) {
+                    currentQuestionData.question.video_url = data.video_url;
+                    const videoBtn = document.getElementById("videoBtn");
+                    if (videoBtn) videoBtn.classList.add("video-btn-active");
+                }
+            });
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'خطا',
+                text: data.message,
+                confirmButtonText: 'تایید'
+            });
+        }
+    })
+    .catch(err => {
+        console.error('Error uploading video:', err);
+        Swal.fire({
+            icon: 'error',
+            title: 'خطا',
+            text: 'خطا در ارتباط با سرور',
+            confirmButtonText: 'تایید'
+        });
+    });
+}
+
+function deleteQuestionVideo(questionId) {
+    Swal.fire({
+        title: 'آیا مطمئن هستید؟',
+        text: 'ویدیو آموزشی این سوال به طور کامل حذف خواهد شد.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'بله، حذف شود',
+        cancelButtonText: 'خیر',
+        confirmButtonColor: '#dc3545'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            const formData = new FormData();
+            formData.append('question_id', questionId);
+            formData.append('action', 'delete');
+            formData.append('csrf_token', csrfToken);
+            
+            Swal.fire({
+                title: 'در حال حذف...',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+            
+            fetch('../incloud/update_question_video.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'حذف شد',
+                        text: data.message,
+                        confirmButtonText: 'تایید'
+                    }).then(() => {
+                        if (currentQuestionData && currentQuestionData.question && currentQuestionData.question.id == questionId) {
+                            currentQuestionData.question.video_url = null;
+                            const videoBtn = document.getElementById("videoBtn");
+                            if (videoBtn) videoBtn.classList.remove("video-btn-active");
+                        }
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'خطا',
+                        text: data.message,
+                        confirmButtonText: 'تایید'
+                    });
+                }
+            })
+            .catch(err => {
+                console.error('Error deleting video:', err);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'خطا',
+                    text: 'خطا در ارتباط با سرور',
+                    confirmButtonText: 'تایید'
+                });
+            });
+        }
+    });
+}
+
 function saveAdminEdit(element, type, field, id) {
     if (!isAdmin) return;
     
@@ -1971,7 +2790,6 @@ function showTranslationContent() {
         const content = makeEditableHTML(question.asw_farsi, 'question', 'asw_farsi', question.id);
         pretextTransContainer.innerHTML = `
             <div class="pretext-translation"><p class="mb-0 mt-2">${content}</p></div>
-            </div>
         `;
     } else {
         pretextTransContainer.innerHTML = '';
@@ -2113,6 +2931,7 @@ function hideExplanationContent() {
             resetQuestionState();
 
             const questionId = selectedQuestions[currentQuestionIndex];
+            currentQuestionId = questionId;
 
             if (!questionId) {
                 console.error('No question ID found at current index:', currentQuestionIndex);
@@ -2162,9 +2981,19 @@ function hideExplanationContent() {
                     }
 
                     currentQuestionData = data;
+                    if (mode === 'review') {
+                        loadUserAnswersForReview(questionId);
+                    }
                     updateQuestionDisplay(data);
                     updateSession(questionId);
                     checkBookmarkStatus(questionId);
+
+                    // Reset keywords state on new question
+                    if (typeof keywordsActive !== 'undefined' && keywordsActive) {
+                        keywordsActive = false;
+                        const kBtn = document.getElementById('keywordsBtn');
+                        if (kBtn) kBtn.classList.remove('active');
+                    }
 
                     if (mode === 'practice') {
                         loadUserAnswersFromMemory(questionId);
@@ -2410,6 +3239,18 @@ function hideExplanationContent() {
             updatePracticeButtons();
         }
 
+        function loadUserAnswersForReview(questionId) {
+            userAnswers = {};
+            hasUserAnswer = false;
+            questionSolved = false;
+
+            if (typeof examUserAnswers !== 'undefined' && examUserAnswers && examUserAnswers[questionId]) {
+                userAnswers = examUserAnswers[questionId];
+                hasUserAnswer = Object.keys(userAnswers).length > 0;
+                questionSolved = true;
+            }
+        }
+
         function applyUserAnswers() {
             if (Object.keys(userAnswers).length === 0) return;
 
@@ -2477,11 +3318,7 @@ function solveQuestion() {
     updatePracticeButtons();
     renderPageButtons();
 
-    // نمایش اتوماتیک توضیح بعد از پاسخ
-    explanationActive = true;
-    document.getElementById('explainBtn').classList.add('active');
-    showTranslationContent();
-    showExplanationContent();
+
 }
 
         function checkUserAnswer() {
@@ -2544,7 +3381,22 @@ function solveQuestion() {
                 const isCorrect = input.value.trim() === correctAnswer.value.trim();
 
                 if (!isCorrect) {
-                    input.value = correctAnswer.value;
+                    if (mode === 'review') {
+                        const feedbackContainer = input.closest('.mb-4') || input.parentElement;
+                        if (feedbackContainer) {
+                            const existingFeedback = feedbackContainer.querySelector('.numeric-feedback');
+                            if (existingFeedback) existingFeedback.remove();
+
+                            const feedback = document.createElement('div');
+                            feedback.className = 'numeric-feedback mt-2 text-danger fw-semibold w-100 text-center';
+                            feedback.style.fontSize = '0.9rem';
+                            feedback.style.direction = 'rtl';
+                            feedback.innerText = 'پاسخ صحیح: ' + correctAnswer.value;
+                            feedbackContainer.appendChild(feedback);
+                        }
+                    } else {
+                        input.value = correctAnswer.value;
+                    }
                 }
 
                 input.style.backgroundColor = isCorrect ? '#d4edda' : '#f8d7da';
@@ -2577,12 +3429,35 @@ function solveQuestion() {
                     answerItem.classList.add('answer-correct-selected');
                 } else if (!isCorrect && isSelected) {
                     answerItem.classList.add('answer-incorrect-selected');
-                    checkbox.checked = false;
                 } else if (isCorrect && !isSelected) {
                     answerItem.classList.add('answer-correct-unselected');
-                    checkbox.checked = true;
                 } else if (!isCorrect && !isSelected) {
                     answerItem.classList.add('answer-incorrect-unselected');
+                }
+
+                // Add text helper under the answer if user made a mistake
+                const flexGrow = answerItem.querySelector('.flex-grow-1');
+                if (flexGrow) {
+                    const existingFeedback = flexGrow.querySelector('.selection-feedback');
+                    if (existingFeedback) existingFeedback.remove();
+
+                    if (!isCorrect && isSelected) {
+                        const feedback = document.createElement('div');
+                        feedback.className = 'selection-feedback mt-1 text-danger fw-semibold';
+                        feedback.style.fontSize = '0.75rem';
+                        feedback.style.direction = 'rtl';
+                        feedback.style.textAlign = 'right';
+                        feedback.innerText = 'این پاسخ را نباید انتخاب میکردید';
+                        flexGrow.appendChild(feedback);
+                    } else if (isCorrect && !isSelected) {
+                        const feedback = document.createElement('div');
+                        feedback.className = 'selection-feedback mt-1 text-success fw-semibold';
+                        feedback.style.fontSize = '0.75rem';
+                        feedback.style.direction = 'rtl';
+                        feedback.style.textAlign = 'right';
+                        feedback.innerText = 'این پاسخ را باید انتخاب میکردید';
+                        flexGrow.appendChild(feedback);
+                    }
                 }
 
                 checkbox.disabled = true;
@@ -2605,6 +3480,16 @@ function solveQuestion() {
             }
 
             const question = data.question;
+
+            // به‌روزرسانی استایل دکمه ویدیو آموزشی بر اساس داشتن ویدیو
+            const videoBtn = document.getElementById("videoBtn");
+            if (videoBtn) {
+                if (question.video_url) {
+                    videoBtn.classList.add("video-btn-active");
+                } else {
+                    videoBtn.classList.remove("video-btn-active");
+                }
+            }
             const fileName = question.picture || '';
             const extension = fileName ? fileName.split('.').pop().toLowerCase() : '';
             const fileNameWithoutExt = fileName ? fileName.replace(/\.[^/.]+$/, "") : '';
@@ -2866,8 +3751,15 @@ function answerBuilder(answers = null) {
                 let disabled = "";
 
                 if (mode === 'browse' || mode === 'review') {
-                    if (answer['asw_corr'] == 1) {
-                        status = 'checked';
+                    const hasUserAnswers = Object.keys(userAnswers).length > 0;
+                    if (mode === 'review' && hasUserAnswers) {
+                        if (userAnswers[answer['id']] === true) {
+                            status = 'checked';
+                        }
+                    } else {
+                        if (answer['asw_corr'] == 1) {
+                            status = 'checked';
+                        }
                     }
                     disabled = 'disabled';
                 } else if (mode === 'practice' && questionSolved) {
@@ -2947,6 +3839,10 @@ function answerBuilder(answers = null) {
         }
 
         document.getElementById("answers").innerHTML = answersText;
+        
+        if (mode === 'review') {
+            showAnswerResults();
+        }
         
 
     } else {
@@ -3853,6 +4749,273 @@ function sendHelpRequest() {
 
     // شروع تور با کمی تاخیر برای لود کامل سوال
     // setTimeout(startGuidedTour, 1500); // Disabled auto start, user triggers via رانما button
+
+    // ===== Keywords Feature =====
+    let keywordsActive = false;
+
+    function makeKeyword() {
+        if (!isAdmin || !currentQuestionData) return;
+
+        const word = document.getElementById('sheet-original-word')?.textContent?.trim();
+        const translation = document.getElementById('sheet-translated-word')?.textContent?.trim();
+
+        if (!word || !translation) {
+            showVocabToast('لطفاً ابتدا کلمه را ترجمه کنید', 'error');
+            return;
+        }
+
+        const btn = document.getElementById('sheet-keyword-btn');
+        const originalHTML = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        btn.disabled = true;
+
+        const formData = createFormDataWithCSRF({
+            action: 'create',
+            question_id: currentQuestionData.question.id,
+            keyword: word,
+            translation: translation
+        });
+
+        fetch('../incloud/manage_question_keywords.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: formData
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                showVocabToast('کلمه کلیدی ثبت شد ✅', 'success');
+                btn.innerHTML = '<i class="fas fa-check"></i> ثبت شد';
+                btn.className = 'btn btn-outline-success btn-lg px-4';
+                btn.disabled = true;
+
+                // Add to local data
+                if (!currentQuestionData.keywords) currentQuestionData.keywords = [];
+                const exists = currentQuestionData.keywords.find(k => k.keyword.toLowerCase() === word.toLowerCase());
+                if (!exists) {
+                    currentQuestionData.keywords.push({ keyword: word, translation: translation });
+                } else {
+                    exists.translation = translation;
+                }
+
+                // If keywords are active, re-apply highlights
+                if (keywordsActive) {
+                    removeKeywordHighlights();
+                    applyKeywordHighlights();
+                }
+            } else {
+                showVocabToast(data.message || 'خطا در ثبت کلمه کلیدی', 'error');
+                btn.innerHTML = originalHTML;
+                btn.disabled = false;
+            }
+        })
+        .catch(() => {
+            showVocabToast('خطا در ارتباط با سرور', 'error');
+            btn.innerHTML = originalHTML;
+            btn.disabled = false;
+        });
+    }
+
+    function toggleKeywords() {
+        keywordsActive = !keywordsActive;
+        const btn = document.getElementById('keywordsBtn');
+
+        if (keywordsActive) {
+            if (btn) btn.classList.add('active');
+            applyKeywordHighlights();
+        } else {
+            if (btn) btn.classList.remove('active');
+            removeKeywordHighlights();
+        }
+    }
+
+    function applyKeywordHighlights() {
+        if (!currentQuestionData || !currentQuestionData.keywords || currentQuestionData.keywords.length === 0) {
+            showVocabToast('کلمه کلیدی برای این سوال ثبت نشده است', 'info');
+            keywordsActive = false;
+            const btn = document.getElementById('keywordsBtn');
+            if (btn) btn.classList.remove('active');
+            return;
+        }
+
+        const keywords = currentQuestionData.keywords;
+        const containers = ['text', 'asw_pretext'];
+
+        containers.forEach(containerId => {
+            const el = document.getElementById(containerId);
+            if (!el) return;
+
+            // Work on the text nodes inside the element
+            highlightKeywordsInElement(el, keywords);
+        });
+
+        // Also highlight in answer texts
+        document.querySelectorAll('.answer-item .vocabulary-selection span[name="text"]').forEach(span => {
+            highlightKeywordsInElement(span, keywords);
+        });
+    }
+
+    function highlightKeywordsInElement(element, keywords) {
+        const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT, null, false);
+        const textNodes = [];
+        while (walker.nextNode()) {
+            textNodes.push(walker.currentNode);
+        }
+
+        textNodes.forEach(textNode => {
+            const parent = textNode.parentNode;
+            if (parent.classList && parent.classList.contains('keyword-highlight')) return;
+            if (parent.classList && parent.classList.contains('keyword-translation-inline')) return;
+
+            let html = textNode.textContent;
+            let modified = false;
+
+            // Sort keywords by length (longest first) to avoid partial matches
+            const sortedKeywords = [...keywords].sort((a, b) => b.keyword.length - a.keyword.length);
+
+            sortedKeywords.forEach(kw => {
+                const escaped = kw.keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                const regex = new RegExp(`(${escaped})`, 'gi');
+                const safeKw = kw.keyword.replace(/"/g, '&quot;');
+                const safeTr = kw.translation.replace(/"/g, '&quot;');
+                const newHtml = html.replace(regex, `<span class="keyword-highlight" data-keyword="${safeKw}" data-translation="${safeTr}">$1<span class="keyword-translation-inline">${kw.translation}</span></span>`);
+                if (newHtml !== html) {
+                    html = newHtml;
+                    modified = true;
+                }
+            });
+
+            if (modified) {
+                const wrapper = document.createElement('span');
+                wrapper.innerHTML = html;
+                parent.replaceChild(wrapper, textNode);
+            }
+        });
+    }
+
+    function removeKeywordHighlights() {
+        document.querySelectorAll('.keyword-highlight').forEach(el => {
+            const translationSpan = el.querySelector('.keyword-translation-inline');
+            if (translationSpan) translationSpan.remove();
+            const text = el.textContent;
+            const textNode = document.createTextNode(text);
+            el.parentNode.replaceChild(textNode, el);
+        });
+
+        // Clean up leftover wrapper spans
+        document.querySelectorAll('span:not([class]):not([id])').forEach(span => {
+            if (span.children.length === 0 && span.parentNode) {
+                const text = document.createTextNode(span.textContent);
+                span.parentNode.replaceChild(text, span);
+            }
+        });
+    }
+
+    // Keyword click delegation
+    document.addEventListener('click', function(e) {
+        const keywordEl = e.target.closest('.keyword-highlight');
+        if (!keywordEl) return;
+        e.stopPropagation();
+
+        const keyword = keywordEl.dataset.keyword;
+        const translation = keywordEl.dataset.translation;
+
+        if (isAdmin) {
+            // Admin: offer delete
+            Swal.fire({
+                title: 'حذف کلمه کلیدی',
+                html: `آیا می‌خواهید <strong>${keyword}</strong> را از کلمات کلیدی حذف کنید؟`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'بله، حذف شود',
+                cancelButtonText: 'لغو',
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#198754'
+            }).then(result => {
+                if (result.isConfirmed) {
+                    deleteKeyword(keyword);
+                }
+            });
+        } else {
+            // User: toggle translation visibility
+            const transSpan = keywordEl.querySelector('.keyword-translation-inline');
+            if (transSpan) {
+                transSpan.style.display = transSpan.style.display === 'none' ? 'block' : 'none';
+            }
+        }
+    });
+
+    function deleteKeyword(keyword) {
+        if (!currentQuestionData) return;
+
+        const formData = createFormDataWithCSRF({
+            action: 'delete',
+            question_id: currentQuestionData.question.id,
+            keyword: keyword
+        });
+
+        fetch('../incloud/manage_question_keywords.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: formData
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                showVocabToast('کلمه کلیدی حذف شد 🗑️', 'success');
+                // Remove from local data
+                if (currentQuestionData.keywords) {
+                    currentQuestionData.keywords = currentQuestionData.keywords.filter(
+                        k => k.keyword.toLowerCase() !== keyword.toLowerCase()
+                    );
+                }
+                // Re-apply highlights
+                removeKeywordHighlights();
+                if (keywordsActive && currentQuestionData.keywords && currentQuestionData.keywords.length > 0) {
+                    applyKeywordHighlights();
+                } else {
+                    keywordsActive = false;
+                    const btn = document.getElementById('keywordsBtn');
+                    if (btn) btn.classList.remove('active');
+                }
+            } else {
+                showVocabToast(data.message || 'خطا در حذف کلمه کلیدی', 'error');
+            }
+        })
+        .catch(() => {
+            showVocabToast('خطا در ارتباط با سرور', 'error');
+        });
+    }
+
+    // Theme Toggle Functionality
+    function toggleTheme() {
+        const currentTheme = document.documentElement.getAttribute('data-bs-theme');
+        const nextTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-bs-theme', nextTheme);
+        localStorage.setItem('farsifahr_theme', nextTheme);
+        updateThemeToggleButton(nextTheme);
+    }
+
+    function updateThemeToggleButton(theme) {
+        const btn = document.getElementById('themeToggleBtn');
+        if (btn) {
+            const icon = btn.querySelector('i');
+            if (icon) {
+                if (theme === 'dark') {
+                    icon.className = 'fas fa-sun';
+                } else {
+                    icon.className = 'fas fa-moon';
+                }
+            }
+        }
+    }
+
+
+    // Sync button state on page load
+    document.addEventListener('DOMContentLoaded', () => {
+        const currentTheme = document.documentElement.getAttribute('data-bs-theme') || 'light';
+        updateThemeToggleButton(currentTheme);
+    });
     </script>
 </body>
 

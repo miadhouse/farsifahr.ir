@@ -502,10 +502,10 @@ header('X-LiteSpeed-Cache-Control: no-cache'); // LiteSpeed Server
                                 <div class="isl-phone-wrapper" id="islPhoneWrapper">
                                   <div class="isl-side-images" id="islSidePanels">
                                     <div class="isl-side-panel left" id="islLeftPanel">
-                                      <canvas class="isl-side-canvas" id="islLeftCanvas" width="100" height="200"></canvas>
+                                      <canvas class="isl-side-canvas" id="islLeftCanvas" width="110" height="220"></canvas>
                                     </div>
                                     <div class="isl-side-panel right" id="islRightPanel">
-                                      <canvas class="isl-side-canvas" id="islRightCanvas" width="100" height="200"></canvas>
+                                      <canvas class="isl-side-canvas" id="islRightCanvas" width="110" height="220"></canvas>
                                     </div>
                                   </div>
                                   <div class="isl-phone">
@@ -513,6 +513,15 @@ header('X-LiteSpeed-Cache-Control: no-cache'); // LiteSpeed Server
                                     <div class="isl-btn-vol1"></div>
                                     <div class="isl-btn-vol2"></div>
                                     <div class="isl-btn-mute"></div>
+                                    <div class="isl-status-bar">
+                                      <span class="isl-status-time">9:41</span>
+                                      <div class="isl-status-icons">
+                                        <div class="isl-signal-bars"><span></span><span></span><span></span><span></span></div>
+                                        <span>▾</span>
+                                        <div class="isl-battery"><div class="isl-battery-fill"></div></div>
+                                      </div>
+                                    </div>
+                                    <div class="isl-dynamic-island"><div class="isl-camera-dot"></div></div>
                                     <div class="isl-screen">
                                       <div class="isl-carousel">
                                         <div class="isl-carousel-track" id="islTrack"></div>
@@ -581,45 +590,19 @@ header('X-LiteSpeed-Cache-Control: no-cache'); // LiteSpeed Server
                               var islCurrentIndex=0;
                               var islTrack=document.getElementById('islTrack');
                               var islDotsContainer=document.getElementById('islDots');
+
                               var totalSlidesCount = islSlides.length;
-
-                              // لیستی که اسلایدها و کپی‌های کناری را نگه می‌دارد (برای حرکت لوپ بی‌نهایت)
-                              var renderSlidesList = [];
-                              if (totalSlidesCount > 1) {
-                                // کپی اسلاید آخر در ابتدا
-                                renderSlidesList.push({ slide: islSlides[totalSlidesCount - 1], isClone: true });
-                                // اسلایدهای واقعی
-                                islSlides.forEach(function(s) {
-                                  renderSlidesList.push({ slide: s, isClone: false });
-                                });
-                                // کپی اسلاید اول در انتها
-                                renderSlidesList.push({ slide: islSlides[0], isClone: true });
-                              } else {
-                                islSlides.forEach(function(s) {
-                                  renderSlidesList.push({ slide: s, isClone: false });
-                                });
+                              if (islTrack && totalSlidesCount > 0) {
+                                islTrack.style.width = (totalSlidesCount * 100) + '%';
                               }
 
-                              var totalElements = renderSlidesList.length;
-                              if (islTrack && totalElements > 0) {
-                                islTrack.style.width = (totalElements * 100) + '%';
-                              }
-
-                              // ساخت کادر اسلایدها در صفحه
-                              if (islTrack) {
-                                islTrack.innerHTML = '';
-                              }
-                              if (islDotsContainer) {
-                                islDotsContainer.innerHTML = '';
-                              }
-
-                              renderSlidesList.forEach(function(item, idx){
-                                var s = item.slide;
-                                var slide=document.createElement('div');
-                                slide.className='isl-slide';
-                                slide.style.width = (100 / totalElements) + '%';
-
+                              islSlides.forEach(function(s,i){
+                                var slide=document.createElement('div');slide.className='isl-slide';
+                                if (totalSlidesCount > 0) {
+                                  slide.style.width = (100 / totalSlidesCount) + '%';
+                                }
                                 if (s.imgSrc) {
+                                  // استفاده از img tag به جای background-image برای حل باگ رندرینگ سه بعدی OLS/Safari
                                   var img = document.createElement('img');
                                   img.src = s.imgSrc;
                                   img.style.width = '100%';
@@ -630,35 +613,18 @@ header('X-LiteSpeed-Cache-Control: no-cache'); // LiteSpeed Server
                                   img.setAttribute('draggable', 'false');
                                   slide.appendChild(img);
                                 } else {
-                                  var canvas=document.createElement('canvas');
-                                  canvas.width=200;
-                                  canvas.height=430;
-                                  canvas.className='isl-slide-canvas';
+                                  var canvas=document.createElement('canvas');canvas.width=200;canvas.height=430;canvas.className='isl-slide-canvas';
                                   slide.appendChild(canvas);
                                 }
                                 islTrack.appendChild(slide);
-
-                                // فقط برای اسلایدهای اصلی دات می‌سازیم
-                                if (!item.isClone) {
-                                  var realIdx = totalSlidesCount > 1 ? idx - 1 : idx;
-                                  var dot=document.createElement('div');
-                                  dot.className='isl-dot'+(realIdx===0?' active':'');
-                                  islDotsContainer.appendChild(dot);
-                                }
+                                var dot=document.createElement('div');dot.className='isl-dot'+(i===0?' active':'');islDotsContainer.appendChild(dot);
                               });
 
                               function islRenderSlides(){
                                 var canvases=islTrack.querySelectorAll('.isl-slide-canvas');
                                 canvases.forEach(function(canvas){
                                   var idx=Array.prototype.indexOf.call(islTrack.children,canvas.parentNode);
-                                  var s;
-                                  if (totalSlidesCount > 1) {
-                                    if (idx === 0) s = islSlides[totalSlidesCount - 1];
-                                    else if (idx === totalElements - 1) s = islSlides[0];
-                                    else s = islSlides[idx - 1];
-                                  } else {
-                                    s = islSlides[idx];
-                                  }
+                                  var s=islSlides[idx];
                                   if(s&&s.draw){var ctx=canvas.getContext('2d');s.draw(ctx,canvas.width,canvas.height);}
                                 });
                               }
@@ -688,7 +654,7 @@ header('X-LiteSpeed-Cache-Control: no-cache'); // LiteSpeed Server
                                 var leftIndex = isRTL ? islCurrentIndex + 1 : islCurrentIndex - 1;
                                 var rightIndex = isRTL ? islCurrentIndex - 1 : islCurrentIndex + 1;
                                 islRenderSidePanel('islLeftCanvas', leftIndex);
-                                  islRenderSidePanel('islRightCanvas', rightIndex);
+                                islRenderSidePanel('islRightCanvas', rightIndex);
                               }
                               islUpdateSidePanels();
 
@@ -713,58 +679,16 @@ header('X-LiteSpeed-Cache-Control: no-cache'); // LiteSpeed Server
                                 },260);
                               }
 
-                              var islIsTransitioning = false;
-
-                              function islGoToSlide(targetIndex,direction,immediate){
+                              function islGoToSlide(index,direction){
                                 var total=islSlides.length;
                                 if (total === 0) return;
-
+                                islCurrentIndex=((index%total)+total)%total;
                                 var directionMultiplier = isRTL ? 1 : -1;
-
-                                if (immediate) {
-                                  islCurrentIndex=((targetIndex%total)+total)%total;
-                                  var visualIndex = total > 1 ? islCurrentIndex + 1 : 0;
-                                  var translatePercent = directionMultiplier * visualIndex * (100 / totalElements);
-                                  if (islTrack) {
-                                    islTrack.style.transition='none';
-                                    islTrack.style.transform='translateX('+translatePercent+'%)';
-                                  }
-                                  document.querySelectorAll('#iphone-slider-root .isl-dot').forEach(function(d,i){d.classList.toggle('active',i===islCurrentIndex);});
-                                  islUpdateSidePanels();
-                                  var titleText = document.getElementById('islTitleText');
-                                  if (titleText) titleText.textContent = islSlides[islCurrentIndex].label;
-                                  return;
-                                }
-
-                                if (islIsTransitioning) return;
-                                islIsTransitioning = true;
-
-                                var visualTargetIndex;
-                                if (total > 1) {
-                                  if (targetIndex === total) {
-                                    visualTargetIndex = total + 1; // Clone of Slide 0
-                                  } else if (targetIndex === -1) {
-                                    visualTargetIndex = 0; // Clone of Slide N-1
-                                  } else {
-                                    visualTargetIndex = targetIndex + 1;
-                                  }
-                                } else {
-                                  visualTargetIndex = 0;
-                                }
-
-                                var translatePercent = directionMultiplier * visualTargetIndex * (100 / totalElements);
-                                if (islTrack) {
-                                  islTrack.style.transition='transform 0.5s cubic-bezier(0.4,0,0.2,1)';
-                                  islTrack.style.transform='translateX('+translatePercent+'%)';
-                                }
-
-                                var nextIndex = ((targetIndex%total)+total)%total;
-                                islCurrentIndex = nextIndex;
-
+                                var translatePercent = directionMultiplier * islCurrentIndex * (100 / total);
+                                if (islTrack) islTrack.style.transform='translateX('+translatePercent+'%)';
                                 document.querySelectorAll('#iphone-slider-root .isl-dot').forEach(function(d,i){d.classList.toggle('active',i===islCurrentIndex);});
                                 islUpdateSidePanels();
                                 islAnimateTitle(islSlides[islCurrentIndex].label);
-
                                 var pw=document.getElementById('islPhoneWrapper');
                                 if (pw) {
                                   var tiltDir=direction==='left'?4:-4;
@@ -775,26 +699,6 @@ header('X-LiteSpeed-Cache-Control: no-cache'); // LiteSpeed Server
                                     pw.style.transform='rotateX(0deg) rotateY(0deg) rotateZ(0deg)';
                                   },50);
                                 }
-
-                                // بررسی سرریز شدن و پرش غیرمحسوس به اسلاید واقعی
-                                setTimeout(function(){
-                                  if (total > 1) {
-                                    if (targetIndex === total) {
-                                      var jumpTranslate = directionMultiplier * 1 * (100 / totalElements);
-                                      if (islTrack) {
-                                        islTrack.style.transition = 'none';
-                                        islTrack.style.transform = 'translateX(' + jumpTranslate + '%)';
-                                      }
-                                    } else if (targetIndex === -1) {
-                                      var jumpTranslate = directionMultiplier * total * (100 / totalElements);
-                                      if (islTrack) {
-                                        islTrack.style.transition = 'none';
-                                        islTrack.style.transform = 'translateX(' + jumpTranslate + '%)';
-                                      }
-                                    }
-                                  }
-                                  islIsTransitioning = false;
-                                }, 500);
                               }
 
                               var islHand=document.getElementById('islHandContainer');
@@ -806,7 +710,6 @@ header('X-LiteSpeed-Cache-Control: no-cache'); // LiteSpeed Server
 
                               function islGetEventX(e){return e.touches?e.touches[0].clientX:e.clientX;}
                               function islOnDragStart(e){
-                                if (islIsTransitioning) return;
                                 islIsDragging=true;
                                 islStartX=islGetEventX(e);
                                 islSwipeTriggered=false;
@@ -859,35 +762,30 @@ header('X-LiteSpeed-Cache-Control: no-cache'); // LiteSpeed Server
                               document.addEventListener('touchmove',islOnDragMove,{passive:false});
                               document.addEventListener('touchend',islOnDragEnd);
 
-                              // تنظیم اولیه اسلایدر روی اسلاید اول (بعد از اسلاید کپی شده)
-                              var directionMultiplier = isRTL ? 1 : -1;
-                              if (islTrack) {
-                                var initTranslate = directionMultiplier * (totalSlidesCount > 1 ? 1 : 0) * (100 / totalElements);
-                                islTrack.style.transform='translateX('+initTranslate+'%)';
-                              }
+                              if (islTrack) islTrack.style.transform='translateX(0%)';
                               islShowSidePanels(true);
 
                               // Auto-play
-                              var islAutoTimer=null,islIsAnimating=false,islAutoPaused=false;
+                              var islAutoTimer=null,islAutoDirection=1,islIsAnimating=false,islAutoPaused=false;
                               var ISL_AUTO_INTERVAL=2800,ISL_SWING_DURATION=700;
 
                               function islAnimateHandAndSlide(){
-                                if(islIsDragging||islAutoPaused||islIsTransitioning)return;
+                                if(islIsDragging||islAutoPaused)return;
                                 islIsAnimating=true;
-                                var targetAngle = isRTL ? 32 : -32;
-                                var dir = isRTL ? 'left' : 'right';
+                                var targetAngle=islAutoDirection*32;
+                                var dir=islAutoDirection===1?'right':'left';
                                 islShowSidePanels(true);
                                 if (islHand) {
                                   islHand.classList.remove('snap-back');
                                   islHand.style.transition='transform '+(ISL_SWING_DURATION*0.55)+'ms cubic-bezier(0.4,0,0.2,1)';
                                   islHand.style.transform='rotate('+targetAngle+'deg)';
                                 }
-                                if (isRTL) {
-                                  if (islArrowRight) islArrowRight.classList.add('lit');
+                                if(islAutoDirection===1) {
+                                  if (islArrowRight)  islArrowRight.classList.add('lit');
                                 } else {
                                   if (islArrowLeft) islArrowLeft.classList.add('lit');
                                 }
-                                setTimeout(function(){islGoToSlide(islCurrentIndex+1,dir);},ISL_SWING_DURATION*0.45);
+                                setTimeout(function(){islGoToSlide(islCurrentIndex-islAutoDirection,dir);},ISL_SWING_DURATION*0.45);
                                 setTimeout(function(){
                                   if (islHand) {
                                     islHand.classList.add('snap-back');
@@ -897,6 +795,7 @@ header('X-LiteSpeed-Cache-Control: no-cache'); // LiteSpeed Server
                                   if (islArrowLeft) islArrowLeft.classList.remove('lit');
                                   if (islArrowRight) islArrowRight.classList.remove('lit');
                                   islIsAnimating=false;
+                                  islAutoDirection*=-1;
                                 },ISL_SWING_DURATION+80);
                               }
 
@@ -963,7 +862,6 @@ header('X-LiteSpeed-Cache-Control: no-cache'); // LiteSpeed Server
     </div>
 
     <!-- App Preview Section Start -->
-    <?php /*
     <section class="app-preview-section tmp-section-gapTop" id="app-preview">
         <div class="container">
             <h2 class="app-preview-title tmp-scroll-trigger tmp-fade-in animation-order-1"><?= __('test_app_title', 'در اینجا میتونی قابلیت های farsifahr رو تست کنی') ?></h2>
@@ -975,7 +873,6 @@ header('X-LiteSpeed-Cache-Control: no-cache'); // LiteSpeed Server
             </div>
         </div>
     </section>
-    */ ?>
     <div class="about-content-area">
         <div class="container tmp-section-gap">
             <div class="text-para-doc-wrap">

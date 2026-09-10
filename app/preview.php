@@ -6,6 +6,12 @@ require_once __DIR__ . '/../incloud/i18n.php';
 $mode = 'browse';
 $isPreview = true;
 
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
+$csrf_token = $_SESSION['csrf_token'];
+$user_id = $_SESSION['user_id'] ?? null;
+
 // Fetch 10 questions for preview
 $stmt = $pdo->query("SELECT id FROM questions LIMIT 10");
 $selectedQuestions = $stmt->fetchAll(PDO::FETCH_COLUMN);
@@ -52,6 +58,14 @@ $user_id = 0; // Anonymous
 <html data-bs-theme="light" lang="en" style="height: 100%;">
 
 <head>
+    <script>
+        (function() {
+            const showIncorrect = localStorage.getItem('show_incorrect_unselected') === 'true';
+            if (showIncorrect) {
+                document.documentElement.classList.add('show-incorrect-green');
+            }
+        })();
+    </script>
     <script>
     const originalFetch = window.fetch;
     window.fetch = function(url, options) {
@@ -148,6 +162,12 @@ $user_id = 0; // Anonymous
         /* استایل تصاویر داخل توضیحات و ترجمه‌ها */
         .note-modal { z-index: 100001 !important; }
         .note-modal-backdrop { z-index: 100000 !important; }
+        
+        /* حل مشکل اورلپ مدال‌ها، پاپ‌آپ‌ها و نوبار پایین */
+        .fixed-bottom { z-index: 1000 !important; }
+        .modal { z-index: 100000 !important; }
+        .modal-backdrop { z-index: 99999 !important; }
+        .swal2-container { z-index: 100002 !important; }
         
         .explanation-box img, .translation-box img, .answer-explanation img, .answer-translation img {
             max-width: 180px !important;
@@ -417,6 +437,10 @@ $user_id = 0; // Anonymous
         }
 
         .answer-incorrect-unselected {
+            /* No custom background or border */
+        }
+
+        .show-incorrect-green .answer-incorrect-unselected {
             background-color: #d4edda !important;
             border: 2px solid #28a745 !important;
         }
@@ -1325,6 +1349,28 @@ $user_id = 0; // Anonymous
             if (translateBtnEl) translateBtnEl.style.display = 'inline-block';
             if (sheetEl) sheetEl.classList.add('active');
             if (overlayEl) overlayEl.style.display = 'block';
+
+            // ابتدا بررسی وجود ترجمه در دیتابیس؛ در صورت وجود بلافاصله نمایش داده می‌شود
+            checkDatabaseTranslation(word);
+        }
+
+        function checkDatabaseTranslation(word) {
+            const cleanWord = word.trim().replace(/^[\s.,?!;:\"'()\[\]{}«»]+|[\s.,?!;:\"'()\[\]{}«»]+$/g, '');
+            if (!cleanWord) return;
+
+            const formData = createFormDataWithCSRF({ word: cleanWord });
+            fetch('../incloud/get_translation.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: formData
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success && data.translation && currentWord === word) {
+                    displaySheetTranslation(word, data.translation, data.in_user_collection);
+                }
+            })
+            .catch(() => {});
         }
 
         function closeVocabSheet() {
@@ -1352,7 +1398,7 @@ $user_id = 0; // Anonymous
 
             const btn = document.getElementById('sheet-translate-btn');
             const original = btn.innerHTML;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> در حال ترجمه...';
             btn.disabled = true;
 
             const formData = createFormDataWithCSRF({ 
@@ -1360,7 +1406,7 @@ $user_id = 0; // Anonymous
                 context: currentWordContext
             });
             
-            // ابتدا از جمینای برای ترجمه با کانتکست استفاده می‌کنیم
+            // ترجمه اختصاصی با هوش مصنوعی بر اساس متن سوال
             fetch('../incloud/gemini_translate.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -1371,55 +1417,16 @@ $user_id = 0; // Anonymous
                 if (data.success && data.translation) {
                     displaySheetTranslation(word, data.translation, data.in_user_collection);
                 } else {
-                    // اگر جمینای خطا داد، از سیستم قدیمی استفاده کن
-                    fallbackTranslation(word);
+                    showVocabToast(data.message || 'خطا در ترجمه با هوش مصنوعی', 'error');
                 }
             })
-            .catch(() => fallbackTranslation(word))
+            .catch(err => {
+                console.error('AI Translate Error:', err);
+                showVocabToast('خطا در ارتباط با هوش مصنوعی', 'error');
+            })
             .finally(() => {
                 btn.innerHTML = original;
                 btn.disabled = false;
-            });
-        }
-
-        function fallbackTranslation(word) {
-            const formData = createFormDataWithCSRF({ word: word });
-            fetch('../incloud/get_translation.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: formData
-            })
-            .then(r => r.json())
-            .then(data => {
-                if (data.success && data.translation) {
-                    displaySheetTranslation(word, data.translation, data.in_user_collection);
-                } else {
-                    googleTranslate(word);
-                }
-            })
-            .catch(() => googleTranslate(word));
-        }
-
-        function googleTranslate(text) {
-            if (!text) return;
-            const formData = createFormDataWithCSRF({ 
-                text: text, 
-                from: 'de', 
-                to: 'fa' 
-            });
-            fetch('../incloud/google_translate.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: formData
-            })
-            .then(r => r.json())
-            .then(data => {
-                if (data.success) displaySheetTranslation(text, data.translation, false);
-                else showVocabToast('خطا در ترجمه گوگل', 'error');
-            })
-            .catch(err => {
-                console.error('Google Translate Fetch Error:', err);
-                showVocabToast('خطا در ارتباط با مترجم گوگل', 'error');
             });
         }
 

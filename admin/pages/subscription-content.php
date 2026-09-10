@@ -168,7 +168,6 @@ if ($user_sub !== false && $user_sub !== null) {
                       style="width: <?= $progress_percentage ?>%"
                       aria-valuenow="<?= $progress_percentage ?>" aria-valuemin="0" aria-valuemax="100"></div>
                   </div>
-                  <p class="small text-muted">شما <?= $used_days ?> روز از <?= $total_days ?> روز دوره خود را سپری کرده‌اید.</p>
                 </div>
               <?php endif ?>
             </div>

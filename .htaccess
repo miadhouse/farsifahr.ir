@@ -1,6 +1,29 @@
 RewriteEngine On
 RewriteBase /
 
+# Block abusive IP addresses (195.178.110.157, 207.154.197.113, 185.177.72.0/24, and 95.133.236.9)
+RewriteCond %{HTTP:CF-Connecting-IP} ^195\.178\.110\.157$ [OR]
+RewriteCond %{HTTP:CF-Connecting-IP} ^207\.154\.197\.113$ [OR]
+RewriteCond %{HTTP:CF-Connecting-IP} ^185\.177\.72\. [OR]
+RewriteCond %{HTTP:CF-Connecting-IP} ^95\.133\.236\.9$ [OR]
+RewriteCond %{HTTP:X-Forwarded-For} ^195\.178\.110\.157$ [OR]
+RewriteCond %{HTTP:X-Forwarded-For} ^207\.154\.197\.113$ [OR]
+RewriteCond %{HTTP:X-Forwarded-For} ^185\.177\.72\. [OR]
+RewriteCond %{HTTP:X-Forwarded-For} ^95\.133\.236\.9$ [OR]
+RewriteCond %{REMOTE_ADDR} ^195\.178\.110\.157$ [OR]
+RewriteCond %{REMOTE_ADDR} ^207\.154\.197\.113$ [OR]
+RewriteCond %{REMOTE_ADDR} ^185\.177\.72\. [OR]
+RewriteCond %{REMOTE_ADDR} ^95\.133\.236\.9$
+RewriteRule ^ - [F,L]
+
+# CRITICAL SECURITY: Block access to hidden files/folders (e.g. .git, .env) and sensitive extensions
+# This handles both normal and URL-encoded requests (like %2eenv, %2egit) to prevent webserver bypasses.
+RewriteCond %{REQUEST_URI} (^|/)\.(?!well-known/) [NC,OR]
+RewriteCond %{THE_REQUEST} (/\.|\/%2e) [NC,OR]
+RewriteCond %{THE_REQUEST} (\.sql|\.log|\.env|\.bak|\.config|\.sh|\.xlsx|%2esql|%2elog|%2eenv|%2ebak|%2econfig|%2esh|%2exlsx) [NC]
+RewriteRule ^ - [F,L]
+
+
 # 1. Gzip Compression
 <IfModule mod_deflate.c>
     # Compress HTML, CSS, JavaScript, Text, XML and fonts

@@ -1,5 +1,4 @@
 <?php
-session_start();
 require_once('../incloud/functions.php');
 require_once('../incloud/subscription-functions.php');
 

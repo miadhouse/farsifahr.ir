@@ -10,10 +10,8 @@ if (isset($_SESSION['user_id'])) {
 // خروج از حساب
 logout();
 
-// پاک کردن کوکی remember me
-if (isset($_COOKIE['remember_token'])) {
-    setcookie('remember_token', '', time() - 3600, '/', '', true, true);
-}
+// پاک کردن کوکی و توکن remember me
+clear_remember_token($pdo);
 
 // هدایت به صفحه اصلی
 header("Location: index.php");

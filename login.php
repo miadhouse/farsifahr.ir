@@ -1,6 +1,13 @@
 <?php
 require_once __DIR__ . '/incloud/functions.php';
 
+// Check if blocked message cookie is set
+$blocked_msg = '';
+if (isset($_GET['blocked']) && $_GET['blocked'] == 1) {
+    $blocked_msg = $_COOKIE['blocked_msg'] ?? 'حساب کاربری شما مسدود شده است. لطفاً با پشتیبانی تماس بگیرید.';
+    setcookie('blocked_msg', '', time() - 3600, '/');
+}
+
 // Redirect to dashboard if already logged in
 if (is_logged_in()) {
     header('Location: admin/');
@@ -49,6 +56,11 @@ if (empty($_SESSION['csrf_token'])) {
         <h4 class="mb-0"><?= __('login_title', 'ورود به حساب کاربری') ?></h4>
     </div>
     <div class="auth-body">
+        <?php if (!empty($blocked_msg)): ?>
+        <div class="alert alert-danger text-center mb-3">
+            <?= htmlspecialchars($blocked_msg) ?>
+        </div>
+        <?php endif; ?>
         <form id="loginForm">
             <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
             <input type="hidden" name="action" value="login">
@@ -72,7 +84,7 @@ if (empty($_SESSION['csrf_token'])) {
             </div>
 
             <div class="mb-3 form-check">
-                <input type="checkbox" class="form-check-input" name="remember" id="remember">
+                <input type="checkbox" class="form-check-input" name="remember" id="remember" checked>
                 <label class="form-check-label" for="remember"><?= __('remember_me', 'مرا به خاطر بسپار') ?></label>
             </div>
 

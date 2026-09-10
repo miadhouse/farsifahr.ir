@@ -79,6 +79,13 @@ function handle_login($pdo, $ip)
         return;
     }
 
+    // بررسی وضعیت مسدود بودن کاربر
+    if (isset($user['is_blocked']) && $user['is_blocked'] == 1) {
+        $block_msg = !empty($user['block_message']) ? $user['block_message'] : 'حساب کاربری شما مسدود شده است. لطفاً با پشتیبانی تماس بگیرید.';
+        echo json_encode(['success' => false, 'message' => $block_msg]);
+        return;
+    }
+
     // بررسی وضعیت تایید ایمیل
     if ($user['email_verified'] == 0) {
         echo json_encode([
@@ -100,21 +107,14 @@ function handle_login($pdo, $ip)
     // ذخیره سشن در دیتابیس
     save_session($user['id'], $pdo);
 
-    // تنظیم کوکی remember me
-    if ($remember) {
-        $token = generate_token();
-        // در محیط واقعی، این توکن را در دیتابیس ذخیره کنید
-        setcookie('remember_token', $token, time() + (30 * 24 * 60 * 60), '/', '', true, true);
-    }
+    // تنظیم توکن و کوکی ماندگاری لاگین برای همه کاربران (۳ ماهه، حتی بدون زدن تیک مرا به خاطر بسپار)
+    create_remember_token($user['id'], $pdo);
 
     // پاک کردن تلاش‌های ورود
     clear_login_attempts($email, $ip, $pdo);
 
     // ثبت لاگ
     log_user_action($user['id'], $email, 'login', 'success', $pdo);
-    // ارسال اعلان ورود به تلگرام
-    $tg_msg = "🔐 <b>ورود موفق کاربر</b>\n\n👤 نام: {$user['name']}\n📧 ایمیل: {$email}\n🌐 آی‌پی: {$ip}\n🕒 زمان: " . date('Y-m-d H:i:s');
-    send_telegram_admin_message($tg_msg);
 
     echo json_encode([
         'success' => true,

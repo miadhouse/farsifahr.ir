@@ -7,7 +7,12 @@ $exams = $stmt->fetchAll();
 
 <div class="col-12">
     <div class="card">
-        <h5 class="card-header"><?= __('exam_simulator') ?></h5>
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><?= __('exam_simulator') ?></h5>
+            <a href="../exam/exam_simulator.php" class="btn btn-primary">
+                <i class="bx bx-play me-1"></i> امتحان جدید
+            </a>
+        </div>
         <div class="table-responsive text-nowrap">
             <table class="table table-hover">
                 <thead>
@@ -48,7 +53,7 @@ $exams = $stmt->fetchAll();
                                         <a href="../app/index.php?mode=practice&questions=<?= $idsStr ?>" class="btn btn-sm btn-outline-primary">
                                             <i class="bx bx-pencil me-1"></i> تمرین اشتباهات
                                         </a>
-                                        <a href="../app/index.php?mode=review&questions=<?= $idsStr ?>" class="btn btn-sm btn-outline-info">
+                                        <a href="../app/index.php?mode=review&exam_id=<?= $exam['id'] ?>&questions=<?= $idsStr ?>" class="btn btn-sm btn-outline-info">
                                             <i class="bx bx-show me-1"></i> مرور اشتباهات
                                         </a>
                                     <?php else: ?>

@@ -31,7 +31,9 @@ function googleLogin() {
 }
 
 // فرم ورود
-document.getElementById('loginForm').addEventListener('submit', async function(e) {
+const loginForm = document.getElementById('loginForm');
+if (loginForm) {
+    loginForm.addEventListener('submit', async function(e) {
     e.preventDefault();
     
     const formData = new FormData(this);
@@ -162,10 +164,13 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
         submitBtn.disabled = false;
         submitBtn.innerHTML = '<i class="bi bi-box-arrow-in-left"></i> ورود';
     }
-});
+    });
+}
 
 // فرم ثبت نام
-document.getElementById('registerForm').addEventListener('submit', async function(e) {
+const registerForm = document.getElementById('registerForm');
+if (registerForm) {
+    registerForm.addEventListener('submit', async function(e) {
     e.preventDefault();
     
     const formData = new FormData(this);
@@ -237,10 +242,13 @@ document.getElementById('registerForm').addEventListener('submit', async functio
         submitBtn.disabled = false;
         submitBtn.innerHTML = '<i class="bi bi-person-plus"></i> ثبت نام';
     }
-});
+    });
+}
 
 // فرم بازیابی رمز
-document.getElementById('resetForm').addEventListener('submit', async function(e) {
+const resetForm = document.getElementById('resetForm');
+if (resetForm) {
+    resetForm.addEventListener('submit', async function(e) {
     e.preventDefault();
     
     const formData = new FormData(this);
@@ -286,10 +294,13 @@ document.getElementById('resetForm').addEventListener('submit', async function(e
         submitBtn.disabled = false;
         submitBtn.innerHTML = '<i class="bi bi-envelope"></i> ارسال لینک بازیابی';
     }
-});
+    });
+}
 
 // اعتبارسنجی real-time رمز عبور
-document.getElementById('password').addEventListener('input', function() {
+const passwordInput = document.getElementById('password');
+if (passwordInput) {
+    passwordInput.addEventListener('input', function() {
     const password = this.value;
     const feedback = document.createElement('div');
     feedback.className = 'form-text';
@@ -330,4 +341,5 @@ document.getElementById('password').addEventListener('input', function() {
         feedback.textContent = message;
         this.parentElement.appendChild(feedback);
     }
-});
+    });
+}

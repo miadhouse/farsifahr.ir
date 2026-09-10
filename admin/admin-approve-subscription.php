@@ -4,7 +4,6 @@
  * استفاده: approve-subscription.php?id=123
  */
 
-session_start();
 require_once('../config/config.php');
 require_once('../incloud/functions.php');
 require_once('../incloud/subscription-functions.php');

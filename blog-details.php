@@ -25,6 +25,18 @@ function get_replies($parent_id, $pdo) {
 }
 
 $title = $post['title'] . ' | ' . __('site_title', 'farsifahr');
+
+// SEO Optimization: Clean content from style & script blocks to prevent raw CSS in meta description
+$clean_content = preg_replace('/<(style|script)\b[^>]*>(.*?)<\/\1>/is', '', $post['content']);
+// Remove all tags and trim spaces
+$meta_desc = strip_tags($clean_content);
+$meta_desc = preg_replace('/\s+/', ' ', $meta_desc);
+$meta_desc = trim($meta_desc);
+// Slice to 160 characters for Google meta description
+$meta_desc = mb_substr($meta_desc, 0, 160);
+if (mb_strlen(strip_tags($clean_content)) > 160) {
+    $meta_desc .= '...';
+}
 ?>
 <!DOCTYPE html>
 <html lang="<?= get_current_lang() ?>" dir="<?= get_lang_dir() ?>">
@@ -35,8 +47,58 @@ $title = $post['title'] . ' | ' . __('site_title', 'farsifahr');
     <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport">
     
     <title><?= htmlspecialchars($title) ?></title>
-    <meta name="description" content="<?= htmlspecialchars(mb_substr(strip_tags($post['content']), 0, 160)) ?>">
+    <meta name="description" content="<?= htmlspecialchars($meta_desc) ?>">
     
+    <!-- Canonical URL -->
+    <link rel="canonical" href="<?= SITE_URL ?>blog-details.php?id=<?= $post_id ?>">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="<?= SITE_URL ?>blog-details.php?id=<?= $post_id ?>">
+    <meta property="og:title" content="<?= htmlspecialchars($post['title']) ?>">
+    <meta property="og:description" content="<?= htmlspecialchars($meta_desc) ?>">
+    <?php if ($post['image']): ?>
+    <meta property="og:image" content="<?= rtrim(SITE_URL, '/') ?>/panel/storage/<?= $post['image'] ?>">
+    <?php else: ?>
+    <meta property="og:image" content="<?= SITE_URL ?>assets/images/logo/logoAsset%201.svg">
+    <?php endif; ?>
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="<?= SITE_URL ?>blog-details.php?id=<?= $post_id ?>">
+    <meta property="twitter:title" content="<?= htmlspecialchars($post['title']) ?>">
+    <meta property="twitter:description" content="<?= htmlspecialchars($meta_desc) ?>">
+    <?php if ($post['image']): ?>
+    <meta property="twitter:image" content="<?= rtrim(SITE_URL, '/') ?>/panel/storage/<?= $post['image'] ?>">
+    <?php else: ?>
+    <meta property="twitter:image" content="<?= SITE_URL ?>assets/images/logo/logoAsset%201.svg">
+    <?php endif; ?>
+
+    <!-- Schema.org (JSON-LD) for Google Rich Snippets -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "BlogPosting",
+      "headline": "<?= htmlspecialchars($post['title']) ?>",
+      "description": "<?= htmlspecialchars($meta_desc) ?>",
+      "image": "<?= $post['image'] ? rtrim(SITE_URL, '/') . '/panel/storage/' . $post['image'] : SITE_URL . 'assets/images/logo/logoAsset%201.svg' ?>",
+      "author": {
+        "@type": "Person",
+        "name": "<?= htmlspecialchars($post['author_name'] ?: 'مدیر سایت') ?>"
+      },
+      "datePublished": "<?= $post['published_at'] ?: $post['created_at'] ?>",
+      "dateModified": "<?= $post['updated_at'] ?: $post['created_at'] ?>",
+      "publisher": {
+        "@type": "Organization",
+        "name": "FarsiFahr",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "<?= SITE_URL ?>assets/images/favicon.svg"
+        }
+      }
+    }
+    </script>
+
     <link href="assets/images/favicon.svg" rel="shortcut icon" type="image/x-icon">
     <?php if (get_lang_dir() === 'rtl'): ?>
     <link href="assets/css/vendor/bootstrap.min.rtl.css" rel="stylesheet">

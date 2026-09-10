@@ -41,10 +41,33 @@
               </a>
             </li>
             <li>
-              <a class="dropdown-item" href="javascript:void(0);">
-                <i class="bx bx-cog me-2"></i>
-                <span class="align-middle"><?= __('settings') ?></span>
-              </a>
+              <div class="dropdown-item d-flex align-items-center justify-content-between" style="cursor: default;">
+                <div class="d-flex align-items-center">
+                  <i class="bx bx-check-circle me-2"></i>
+                  <span class="align-middle" style="font-size: 0.85rem;">کادر سبز گزینه‌های نادرست</span>
+                </div>
+                <div class="form-check form-switch m-0 p-0 ms-2" style="min-height: auto;">
+                  <input class="form-check-input" type="checkbox" role="switch" id="adminShowIncorrectUnselectedToggle" onchange="toggleAdminIncorrectUnselectedSetting(this.checked)" style="cursor: pointer;">
+                </div>
+              </div>
+              <script>
+                (function() {
+                  document.addEventListener('DOMContentLoaded', function() {
+                    const toggle = document.getElementById('adminShowIncorrectUnselectedToggle');
+                    if (toggle) {
+                      toggle.checked = localStorage.getItem('show_incorrect_unselected') === 'true';
+                    }
+                  });
+                })();
+                function toggleAdminIncorrectUnselectedSetting(checked) {
+                  localStorage.setItem('show_incorrect_unselected', checked ? 'true' : 'false');
+                  if (checked) {
+                    document.documentElement.classList.add('show-incorrect-green');
+                  } else {
+                    document.documentElement.classList.remove('show-incorrect-green');
+                  }
+                }
+              </script>
             </li>
             <li>
               <div class="dropdown-divider"></div>

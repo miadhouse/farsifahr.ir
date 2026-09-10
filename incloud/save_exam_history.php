@@ -24,18 +24,19 @@ $five_point_errors = (int)($_POST['five_point_errors'] ?? 0);
 $passed = (int)($_POST['passed'] ?? 0);
 $wrong_questions = $_POST['wrong_questions'] ?? '[]';
 $all_questions = $_POST['all_questions'] ?? '[]';
+$user_answers = $_POST['user_answers'] ?? null;
 
 try {
     $stmt = $pdo->prepare("
         INSERT INTO exam_history (
             user_id, score, total_questions, correct_count, error_points, 
-            five_point_errors, passed, wrong_questions, all_questions
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            five_point_errors, passed, wrong_questions, all_questions, user_answers
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ");
     
     $stmt->execute([
         $user_id, $score, $total_questions, $correct_count, $error_points,
-        $five_point_errors, $passed, $wrong_questions, $all_questions
+        $five_point_errors, $passed, $wrong_questions, $all_questions, $user_answers
     ]);
 
     echo json_encode(['success' => true, 'id' => $pdo->lastInsertId()]);

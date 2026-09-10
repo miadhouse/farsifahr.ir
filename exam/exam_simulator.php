@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/../incloud/functions.php';
 require_once __DIR__ . '/../incloud/questions.php';
 require_once __DIR__ . '/../incloud/subscription-functions.php';
 require_once __DIR__ . '/../config/config.php';
@@ -560,6 +561,7 @@ $allQuestions = array_merge($grundstoffIds, $zusatzstoffIds);
         let showingAnswers = false;
         let videoUrl = '';
         let examFinished = false;
+        let videoQuestionStates = {};
 
         function getCurrentQuestions() {
             return currentSection === 'grundstoff' ? grundstoffQuestions : zusatzstoffQuestions;
@@ -618,6 +620,14 @@ $allQuestions = array_merge($grundstoffIds, $zusatzstoffIds);
             const questionId = questions[currentQuestionIndex];
 
             resetQuestionState();
+
+            if (videoQuestionStates[questionId]) {
+                const state = videoQuestionStates[questionId];
+                videoViewCount = state.videoViewCount;
+                hasWatchedVideo = state.hasWatchedVideo;
+                showingAnswers = state.showingAnswers;
+            }
+
             updateNavigationState();
 
             const formData = createFormDataWithCSRF({ question_id: questionId });
@@ -786,7 +796,13 @@ $allQuestions = array_merge($grundstoffIds, $zusatzstoffIds);
                 showRegularQuestion(data);
             } else if (isVideoQuestion) {
                 videoUrl = 'https://www.theorie24.de/live_images/_current_ws_2024-10-01_2025-04-01/videos/' + fileName;
-                showVideoQuestion(data, fileNameWithoutExt);
+                if (showingAnswers) {
+                    showRegularQuestion(data);
+                    const imageUrl = 'https://t24.theorie24.de/2025-01-v400/data/img/images/' + fileNameWithoutExt + '_anfang.jpg';
+                    document.getElementById("media").innerHTML = '<div class="video-placeholder"><img src="' + imageUrl + '" class="w-100"></div>';
+                } else {
+                    showVideoQuestion(data, fileNameWithoutExt);
+                }
             } else {
                 document.getElementById("media").innerHTML = '';
                 showRegularQuestion(data);
@@ -850,11 +866,26 @@ $allQuestions = array_merge($grundstoffIds, $zusatzstoffIds);
                 startBtn.style.display = "none";
                 zurAufgabeBtn.style.display = "none";
             }
-        } function playVideo() {
+        } 
+
+        function saveVideoQuestionState() {
+            const questions = getCurrentQuestions();
+            const questionId = questions[currentQuestionIndex];
+            if (questionId) {
+                videoQuestionStates[questionId] = {
+                    videoViewCount: videoViewCount,
+                    hasWatchedVideo: hasWatchedVideo,
+                    showingAnswers: showingAnswers
+                };
+            }
+        }
+
+        function playVideo() {
             if (videoViewCount >= maxVideoViews || showingAnswers) return;
 
             videoViewCount++;
             hasWatchedVideo = true;
+            saveVideoQuestionState();
 
             if (currentQuestionData) {
                 const fileName = currentQuestionData.question.picture || '';
@@ -878,6 +909,7 @@ $allQuestions = array_merge($grundstoffIds, $zusatzstoffIds);
         function showAnswers() {
             if (!currentQuestionData) return;
             showingAnswers = true;
+            saveVideoQuestionState();
             document.getElementById("video-controls").style.display = "none";
             document.getElementById("answers").style.display = "block";
             document.getElementById("text").innerText = currentQuestionData.question.text;
@@ -1142,7 +1174,8 @@ $allQuestions = array_merge($grundstoffIds, $zusatzstoffIds);
                 const questionId = questions[i];
                 const btn = document.createElement('button');
                 btn.className = 'btn question-btn';
-                btn.textContent = i + 1;
+                const displayIndex = currentSection === 'zusatzstoff' ? (i + 1 + grundstoffQuestions.length) : (i + 1);
+                btn.textContent = displayIndex;
                 btn.onclick = () => goToQuestion(i);
 
                 if (i === currentQuestionIndex) {
@@ -1263,7 +1296,8 @@ $allQuestions = array_merge($grundstoffIds, $zusatzstoffIds);
                 five_point_errors: fivePointErrors,
                 passed: passed,
                 wrong_questions: JSON.stringify(wrongQuestionsIds),
-                all_questions: JSON.stringify(allQuestionsIds)
+                all_questions: JSON.stringify(allQuestionsIds),
+                user_answers: JSON.stringify(userAnswers)
             });
 
             fetch("../incloud/save_exam_history.php", {

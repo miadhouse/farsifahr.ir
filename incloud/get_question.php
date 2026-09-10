@@ -76,6 +76,13 @@ try {
         ]);
         exit;
     }
+
+    // دریافت ویدیو آموزشی مرتبط در صورت وجود
+    $stmtVideo = $pdo->prepare("SELECT video_url, title FROM question_videos WHERE question_id = ?");
+    $stmtVideo->execute([$questionId]);
+    $video = $stmtVideo->fetch(PDO::FETCH_ASSOC);
+    $question['video_url'] = $video ? $video['video_url'] : null;
+    $question['video_title'] = $video ? $video['title'] : null;
     
     if ($userLanguage === 'EN') {
         if (!empty($question['en_text'])) {
@@ -114,6 +121,7 @@ try {
         'success' => true,
         'question' => $question,
         'answers' => getAnswers($pdo, $questionId, $userLanguage),
+        'keywords' => getKeywords($pdo, $questionId),
         'message' => 'سوال با موفقیت بارگذاری شد',
         'user_info' => [
             'is_vip' => is_user_vip($user_id, $pdo),
@@ -134,6 +142,18 @@ try {
         'success' => false,
         'message' => 'خطای سیستمی رخ داده است'
     ]);
+}
+
+function getKeywords(PDO $pdo, $questionId)
+{
+    try {
+        $stmt = $pdo->prepare("SELECT keyword, translation FROM question_keywords WHERE question_id = ?");
+        $stmt->execute([$questionId]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        error_log("Database error getting keywords: " . $e->getMessage());
+        return [];
+    }
 }
 
 function getAnswers(PDO $pdo, $questionId, $userLanguage = 'DE')
