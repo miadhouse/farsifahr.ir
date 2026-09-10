@@ -1818,6 +1818,8 @@ html[data-bs-theme="dark"] .keyword-translation-inline {
         let currentTranslation = '';
         let currentWord = '';
         let currentWordContext = ""; // کانتکست کلمه برای ترجمه دقیق‌تر
+        let currentWordInCollection = false;
+        let isSavingTranslation = false;
 
         let vocabularyState = {
             translated: false,
@@ -1972,6 +1974,34 @@ html[data-bs-theme="dark"] .keyword-translation-inline {
                     // closeVocabSheet(); // فعلا غیرفعال برای جلوگیری از بستن ناگهانی
                 }
             }, true);
+
+            // اتصال رویدادهای ویرایش ترجمه
+            const inputEl = document.getElementById('sheet-translated-word');
+            if (inputEl) {
+                inputEl.addEventListener('input', function () {
+                    updateSaveBtnDisplay();
+                });
+
+                inputEl.addEventListener('keydown', function (e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        inputEl.blur();
+                    }
+                });
+
+                inputEl.addEventListener('blur', function () {
+                    const edited = inputEl.textContent.trim();
+                    if (edited && edited !== currentTranslation) {
+                        saveEditedWord(edited);
+                    }
+                });
+
+                inputEl.addEventListener('paste', function (e) {
+                    e.preventDefault();
+                    const text = (e.clipboardData || window.clipboardData).getData('text/plain');
+                    document.execCommand('insertText', false, text);
+                });
+            }
         }
 
         function addTextSelectionListeners(element) {
@@ -2067,9 +2097,13 @@ html[data-bs-theme="dark"] .keyword-translation-inline {
         }
 
         function showVocabSheet(word, context = "") {
-            selectedText = word;
-            currentWord = word;
+            const cleanWord = (word || '').trim().replace(/^[\s.,?!;:\"'()\[\]{}«»]+|[\s.,?!;:\"'()\[\]{}«»]+$/g, '');
+            selectedText = cleanWord;
+            currentWord = cleanWord;
             currentWordContext = context;
+            currentTranslation = '';
+            currentWordInCollection = false;
+
             const originalWordEl = document.getElementById('sheet-original-word');
             const translationBoxEl = document.getElementById('sheet-translation-box');
             const saveBtnEl = document.getElementById('sheet-save-btn');
@@ -2077,21 +2111,28 @@ html[data-bs-theme="dark"] .keyword-translation-inline {
             const keywordBtnEl = document.getElementById('sheet-keyword-btn');
             const sheetEl = document.getElementById('vocab-sheet');
             const overlayEl = document.getElementById('sheet-overlay');
+            const inputEl = document.getElementById('sheet-translated-word');
+            const editHint = translationBoxEl ? translationBoxEl.querySelector('.edit-hint') : null;
 
-            if (originalWordEl) originalWordEl.textContent = word;
+            if (originalWordEl) originalWordEl.textContent = cleanWord;
+            if (inputEl) inputEl.textContent = '';
             if (translationBoxEl) translationBoxEl.classList.remove('active');
-            if (saveBtnEl) saveBtnEl.style.display = 'none';
+            if (saveBtnEl) {
+                saveBtnEl.style.display = 'none';
+                saveBtnEl.disabled = false;
+            }
             if (keywordBtnEl) keywordBtnEl.style.display = 'none';
             if (translateBtnEl) translateBtnEl.style.display = 'inline-block';
+            if (editHint) editHint.innerHTML = '<i class="fas fa-edit"></i> قابل ویرایش';
             if (sheetEl) sheetEl.classList.add('active');
             if (overlayEl) overlayEl.style.display = 'block';
 
             // ابتدا بررسی وجود ترجمه در دیتابیس؛ در صورت وجود بلافاصله نمایش داده می‌شود
-            checkDatabaseTranslation(word);
+            checkDatabaseTranslation(cleanWord);
         }
 
         function checkDatabaseTranslation(word) {
-            const cleanWord = word.trim().replace(/^[\s.,?!;:\"'()\[\]{}«»]+|[\s.,?!;:\"'()\[\]{}«»]+$/g, '');
+            const cleanWord = (word || '').trim().replace(/^[\s.,?!;:\"'()\[\]{}«»]+|[\s.,?!;:\"'()\[\]{}«»]+$/g, '');
             if (!cleanWord) return;
 
             const formData = createFormDataWithCSRF({ word: cleanWord });
@@ -2102,14 +2143,20 @@ html[data-bs-theme="dark"] .keyword-translation-inline {
             })
             .then(r => r.json())
             .then(data => {
-                if (data.success && data.translation && currentWord === word) {
-                    displaySheetTranslation(word, data.translation, data.in_user_collection);
+                if (data.success && data.translation && currentWord === cleanWord) {
+                    displaySheetTranslation(cleanWord, data.translation, data.in_user_collection);
                 }
             })
             .catch(() => {});
         }
 
         function closeVocabSheet() {
+            const input = document.getElementById('sheet-translated-word');
+            const edited = input ? input.textContent.trim() : '';
+            if (edited && edited !== currentTranslation && !isSavingTranslation) {
+                saveEditedWord(edited);
+            }
+
             const sheetEl = document.getElementById('vocab-sheet');
             const overlayEl = document.getElementById('sheet-overlay');
             
@@ -2124,8 +2171,7 @@ html[data-bs-theme="dark"] .keyword-translation-inline {
         }
 
         function translateWord() {
-            const wordEl = document.getElementById('sheet-original-word');
-            const word = wordEl ? wordEl.textContent.trim() : null;
+            const word = currentWord;
             
             if (!word) {
                 showVocabToast('کلمه‌ای انتخاب نشده است', 'error');
@@ -2168,27 +2214,18 @@ html[data-bs-theme="dark"] .keyword-translation-inline {
 
         function displaySheetTranslation(original, translation, inCollection) {
             currentTranslation = translation;
+            currentWordInCollection = !!inCollection;
             const box = document.getElementById('sheet-translation-box');
             const input = document.getElementById('sheet-translated-word');
-            const saveBtn = document.getElementById('sheet-save-btn');
             const translateBtn = document.getElementById('sheet-translate-btn');
+            const editHint = box ? box.querySelector('.edit-hint') : null;
 
             if (input) input.textContent = translation;
             if (box) box.classList.add('active');
             if (translateBtn) translateBtn.style.display = 'none';
+            if (editHint) editHint.innerHTML = '<i class="fas fa-edit"></i> قابل ویرایش';
             
-            if (saveBtn) {
-                saveBtn.style.display = 'inline-block';
-                if (inCollection) {
-                    saveBtn.innerHTML = '<i class="fas fa-check"></i> در کلکشن موجود است';
-                    saveBtn.disabled = true;
-                    saveBtn.className = 'btn btn-outline-success btn-lg px-4';
-                } else {
-                    saveBtn.innerHTML = '<i class="fas fa-plus"></i> ذخیره کلمه';
-                    saveBtn.disabled = false;
-                    saveBtn.className = 'btn btn-warning btn-lg px-4';
-                }
-            }
+            updateSaveBtnDisplay();
 
             // Show keyword button for admins
             const keywordBtn = document.getElementById('sheet-keyword-btn');
@@ -2197,9 +2234,112 @@ html[data-bs-theme="dark"] .keyword-translation-inline {
             }
         }
 
+        function updateSaveBtnDisplay() {
+            const saveBtn = document.getElementById('sheet-save-btn');
+            const input = document.getElementById('sheet-translated-word');
+            if (!saveBtn) return;
+
+            saveBtn.style.display = 'inline-block';
+            const editedText = input ? input.textContent.trim() : '';
+            const hasChanged = (editedText && editedText !== currentTranslation);
+
+            if (hasChanged) {
+                saveBtn.innerHTML = '<i class="fas fa-save"></i> ذخیره ویرایش';
+                saveBtn.disabled = false;
+                saveBtn.className = 'btn btn-primary btn-lg px-4';
+            } else if (currentWordInCollection) {
+                saveBtn.innerHTML = '<i class="fas fa-check"></i> در کلکشن موجود است';
+                saveBtn.disabled = true;
+                saveBtn.className = 'btn btn-outline-success btn-lg px-4';
+            } else {
+                saveBtn.innerHTML = '<i class="fas fa-plus"></i> ذخیره کلمه';
+                saveBtn.disabled = false;
+                saveBtn.className = 'btn btn-warning btn-lg px-4';
+            }
+        }
+
+        function saveEditedWord(newTranslation, callback) {
+            if (!currentWord) {
+                if (typeof callback === 'function') callback();
+                return;
+            }
+            const input = document.getElementById('sheet-translated-word');
+            const cleanTranslation = (newTranslation !== undefined ? newTranslation : (input ? input.textContent : '')).trim();
+            if (!cleanTranslation || cleanTranslation === currentTranslation || isSavingTranslation) {
+                if (typeof callback === 'function') callback();
+                return;
+            }
+
+            isSavingTranslation = true;
+            const editHint = document.querySelector('#sheet-translation-box .edit-hint');
+            const originalHint = editHint ? editHint.innerHTML : '';
+            if (editHint) {
+                editHint.innerHTML = '<i class="fas fa-spinner fa-spin text-primary"></i> در حال ذخیره ویرایش...';
+            }
+
+            const formData = createFormDataWithCSRF({
+                word: currentWord,
+                translation: cleanTranslation
+            });
+
+            fetch('../incloud/update_word_translation.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: formData
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    currentTranslation = cleanTranslation;
+                    if (editHint) {
+                        editHint.innerHTML = '<i class="fas fa-check text-success"></i> <span class="text-success">ویرایش ذخیره شد</span>';
+                        setTimeout(() => {
+                            if (editHint) editHint.innerHTML = '<i class="fas fa-edit"></i> قابل ویرایش';
+                        }, 2500);
+                    }
+                    updateSaveBtnDisplay();
+                    showVocabToast('ویرایش ترجمه با موفقیت ذخیره شد ✅', 'success');
+                    if (typeof callback === 'function') callback();
+                } else {
+                    if (editHint) editHint.innerHTML = originalHint;
+                    showVocabToast(data.message || 'خطا در ذخیره ویرایش', 'error');
+                }
+            })
+            .catch(err => {
+                console.error('Update Translation Error:', err);
+                if (editHint) editHint.innerHTML = originalHint;
+                showVocabToast('خطا در ارتباط جهت ذخیره ویرایش', 'error');
+            })
+            .finally(() => {
+                isSavingTranslation = false;
+            });
+        }
+
         function saveWord() {
-            const edited = document.getElementById('sheet-translated-word').textContent.trim();
+            const input = document.getElementById('sheet-translated-word');
+            const edited = input ? input.textContent.trim() : '';
             if (!edited) return;
+
+            if (isSavingTranslation) return;
+
+            // اگر کلمه قبلاً در کلکشن است و فقط ترجمه‌اش ویرایش شده
+            if (currentWordInCollection) {
+                if (edited !== currentTranslation) {
+                    const btn = document.getElementById('sheet-save-btn');
+                    const original = btn.innerHTML;
+                    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                    btn.disabled = true;
+
+                    saveEditedWord(edited, function () {
+                        btn.innerHTML = '<i class="fas fa-check"></i> ذخیره شد';
+                        btn.className = 'btn btn-success btn-lg px-4';
+                        setTimeout(closeVocabSheet, 1000);
+                    });
+                }
+                return;
+            }
+
+            // اگر کلمه در کلکشن نیست (چه ترجمه ویرایش شده باشد چه نشده باشد)
             const btn = document.getElementById('sheet-save-btn');
             const original = btn.innerHTML;
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
@@ -2219,14 +2359,21 @@ html[data-bs-theme="dark"] .keyword-translation-inline {
             .then(r => r.json())
             .then(data => {
                 if (data.success) {
+                    currentTranslation = edited;
+                    currentWordInCollection = true;
                     btn.innerHTML = '<i class="fas fa-check"></i> ذخیره شد';
                     btn.className = 'btn btn-success btn-lg px-4';
                     setTimeout(closeVocabSheet, 1200);
                 } else {
                     btn.innerHTML = original;
                     btn.disabled = false;
-                    showVocabToast(data.error, 'error');
+                    showVocabToast(data.error || 'خطا در ذخیره کلمه', 'error');
                 }
+            })
+            .catch(err => {
+                btn.innerHTML = original;
+                btn.disabled = false;
+                showVocabToast('خطا در ارتباط با سرور', 'error');
             });
         }
 

@@ -35,16 +35,10 @@ if (
 }
 
 $word = trim($_POST['word']);
+$word = trim($word, " \t\n\r\0\x0B.,?!;:\"'()[]{}«»");
 $translation = trim($_POST['translation']);
 $question_id = isset($_POST['question_id']) && !empty($_POST['question_id']) ? (int) $_POST['question_id'] : null;
 $category_id = isset($_POST['category_id']) && !empty($_POST['category_id']) ? (int) $_POST['category_id'] : null;
-
-// بررسی اینکه فقط یک کلمه باشد
-$words = preg_split('/\s+/', $word);
-if (count($words) > 1) {
-    echo json_encode(['success' => false, 'error' => 'فقط یک کلمه قابل ذخیره است']);
-    exit;
-}
 
 // بررسی طول کلمه
 if (mb_strlen($word, 'UTF-8') < 2 || mb_strlen($word, 'UTF-8') > 100) {
