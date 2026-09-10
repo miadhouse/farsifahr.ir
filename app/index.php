@@ -1463,6 +1463,7 @@ html[data-bs-theme="dark"] .keyword-translation-inline {
 </head>
 
 <body style="min-height: 100vh; background-color: #d3f5da;" class="<?= $mode === 'practice' ? 'practice-mode' : '' ?>">
+    <?php render_announcements('practice'); ?>
     <!-- Glassmorphic 3D Sidebar -->
     <div class="glass-sidebar">
         <button class="sidebar-btn" id="translateBtn" data-title="ترجمه" onclick="toggleTranslation()">

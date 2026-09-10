@@ -839,6 +839,7 @@ function render_announcements($page_name)
             animation: announcementPopupScale 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
         }
         
+        html[data-bs-theme="dark"] .announcement-modal-card,
         .dark-style .announcement-modal-card {
             background: #232a3b;
             color: #d8deea;
@@ -856,9 +857,11 @@ function render_announcements($page_name)
             align-items: center;
         }
         
+        html[data-bs-theme="dark"] .announcement-modal-header,
         .dark-style .announcement-modal-header {
             background: #1c222f;
             border-bottom-color: #36445d;
+            color: #ffffff;
         }
         
         .announcement-modal-body {
