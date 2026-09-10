@@ -5148,6 +5148,39 @@ function sendHelpRequest() {
                 }
             }
         }
+
+        // نمایش پیام راهنما به کاربر
+        if (shuffleAnswersActive) {
+            Swal.fire({
+                icon: 'success',
+                title: 'چینش تصادفی گزینه‌ها روشن شد',
+                html: `
+                    <div style="direction: rtl; text-align: right; font-size: 0.95rem; line-height: 1.8;">
+                        <p class="mb-2">پاسخ‌ها هر بار که وارد این سوال می‌شوید موقعیتشان متفاوت است.</p>
+                        <p class="mb-0 text-muted" style="font-size: 0.88rem;">
+                            چون در امتحان تئوری ممکن است جای پاسخ‌ها با موقع مطالعه متفاوت باشد، پیشنهاد می‌کنیم این گزینه همیشه روشن باشد.
+                        </p>
+                    </div>
+                `,
+                confirmButtonText: 'متوجه شدم',
+                confirmButtonColor: '#28a745'
+            });
+        } else {
+            Swal.fire({
+                icon: 'info',
+                title: 'چینش تصادفی گزینه‌ها خاموش شد',
+                html: `
+                    <div style="direction: rtl; text-align: right; font-size: 0.95rem; line-height: 1.8;">
+                        <p class="mb-2">پاسخ‌ها همیشه در یک موقعیت ثابت قرار دارند.</p>
+                        <p class="mb-0 text-muted" style="font-size: 0.88rem;">
+                            چون در امتحان تئوری ممکن است جای پاسخ‌ها با موقع مطالعه متفاوت باشد، پیشنهاد می‌کنیم این گزینه همیشه روشن باشد.
+                        </p>
+                    </div>
+                `,
+                confirmButtonText: 'متوجه شدم',
+                confirmButtonColor: '#5a8dee'
+            });
+        }
     }
 
     // Theme Toggle Functionality
