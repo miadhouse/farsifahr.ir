@@ -1,6 +1,6 @@
 <?php
 // config.php
-define('SESSION_LIFETIME', 7776000); // 90 روز (۳ ماه) به ثانیه
+define('SESSION_LIFETIME', 5184000); // 90 روز (۳ ماه) به ثانیه
 ini_set('session.gc_maxlifetime', 7776000);
 ini_set('session.cookie_lifetime', 7776000);
 
@@ -58,7 +58,7 @@ define('GEMINI_API_KEY', getenv('GEMINI_API_KEY') ?: '');
 define('MAX_LOGIN_ATTEMPTS', 5);
 define('LOGIN_ATTEMPT_TIMEOUT', 15); // دقیقه
 define('PASSWORD_RESET_EXPIRY', 3600); // ثانیه
-define('EURO_TO_TOMAN_RATE', 200000); // نرخ تبدیل یورو به تومان پیش‌فرض
+define('EURO_TO_TOMAN_RATE', 250000); // نرخ تبدیل یورو به تومان پیش‌فرض
 
 // لود کردن تنظیمات داینامیک از فایل JSON
 $settingsFile = __DIR__ . '/settings.json';

@@ -1490,7 +1490,12 @@ html[data-bs-theme="dark"] .keyword-translation-inline {
     <div id="vocab-sheet" class="vocab-bottom-sheet">
         <div class="sheet-handle"></div>
         <div class="vocab-sheet-content">
-            <span id="sheet-original-word" class="vocab-word-display"></span>
+            <div class="d-flex align-items-center justify-content-center gap-2 mb-2">
+                <span id="sheet-original-word" class="vocab-word-display mb-0"></span>
+                <button type="button" class="btn btn-outline-primary btn-sm rounded-circle p-0" id="sheet-speak-btn" onclick="speakVocabSheetWord()" title="پخش تلفظ صوتی" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                    <i class="fas fa-volume-up"></i>
+                </button>
+            </div>
             
             <div id="sheet-translation-box" class="vocab-translation-display">
                 <div contenteditable="true" id="sheet-translated-word" class="translation-editable"></div>
@@ -2345,10 +2350,12 @@ html[data-bs-theme="dark"] .keyword-translation-inline {
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
             btn.disabled = true;
 
+            const detectedLang = (typeof displayLanguage !== 'undefined' && displayLanguage === 'en') ? 'en' : 'de';
             const formData = createFormDataWithCSRF({
                 word: currentWord,
                 translation: edited,
-                question_id: currentQuestionId
+                question_id: currentQuestionId,
+                language: detectedLang
             });
 
             fetch('../incloud/save_vocabulary.php', {
@@ -2375,6 +2382,36 @@ html[data-bs-theme="dark"] .keyword-translation-inline {
                 btn.disabled = false;
                 showVocabToast('خطا در ارتباط با سرور', 'error');
             });
+        }
+
+        function speakVocabSheetWord() {
+            const word = currentWord || (document.getElementById('sheet-original-word')?.textContent || '').trim();
+            if (!word) return;
+            if (!('speechSynthesis' in window)) return;
+
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(word);
+            let lang = 'de-DE';
+            if (typeof displayLanguage !== 'undefined' && displayLanguage === 'en' && !/[äöüßÄÖÜ]/.test(word)) {
+                lang = 'en-US';
+            }
+            utterance.lang = lang;
+            utterance.rate = 0.88;
+
+            const voices = window.speechSynthesis.getVoices();
+            if (voices && voices.length > 0) {
+                const prefix = (lang === 'en-US') ? 'en' : 'de';
+                const matched = voices.find(v => v.lang && v.lang.toLowerCase().startsWith(prefix));
+                if (matched) utterance.voice = matched;
+            }
+
+            const btn = document.getElementById('sheet-speak-btn');
+            if (btn) btn.classList.add('btn-primary', 'text-white');
+
+            utterance.onend = () => { if (btn) btn.classList.remove('btn-primary', 'text-white'); };
+            utterance.onerror = () => { if (btn) btn.classList.remove('btn-primary', 'text-white'); };
+
+            window.speechSynthesis.speak(utterance);
         }
 
         function updateVocabularyContext(questionId, categoryId = null) {

@@ -93,19 +93,33 @@ function handle_vocabulary_words($pdo, $userId) {
     }
 
     try {
-        $pattern = "%," . $categoryId . ",%";
-        $stmt = $pdo->prepare("
-            SELECT DISTINCT
-                vw.id, vw.word, vw.translation, uv.question_id, q.text as question_text
-            FROM user_vocabulary uv
-            INNER JOIN vocabulary_words vw ON uv.word_id = vw.id
-            INNER JOIN questions q ON uv.question_id = q.id
-            WHERE uv.user_id = ?
-            AND q.category_id LIKE ?
-            ORDER BY uv.created_at DESC
-        ");
-        $stmt->execute([$userId, $pattern]);
-        $words = $stmt->fetchAll();
+        if ($categoryId === 'all' || $categoryId === '0') {
+            $stmt = $pdo->prepare("
+                SELECT DISTINCT
+                    vw.id, vw.word, vw.translation, COALESCE(uv.language, vw.language, 'de') as language, uv.question_id, q.text as question_text
+                FROM user_vocabulary uv
+                INNER JOIN vocabulary_words vw ON uv.word_id = vw.id
+                LEFT JOIN questions q ON uv.question_id = q.id
+                WHERE uv.user_id = ?
+                ORDER BY uv.created_at DESC
+            ");
+            $stmt->execute([$userId]);
+            $words = $stmt->fetchAll();
+        } else {
+            $pattern = "%," . $categoryId . ",%";
+            $stmt = $pdo->prepare("
+                SELECT DISTINCT
+                    vw.id, vw.word, vw.translation, COALESCE(uv.language, vw.language, 'de') as language, uv.question_id, q.text as question_text
+                FROM user_vocabulary uv
+                INNER JOIN vocabulary_words vw ON uv.word_id = vw.id
+                INNER JOIN questions q ON uv.question_id = q.id
+                WHERE uv.user_id = ?
+                AND q.category_id LIKE ?
+                ORDER BY uv.created_at DESC
+            ");
+            $stmt->execute([$userId, $pattern]);
+            $words = $stmt->fetchAll();
+        }
 
         Response::success($words);
     } catch (Exception $e) {
@@ -123,6 +137,7 @@ function handle_save_vocabulary($pdo, $userId) {
     $translation = trim($input['translation'] ?? '');
     $questionId = $input['question_id'] ?? null;
     $categoryId = $input['category_id'] ?? null;
+    $language = isset($input['language']) ? strtolower(trim($input['language'])) : '';
 
     if (empty($word) || empty($translation)) {
         Response::error('Word and translation are required');
@@ -131,13 +146,23 @@ function handle_save_vocabulary($pdo, $userId) {
     try {
         $pdo->beginTransaction();
 
-        $stmt = $pdo->prepare("SELECT id, translation FROM vocabulary_words WHERE word = ?");
+        if (!in_array($language, ['de', 'en'])) {
+            $stmtUserLang = $pdo->prepare("SELECT language FROM user_config WHERE user_id = ?");
+            $stmtUserLang->execute([$userId]);
+            $userLangRow = $stmtUserLang->fetch();
+            $language = ($userLangRow && strtolower($userLangRow['language']) === 'en') ? 'en' : 'de';
+        }
+        if (preg_match('/[äöüßÄÖÜ]/u', $word)) {
+            $language = 'de';
+        }
+
+        $stmt = $pdo->prepare("SELECT id, translation, language FROM vocabulary_words WHERE word = ?");
         $stmt->execute([$word]);
         $word_row = $stmt->fetch();
 
         if (!$word_row) {
-            $stmt = $pdo->prepare("INSERT INTO vocabulary_words (word, translation) VALUES (?, ?)");
-            $stmt->execute([$word, $translation]);
+            $stmt = $pdo->prepare("INSERT INTO vocabulary_words (word, translation, language) VALUES (?, ?, ?)");
+            $stmt->execute([$word, $translation, $language]);
             $word_id = $pdo->lastInsertId();
         } else {
             $word_id = $word_row['id'];
@@ -152,11 +177,11 @@ function handle_save_vocabulary($pdo, $userId) {
         $user_vocab_row = $stmt->fetch();
 
         if ($user_vocab_row) {
-            $stmt = $pdo->prepare("UPDATE user_vocabulary SET question_id = ?, category_id = ?, updated_at = NOW() WHERE id = ?");
-            $stmt->execute([$questionId, $categoryId, $user_vocab_row['id']]);
+            $stmt = $pdo->prepare("UPDATE user_vocabulary SET question_id = ?, category_id = ?, language = ?, updated_at = NOW() WHERE id = ?");
+            $stmt->execute([$questionId, $categoryId, $language, $user_vocab_row['id']]);
         } else {
-            $stmt = $pdo->prepare("INSERT INTO user_vocabulary (word_id, user_id, question_id, category_id) VALUES (?, ?, ?, ?)");
-            $stmt->execute([$word_id, $userId, $questionId, $categoryId]);
+            $stmt = $pdo->prepare("INSERT INTO user_vocabulary (word_id, user_id, question_id, category_id, language) VALUES (?, ?, ?, ?, ?)");
+            $stmt->execute([$word_id, $userId, $questionId, $categoryId, $language]);
         }
 
         $pdo->commit();

@@ -39,7 +39,8 @@ try {
     if (empty($questionData)) {
         echo json_encode([
             'success' => true,
-            'categories' => []
+            'categories' => [],
+            'total_words' => 0
         ]);
         exit;
     }
@@ -100,9 +101,13 @@ try {
         $category['word_count'] = count($categoryWords[$category['id']] ?? []);
     }
 
+    // محاسبه کل کلمات یونیک از تمام دسته‌ها
+    $totalWordsCount = count(array_unique(array_column($questionData, 'word_id')));
+
     echo json_encode([
         'success' => true,
-        'categories' => $categories
+        'categories' => $categories,
+        'total_words' => $totalWordsCount
     ]);
 
 } catch (PDOException $e) {

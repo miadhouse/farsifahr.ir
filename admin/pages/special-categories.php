@@ -1,5 +1,16 @@
 <?php
+require_once __DIR__ . '/../../incloud/questions.php';
+
 $user_id = $_SESSION['user_id'];
+
+// دریافت exam_date_type کاربر جهت فیلتر سوالات در دسترس
+$examDateType = getUserExamDateType($pdo, $user_id);
+$availableCondition = "";
+if ($examDateType === 'before') {
+    $availableCondition = " AND (q.available = 0 OR q.available = 1)";
+} elseif ($examDateType === 'after') {
+    $availableCondition = " AND (q.available = 0 OR q.available = 2)";
+}
 
 // Calculate special categories totals
 $stmt = $pdo->prepare("SELECT COUNT(*) FROM question_bookmarks WHERE user_id = ?");
@@ -15,10 +26,18 @@ $video_count = $stmt->fetchColumn();
 $stmt = $pdo->query("SELECT COUNT(*) FROM questions WHERE picture IS NOT NULL AND picture != '' AND picture NOT LIKE '%.m4v'");
 $picture_count = $stmt->fetchColumn();
 
+$stmt = $pdo->prepare("SELECT COUNT(*) FROM user_question_stats uqs JOIN questions q ON uqs.question_id = q.id WHERE uqs.user_id = ? AND uqs.correct = 1 AND uqs.incorrect = 1" . $availableCondition);
+$stmt->execute([$user_id]);
+$half_ready_count = (int)$stmt->fetchColumn();
+
+$stmt = $pdo->prepare("SELECT COUNT(*) FROM user_question_stats uqs JOIN questions q ON uqs.question_id = q.id WHERE uqs.user_id = ? AND uqs.incorrect >= 1 AND uqs.correct = 0" . $availableCondition);
+$stmt->execute([$user_id]);
+$not_ready_count = (int)$stmt->fetchColumn();
+
 $stmt = $pdo->query("SELECT id, name FROM question_tags ORDER BY name ASC");
 $tags = $stmt->fetchAll(PDO::FETCH_ASSOC);
 $tag_counts = [];
-$total_special = $bookmarks_count + $points5_count + $video_count + $picture_count;
+$total_special = $bookmarks_count + $points5_count + $video_count + $picture_count + $half_ready_count + $not_ready_count;
 foreach ($tags as $tag) {
     $stmtCount = $pdo->prepare("SELECT COUNT(*) FROM question_question_tag WHERE question_tag_id = ?");
     $stmtCount->execute([$tag['id']]);
@@ -109,6 +128,46 @@ foreach ($tags as $tag) {
                                     </div>
                                     <div class="category-badges">
                                         <span class="question-badge"><?php echo $picture_count; ?></span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="category-container">
+                                <div class="category-item special-category-item"
+                                    data-special-type="halfready"
+                                    data-category-title="۵۰ درصد آماده هستیم"
+                                    data-question-count="<?php echo $half_ready_count; ?>">
+                                    <div class="category-text" style="white-space: normal;">
+                                        <div>
+                                            <i class="fas fa-adjust text-warning me-2"></i>
+                                            ۵۰ درصد آماده هستیم
+                                        </div>
+                                        <div class="small text-muted" style="font-size: 0.75rem; margin-right: 1.5rem; margin-top: 3px;">
+                                            ۱ بار پاسخ درست و ۱ بار پاسخ نادرست
+                                        </div>
+                                    </div>
+                                    <div class="category-badges">
+                                        <span class="question-badge"><?php echo $half_ready_count; ?></span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="category-container">
+                                <div class="category-item special-category-item"
+                                    data-special-type="notready"
+                                    data-category-title="اصلا آماده نیستیم"
+                                    data-question-count="<?php echo $not_ready_count; ?>">
+                                    <div class="category-text" style="white-space: normal;">
+                                        <div>
+                                            <i class="fas fa-times-circle text-danger me-2"></i>
+                                            اصلا آماده نیستیم
+                                        </div>
+                                        <div class="small text-muted" style="font-size: 0.75rem; margin-right: 1.5rem; margin-top: 3px;">
+                                            ۱ یا ۲ بار پاسخ نادرست (بدون پاسخ درست)
+                                        </div>
+                                    </div>
+                                    <div class="category-badges">
+                                        <span class="question-badge"><?php echo $not_ready_count; ?></span>
                                     </div>
                                 </div>
                             </div>
@@ -334,9 +393,16 @@ foreach ($tags as $tag) {
                     const selectedItem = Array.from(document.querySelectorAll('.special-category-item')).find(item => {
                         let itemId = item.getAttribute('data-special-type');
                         if(item.getAttribute('data-tag-id')) itemId += '_' + item.getAttribute('data-tag-id');
-                        return itemId === selectedCategoryId;
+                        return itemId === selectedCategoryId ||
+                               (selectedCategoryId === 'not_ready' && itemId === 'notready') ||
+                               (selectedCategoryId === 'half_ready' && itemId === 'halfready');
                     });
-                    if(selectedItem) selectedItem.classList.add('selected');
+                    if(selectedItem) {
+                        selectedItem.classList.add('selected');
+                        let itemId = selectedItem.getAttribute('data-special-type');
+                        if(selectedItem.getAttribute('data-tag-id')) itemId += '_' + selectedItem.getAttribute('data-tag-id');
+                        selectedCategoryId = itemId;
+                    }
 
                     updateFooterDisplay();
                 } catch (e) {
@@ -440,9 +506,18 @@ foreach ($tags as $tag) {
 
             let url = '';
             if (selectedType === 'special') {
-                const parts = String(selectedCategoryId).split('_');
-                url = `pages/load_questions.php?special_type=${parts[0]}`;
-                if (parts.length > 1) url += `&tag_id=${parts[1]}`;
+                if (String(selectedCategoryId).startsWith('tag_')) {
+                    const tagId = String(selectedCategoryId).substring(4);
+                    url = `pages/load_questions.php?special_type=tag&tag_id=${tagId}`;
+                } else if (selectedCategoryId === 'not_ready' || selectedCategoryId === 'notready') {
+                    url = `pages/load_questions.php?special_type=notready`;
+                } else if (selectedCategoryId === 'half_ready' || selectedCategoryId === 'halfready') {
+                    url = `pages/load_questions.php?special_type=halfready`;
+                } else {
+                    const parts = String(selectedCategoryId).split('_');
+                    url = `pages/load_questions.php?special_type=${parts[0]}`;
+                    if (parts.length > 1) url += `&tag_id=${parts[1]}`;
+                }
             }
 
             fetch(url)

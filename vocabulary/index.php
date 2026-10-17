@@ -72,6 +72,14 @@ $user_id = $_SESSION['user_id'];
             box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
         }
 
+        .category-card.all-words-card {
+            background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+        }
+
+        .category-card.all-words-card:hover {
+            box-shadow: 0 10px 25px rgba(16, 185, 129, 0.4);
+        }
+
         .category-card::before {
             content: '';
             position: absolute;
@@ -173,6 +181,111 @@ $user_id = $_SESSION['user_id'];
             font-size: 1rem;
             opacity: 0.8;
             margin-top: 20px;
+        }
+
+        .card-top-bar {
+            position: absolute;
+            top: 18px;
+            left: 20px;
+            right: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 10;
+        }
+
+        .btn-audio {
+            background: rgba(255, 255, 255, 0.22);
+            border: 1px solid rgba(255, 255, 255, 0.45);
+            color: white;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            backdrop-filter: blur(6px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .btn-audio:hover {
+            background: rgba(255, 255, 255, 0.4);
+            transform: scale(1.1);
+            color: white;
+        }
+
+        .btn-audio.speaking {
+            background: #10b981;
+            border-color: #34d399;
+            animation: pulse-audio 0.9s infinite alternate ease-in-out;
+        }
+
+        @keyframes pulse-audio {
+            from { transform: scale(1); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+            to { transform: scale(1.12); box-shadow: 0 0 0 12px rgba(16, 185, 129, 0); }
+        }
+
+        .badge-lang {
+            background: rgba(255, 255, 255, 0.22);
+            border: 1px solid rgba(255, 255, 255, 0.35);
+            color: white;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.88rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            backdrop-filter: blur(6px);
+            user-select: none;
+        }
+
+        .badge-lang:hover {
+            background: rgba(255, 255, 255, 0.4);
+            transform: scale(1.05);
+            color: white;
+        }
+
+        .auto-speak-container {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: #1e293b;
+            font-size: 0.92rem;
+            font-weight: 500;
+            user-select: none;
+            cursor: pointer;
+            background: rgba(255, 255, 255, 0.92);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            padding: 6px 14px;
+            border-radius: 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+            backdrop-filter: blur(6px);
+            transition: all 0.2s ease;
+        }
+
+        .auto-speak-container i {
+            color: #4f46e5;
+            font-size: 1rem;
+        }
+
+        .auto-speak-container:hover {
+            background: #ffffff;
+            color: #0f172a;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+        }
+
+        .auto-speak-container input[type="checkbox"] {
+            cursor: pointer;
+            accent-color: #4f46e5;
+            width: 16px;
+            height: 16px;
+            margin: 0;
         }
 
         .flashcard-controls {
@@ -324,13 +437,28 @@ $user_id = $_SESSION['user_id'];
 
         <!-- Flashcard Section -->
         <div id="flashcardSection" class="flashcard-section">
-            <div class="progress-info" id="progressInfo">
-                کارت 1 از 10
+            <div class="d-flex justify-content-between align-items-center mb-3" style="max-width: 600px; margin: 0 auto; padding: 0 5px;">
+                <div class="progress-info mb-0" id="progressInfo">
+                    کارت 1 از 10
+                </div>
+                <label class="auto-speak-container mb-0" title="پخش خودکار تلفظ کلمه هنگام رفتن به کارت جدید">
+                    <input type="checkbox" id="autoSpeakCheck" onchange="saveAutoSpeakPref()">
+                    <i class="fas fa-volume-high"></i>
+                    <span>پخش خودکار</span>
+                </label>
             </div>
 
             <div class="flashcard-container">
                 <div class="flashcard" id="flashcard">
                     <div class="flashcard-face flashcard-front">
+                        <div class="card-top-bar">
+                            <button type="button" class="btn-audio" onclick="speakCurrentWord(event)" title="پخش تلفظ صوتی (کلید S)">
+                                <i class="fas fa-volume-up"></i>
+                            </button>
+                            <button type="button" class="badge-lang" onclick="toggleCurrentLang(event)" title="تغییر زبان تلفظ (کلیک کنید)">
+                                <span id="langFlag">🇩🇪</span> <span id="langText">آلمانی</span>
+                            </button>
+                        </div>
                         <div class="flashcard-word" id="wordText">کلمه</div>
                         <div class="flashcard-hint">
                             <i class="fas fa-hand-pointer"></i>
@@ -338,6 +466,14 @@ $user_id = $_SESSION['user_id'];
                         </div>
                     </div>
                     <div class="flashcard-face flashcard-back">
+                        <div class="card-top-bar">
+                            <button type="button" class="btn-audio" onclick="speakCurrentWord(event)" title="پخش تلفظ صوتی (کلید S)">
+                                <i class="fas fa-volume-up"></i>
+                            </button>
+                            <span class="badge-lang" style="cursor: default; pointer-events: none;">
+                                <i class="fas fa-language"></i> ترجمه فارسی
+                            </span>
+                        </div>
                         <div class="flashcard-translation" id="translationText">ترجمه</div>
                         <div class="flashcard-hint">
                             <i class="fas fa-hand-pointer"></i>
@@ -371,13 +507,28 @@ $user_id = $_SESSION['user_id'];
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         let categories = [];
+        let totalWordsCount = 0;
         let currentWords = [];
         let currentIndex = 0;
+        let currentWordLang = 'de';
         const flashcard = document.getElementById('flashcard');
         const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
 
+        // Preload voices
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.onvoiceschanged = () => {
+                window.speechSynthesis.getVoices();
+            };
+        }
+
         // Load categories on page load
-        document.addEventListener('DOMContentLoaded', loadCategories);
+        document.addEventListener('DOMContentLoaded', () => {
+            loadCategories();
+            const autoSpeakEl = document.getElementById('autoSpeakCheck');
+            if (autoSpeakEl) {
+                autoSpeakEl.checked = (localStorage.getItem('farsifahr_vocab_autospeak') === '1');
+            }
+        });
 
         async function loadCategories() {
             try {
@@ -392,7 +543,8 @@ $user_id = $_SESSION['user_id'];
                 const data = await response.json();
 
                 if (data.success) {
-                    categories = data.categories;
+                    categories = data.categories || [];
+                    totalWordsCount = data.total_words !== undefined ? data.total_words : 0;
                     displayCategories();
                 } else {
                     showError(data.error || 'خطا در بارگذاری دسته‌بندی‌ها');
@@ -406,12 +558,34 @@ $user_id = $_SESSION['user_id'];
         function displayCategories() {
             const grid = document.getElementById('categoryGrid');
 
-            if (categories.length === 0) {
+            if (categories.length === 0 && totalWordsCount === 0) {
                 grid.innerHTML = '<div class="error-message">هنوز کلمه‌ای ذخیره نکرده‌اید</div>';
                 return;
             }
 
-            grid.innerHTML = categories.map(cat => `
+            let html = '';
+
+            if (totalWordsCount > 0) {
+                html += `
+                    <div class="category-card all-words-card" onclick="selectCategory('all')">
+                        <div class="category-name">
+                            <i class="fas fa-layer-group"></i>
+                            همه کلمات (تمام دسته‌ها)
+                        </div>
+                        <div class="category-info">
+                            <div class="word-count">
+                                <i class="fas fa-book"></i>
+                                ${totalWordsCount} کلمه
+                            </div>
+                            <div>
+                                <i class="fas fa-arrow-left"></i>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            html += categories.map(cat => `
                 <div class="category-card" onclick="selectCategory(${cat.id})">
                     <div class="category-name">
                         <i class="fas fa-tag"></i>
@@ -428,6 +602,8 @@ $user_id = $_SESSION['user_id'];
                     </div>
                 </div>
             `).join('');
+
+            grid.innerHTML = html;
         }
 
         async function selectCategory(categoryId) {
@@ -473,6 +649,96 @@ $user_id = $_SESSION['user_id'];
 
             // Reset flip
             flashcard.classList.remove('flipped');
+
+            // Update current word language
+            currentWordLang = (word.language && word.language.toLowerCase() === 'en') ? 'en' : 'de';
+            updateLangUI(currentWordLang);
+
+            // Auto-speak if enabled
+            const autoSpeakEl = document.getElementById('autoSpeakCheck');
+            if (autoSpeakEl && autoSpeakEl.checked) {
+                setTimeout(() => {
+                    speakWord(word.word, currentWordLang);
+                }, 250);
+            }
+        }
+
+        function updateLangUI(lang) {
+            const flagEl = document.getElementById('langFlag');
+            const textEl = document.getElementById('langText');
+            if (flagEl && textEl) {
+                if (lang === 'en') {
+                    flagEl.textContent = '🇬🇧';
+                    textEl.textContent = 'انگلیسی';
+                } else {
+                    flagEl.textContent = '🇩🇪';
+                    textEl.textContent = 'آلمانی';
+                }
+            }
+        }
+
+        function toggleCurrentLang(event) {
+            if (event) {
+                event.stopPropagation();
+                event.preventDefault();
+            }
+            if (currentWords.length === 0 || !currentWords[currentIndex]) return;
+
+            currentWordLang = (currentWordLang === 'en') ? 'de' : 'en';
+            updateLangUI(currentWordLang);
+            speakWord(currentWords[currentIndex].word, currentWordLang);
+        }
+
+        function speakCurrentWord(event) {
+            if (event) {
+                event.stopPropagation();
+                event.preventDefault();
+            }
+            if (currentWords.length === 0 || !currentWords[currentIndex]) return;
+
+            const word = currentWords[currentIndex].word;
+            speakWord(word, currentWordLang);
+        }
+
+        function speakWord(text, lang = 'de') {
+            if (!('speechSynthesis' in window)) {
+                console.warn('SpeechSynthesis is not supported in this browser.');
+                return;
+            }
+
+            window.speechSynthesis.cancel();
+
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = (lang === 'en') ? 'en-US' : 'de-DE';
+            utterance.rate = 0.88;
+
+            const voices = window.speechSynthesis.getVoices();
+            if (voices && voices.length > 0) {
+                const prefix = (lang === 'en') ? 'en' : 'de';
+                const voice = voices.find(v => v.lang && v.lang.toLowerCase().startsWith(prefix));
+                if (voice) {
+                    utterance.voice = voice;
+                }
+            }
+
+            const speakBtns = document.querySelectorAll('.btn-audio');
+            speakBtns.forEach(btn => btn.classList.add('speaking'));
+
+            utterance.onend = function () {
+                speakBtns.forEach(btn => btn.classList.remove('speaking'));
+            };
+            utterance.onerror = function () {
+                speakBtns.forEach(btn => btn.classList.remove('speaking'));
+            };
+
+            window.speechSynthesis.speak(utterance);
+        }
+
+        function saveAutoSpeakPref() {
+            const autoSpeakEl = document.getElementById('autoSpeakCheck');
+            if (autoSpeakEl) {
+                localStorage.setItem('farsifahr_vocab_autospeak', autoSpeakEl.checked ? '1' : '0');
+            }
         }
 
         function nextCard() {
@@ -496,13 +762,17 @@ $user_id = $_SESSION['user_id'];
         }
 
         function backToCategories() {
+            window.speechSynthesis && window.speechSynthesis.cancel();
             document.getElementById('flashcardSection').style.display = 'none';
             document.getElementById('categorySection').style.display = 'block';
             flashcard.classList.remove('flipped');
         }
 
-        // Flip card on click
-        flashcard.addEventListener('click', function () {
+        // Flip card on click (ignoring clicks on buttons)
+        flashcard.addEventListener('click', function (e) {
+            if (e.target.closest('.card-top-bar')) {
+                return;
+            }
             this.classList.toggle('flipped');
         });
 
@@ -516,6 +786,8 @@ $user_id = $_SESSION['user_id'];
                 } else if (e.key === ' ') {
                     e.preventDefault();
                     flashcard.classList.toggle('flipped');
+                } else if (e.key === 's' || e.key === 'S' || e.key === 'v' || e.key === 'V') {
+                    speakCurrentWord();
                 }
             }
         });

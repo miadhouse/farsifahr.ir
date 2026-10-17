@@ -3,12 +3,14 @@
 require_once __DIR__ . '/../config/config.php';
 
 // تابع کمکی برای دریافت exam_date_type کاربر
-function getUserExamDateType($pdo, $user_id)
-{
-    $stmt = $pdo->prepare("SELECT exam_date_type FROM user_config WHERE user_id = ?");
-    $stmt->execute([$user_id]);
-    $result = $stmt->fetch(PDO::FETCH_ASSOC);
-    return $result ? $result['exam_date_type'] : null;
+if (!function_exists('getUserExamDateType')) {
+    function getUserExamDateType($pdo, $user_id)
+    {
+        $stmt = $pdo->prepare("SELECT exam_date_type FROM user_config WHERE user_id = ?");
+        $stmt->execute([$user_id]);
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $result ? $result['exam_date_type'] : null;
+    }
 }
 
 // Function to get categories by type and parent

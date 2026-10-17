@@ -4,12 +4,14 @@ require_once __DIR__ . '/../config/config.php';
 require_once __DIR__ . '/subscription-functions.php';
 
 // تابع کمکی برای دریافت exam_date_type کاربر
-function getUserExamDateType($pdo, $user_id)
-{
-    $stmt = $pdo->prepare("SELECT exam_date_type FROM user_config WHERE user_id = ?");
-    $stmt->execute([$user_id]);
-    $result = $stmt->fetch(PDO::FETCH_ASSOC);
-    return $result ? $result['exam_date_type'] : null;
+if (!function_exists('getUserExamDateType')) {
+    function getUserExamDateType($pdo, $user_id)
+    {
+        $stmt = $pdo->prepare("SELECT exam_date_type FROM user_config WHERE user_id = ?");
+        $stmt->execute([$user_id]);
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $result ? $result['exam_date_type'] : null;
+    }
 }
 
 /**
@@ -181,6 +183,12 @@ function getSpecialQuestions($pdo, $special_type, $user_id = null, $tag_id = nul
         $query = "SELECT q.* FROM questions q WHERE q.picture LIKE '%.m4v'" . $availableCondition;
     } elseif ($special_type === 'picture') {
         $query = "SELECT q.* FROM questions q WHERE q.picture IS NOT NULL AND q.picture != '' AND q.picture NOT LIKE '%.m4v'" . $availableCondition;
+    } elseif ($special_type === 'half_ready' || $special_type === 'halfready' || $special_type === 'half-ready') {
+        $query = "SELECT q.* FROM questions q JOIN user_question_stats uqs ON q.id = uqs.question_id WHERE uqs.user_id = ? AND uqs.correct = 1 AND uqs.incorrect = 1" . $availableCondition;
+        $params[] = $user_id;
+    } elseif ($special_type === 'not_ready' || $special_type === 'notready' || $special_type === 'not-ready') {
+        $query = "SELECT q.* FROM questions q JOIN user_question_stats uqs ON q.id = uqs.question_id WHERE uqs.user_id = ? AND uqs.incorrect >= 1 AND uqs.correct = 0" . $availableCondition;
+        $params[] = $user_id;
     } elseif ($special_type === 'tag' && $tag_id !== null) {
         $query = "SELECT q.* FROM questions q JOIN question_question_tag qt ON q.id = qt.question_id WHERE qt.question_tag_id = ?" . $availableCondition;
         $params[] = $tag_id;

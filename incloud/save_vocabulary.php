@@ -66,8 +66,20 @@ try {
 
     $pdo->beginTransaction();
 
+    // تعیین زبان کلمه (آلمانی یا انگلیسی)
+    $language = isset($_POST['language']) ? strtolower(trim($_POST['language'])) : '';
+    if (!in_array($language, ['de', 'en'])) {
+        $stmtUserLang = $pdo->prepare("SELECT language FROM user_config WHERE user_id = ?");
+        $stmtUserLang->execute([$user_id]);
+        $userLangRow = $stmtUserLang->fetch(PDO::FETCH_ASSOC);
+        $language = ($userLangRow && strtolower($userLangRow['language']) === 'en') ? 'en' : 'de';
+    }
+    if (preg_match('/[äöüßÄÖÜ]/u', $word)) {
+        $language = 'de';
+    }
+
     // مرحله 1: بررسی یا درج در vocabulary_words
-    $stmt = $pdo->prepare("SELECT id, translation FROM vocabulary_words WHERE word = ?");
+    $stmt = $pdo->prepare("SELECT id, translation, language FROM vocabulary_words WHERE word = ?");
     if (!$stmt) {
         throw new Exception('خطا در آماده‌سازی کوئری SELECT: ' . implode(', ', $pdo->errorInfo()));
     }
@@ -77,12 +89,12 @@ try {
 
     if (!$word_row) {
         // کلمه جدید است
-        $stmt = $pdo->prepare("INSERT INTO vocabulary_words (word, translation) VALUES (?, ?)");
+        $stmt = $pdo->prepare("INSERT INTO vocabulary_words (word, translation, language) VALUES (?, ?, ?)");
         if (!$stmt) {
             throw new Exception('خطا در آماده‌سازی کوئری INSERT vocabulary_words: ' . implode(', ', $pdo->errorInfo()));
         }
 
-        $result = $stmt->execute([$word, $translation]);
+        $result = $stmt->execute([$word, $translation, $language]);
         if (!$result) {
             throw new Exception('خطا در INSERT vocabulary_words: ' . implode(', ', $stmt->errorInfo()));
         }
@@ -95,14 +107,32 @@ try {
     } else {
         $word_id = $word_row['id'];
 
-        // اگر ترجمه تغییر کرده، آن را به‌روزرسانی کن
+        // اگر ترجمه یا زبان نیاز به به‌روزرسانی دارد
+        $needsUpdate = false;
+        $updates = [];
+        $params = [];
+
         if ($word_row['translation'] !== $translation) {
-            $stmt = $pdo->prepare("UPDATE vocabulary_words SET translation = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?");
+            $updates[] = "translation = ?";
+            $params[] = $translation;
+            $needsUpdate = true;
+        }
+
+        if (empty($word_row['language']) || ($language === 'en' && $word_row['language'] !== 'en' && !preg_match('/[äöüßÄÖÜ]/u', $word))) {
+            $updates[] = "language = ?";
+            $params[] = $language;
+            $needsUpdate = true;
+        }
+
+        if ($needsUpdate) {
+            $updates[] = "updated_at = CURRENT_TIMESTAMP";
+            $params[] = $word_id;
+            $stmt = $pdo->prepare("UPDATE vocabulary_words SET " . implode(', ', $updates) . " WHERE id = ?");
             if (!$stmt) {
                 throw new Exception('خطا در آماده‌سازی کوئری UPDATE vocabulary_words: ' . implode(', ', $pdo->errorInfo()));
             }
 
-            $result = $stmt->execute([$translation, $word_id]);
+            $result = $stmt->execute($params);
             if (!$result) {
                 throw new Exception('خطا در UPDATE vocabulary_words: ' . implode(', ', $stmt->errorInfo()));
             }
@@ -125,14 +155,14 @@ try {
         // کلمه در کلکشن موجود است - به‌روزرسانی
         $stmt = $pdo->prepare("
             UPDATE user_vocabulary 
-            SET question_id = ?, category_id = ?, updated_at = CURRENT_TIMESTAMP 
+            SET question_id = ?, category_id = ?, language = ?, updated_at = CURRENT_TIMESTAMP 
             WHERE id = ?
         ");
         if (!$stmt) {
             throw new Exception('خطا در آماده‌سازی کوئری UPDATE user_vocabulary: ' . implode(', ', $pdo->errorInfo()));
         }
 
-        $result = $stmt->execute([$question_id, $category_id, $user_vocab_row['id']]);
+        $result = $stmt->execute([$question_id, $category_id, $language, $user_vocab_row['id']]);
         if (!$result) {
             throw new Exception('خطا در UPDATE user_vocabulary: ' . implode(', ', $stmt->errorInfo()));
         }
@@ -143,19 +173,20 @@ try {
             'success' => true,
             'message' => 'ترجمه به‌روزرسانی شد',
             'word_id' => $word_id,
+            'language' => $language,
             'updated' => true
         ]);
     } else {
         // مرحله 3: افزودن به کلکشن کاربر
         $stmt = $pdo->prepare("
-            INSERT INTO user_vocabulary (word_id, user_id, question_id, category_id) 
-            VALUES (?, ?, ?, ?)
+            INSERT INTO user_vocabulary (word_id, user_id, question_id, category_id, language) 
+            VALUES (?, ?, ?, ?, ?)
         ");
         if (!$stmt) {
             throw new Exception('خطا در آماده‌سازی کوئری INSERT user_vocabulary: ' . implode(', ', $pdo->errorInfo()));
         }
 
-        $result = $stmt->execute([$word_id, $user_id, $question_id, $category_id]);
+        $result = $stmt->execute([$word_id, $user_id, $question_id, $category_id, $language]);
         if (!$result) {
             throw new Exception('خطا در INSERT user_vocabulary: ' . implode(', ', $stmt->errorInfo()));
         }
@@ -169,6 +200,7 @@ try {
             'message' => 'کلمه به کلکشن واژگان شما افزوده شد',
             'word_id' => $word_id,
             'user_vocab_id' => $user_vocab_id,
+            'language' => $language,
             'updated' => false
         ]);
     }
