@@ -27,8 +27,8 @@ class BackupService
             'backup_time' => $settings['backup_time'] ?? '03:00',
             'backup_database' => $settings['backup_database'] ?? 'fars_farsifahr',
             'backup_telegram_enabled' => (bool) ($settings['backup_telegram_enabled'] ?? true),
-            'backup_telegram_channel_id' => $settings['backup_telegram_channel_id'] ?? ($settings['telegram_channel_id'] ?? ''),
-            'telegram_bot_token' => $settings['telegram_bot_token'] ?? env('TELEGRAM_BOT_TOKEN', ''),
+            'backup_telegram_channel_id' => $settings['backup_telegram_channel_id'] ?? env('TELEGRAM_ADMIN_CHAT_ID', '5287816017'),
+            'telegram_bot_token' => $settings['telegram_bot_token'] ?? env('TELEGRAM_BOT_TOKEN', '8621231197:AAF9Ey2Sb-rIQDiLm_iYcvHPrkIZcJSjjCg'),
             'backup_retention_days' => (int) ($settings['backup_retention_days'] ?? 30),
         ];
     }
@@ -174,8 +174,8 @@ class BackupService
     public static function sendToTelegram(DatabaseBackup $backup): array
     {
         $settings = self::getSettings();
-        $token = $settings['telegram_bot_token'];
-        $channelId = $settings['backup_telegram_channel_id'];
+        $token = !empty($settings['telegram_bot_token']) ? $settings['telegram_bot_token'] : env('TELEGRAM_BOT_TOKEN', '8621231197:AAF9Ey2Sb-rIQDiLm_iYcvHPrkIZcJSjjCg');
+        $channelId = !empty($settings['backup_telegram_channel_id']) ? $settings['backup_telegram_channel_id'] : env('TELEGRAM_ADMIN_CHAT_ID', '5287816017');
 
         if (empty($token) || empty($channelId)) {
             $error = 'توکن ربات تلگرام یا شناسه کانال/چت دریافت‌کننده تنظیم نشده است.';

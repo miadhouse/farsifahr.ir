@@ -140,9 +140,9 @@ class ManageDatabaseBackups extends ManageRecords
                                     ->revealable()
                                     ->required(),
                                 TextInput::make('backup_telegram_channel_id')
-                                    ->label('شناسه کانال یا چت دریافت بکاپ')
-                                    ->placeholder('مثال: farsifahr1@ یا -100123456789')
-                                    ->helperText('پیشنهاد می‌شود از یک کانال اختصاصی/شخصی استفاده کنید.')
+                                    ->label('شناسه چت/کانال دریافت بکاپ (یوزر ترکینگ)')
+                                    ->placeholder('5287816017')
+                                    ->helperText('آیدی عددی چت یا کانال اختصاصی مدیر (پیش‌فرض: چت ترکینگ 5287816017).')
                                     ->required(),
                             ]),
                         ]),
