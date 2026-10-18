@@ -1206,11 +1206,6 @@ if (!$isLobby) {
                         <span>مرحله <strong id="currentQIndexLabel">1</strong> / <strong><?= count($gameQuestions) ?></strong></span>
                     </div>
                 </div>
-                <?php else: ?>
-                <div class="hud-stat-pill">
-                    <i class="fas fa-gamepad text-warning"></i>
-                    <span>آرکید بازی و یادگیری</span>
-                </div>
                 <?php endif; ?>
             </div>
 
@@ -1228,9 +1223,6 @@ if (!$isLobby) {
                  2D GAME MODE SELECTION LOBBY
                  ========================================================= -->
             <div class="lobby-hero-banner mt-2">
-                <div class="d-inline-flex align-items-center justify-content-center mb-2 px-3 py-1 rounded-pill" style="background: rgba(0,0,0,0.25); border: 2px solid rgba(255,255,255,0.4); font-size: 0.8rem; font-weight: 800;">
-                    <i class="fas fa-trophy text-warning me-2"></i> انتخاب مرحله بازی ۲ بعدی
-                </div>
                 <h3 class="fw-black mb-2" style="font-weight: 900; text-shadow: 0 3px 0 #1e1b4b;">بازی و یادگیری گواهینامه</h3>
                 <p class="mb-0" style="font-size: 0.9rem; opacity: 0.95; max-width: 580px; margin: 0 auto;">
                     یک حالت بازی را انتخاب کنید، گزینه‌های صحیح را در <strong>سبد سبز</strong> و گزینه‌های غلط را در <strong>سبد قرمز</strong> بیندازید و امتیاز بگیرید!
