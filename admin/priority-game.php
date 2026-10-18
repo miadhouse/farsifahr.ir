@@ -344,43 +344,27 @@ $scenarios = ensureAndFetchPriorityScenarios($pdo);
             padding: 14px;
         }
 
-        /* 2D Intersection Stage Frame */
+        /* 3D Intersection Stage Frame */
         .intersection-frame {
             width: 100%;
-            max-width: 550px;
+            max-width: 640px;
             margin: 0 auto;
-            aspect-ratio: 1 / 1;
+            aspect-ratio: 6 / 5;
+            min-height: 360px;
             border: 4.5px solid var(--ink-outline);
             border-radius: 22px;
             box-shadow: 0 8px 0 var(--ink-outline), 0 16px 32px rgba(15, 23, 42, 0.25);
             overflow: hidden;
-            background: #4ade80;
+            background: linear-gradient(180deg, #38bdf8 0%, #bae6fd 55%, #4ade80 100%);
             user-select: none;
             position: relative;
         }
 
-        #priorityGameSvg {
-            width: 100%;
-            height: 100%;
-            display: block;
-        }
-
-        .placed-actor-group {
-            cursor: pointer;
-            transition: filter 0.18s ease;
-        }
-
-        .placed-actor-group:hover {
-            filter: drop-shadow(0 0 8px rgba(250, 204, 21, 0.95));
-        }
-
-        @keyframes blinkTurnSignal {
-            0%, 49% { opacity: 1; }
-            50%, 100% { opacity: 0.15; }
-        }
-
-        .turn-signal-blink {
-            animation: blinkTurnSignal 0.7s infinite;
+        @media (max-width: 576px) {
+            .intersection-frame {
+                aspect-ratio: 1 / 1;
+                min-height: 330px;
+            }
         }
 
         /* Clicked Sequence Bar */
@@ -586,7 +570,7 @@ $scenarios = ensureAndFetchPriorityScenarios($pdo);
                         <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2 pb-2 border-bottom">
                             <span class="badge bg-primary fs-6 fw-bold" id="stageTitleBadge"></span>
                             <span class="badge bg-warning text-dark border border-dark fw-bold">
-                                <i class="fas fa-hand-pointer me-1"></i> به ترتیب حق تقدم روی کاربران جاده کلیک کنید!
+                                <i class="fas fa-cube me-1"></i> نمای ۳ بعدی سه‌رخ: به ترتیب حق تقدم روی خودروها/عابرین کلیک کنید!
                             </span>
                         </div>
                         <div class="fw-black mb-1" style="font-weight: 900; font-size: 1rem;" id="stageQuestionFa"></div>
@@ -594,10 +578,8 @@ $scenarios = ensureAndFetchPriorityScenarios($pdo);
                     </div>
                 </div>
 
-                <!-- 2. 2D Interactive Top-Down Intersection Canvas -->
-                <div class="intersection-frame">
-                    <svg id="priorityGameSvg" viewBox="0 0 600 600" xmlns="http://www.w3.org/2000/svg"></svg>
-                </div>
+                <!-- 2. 3D Interactive Three.js Intersection Stage (3/4 Elevated View) -->
+                <div class="intersection-frame" id="priority3DStage"></div>
 
                 <!-- 3. User Clicked Sequence Bar & Reset Action -->
                 <div class="sequence-bar">
@@ -685,6 +667,8 @@ $scenarios = ensureAndFetchPriorityScenarios($pdo);
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="assets/js/priority-3d-engine.js?v=1.1"></script>
 
     <?php if (!empty($scenarios)): ?>
     <script>
@@ -706,172 +690,33 @@ $scenarios = ensureAndFetchPriorityScenarios($pdo);
         };
 
         const VEHICLE_CATALOG = {
-            car_yellow: { name: 'خودرو زرد', color: '#facc15', roof: '#fef08a' },
-            car_green:  { name: 'خودرو سبز', color: '#22c55e', roof: '#86efac' },
-            car_blue:   { name: 'خودرو آبی', color: '#3b82f6', roof: '#93c5fd' },
-            car_red:    { name: 'خودرو قرمز', color: '#ef4444', roof: '#fca5a5' },
-            bus:        { name: 'اتوبوس', color: '#f97316', roof: '#fdba74' },
-            truck:      { name: 'کامیون', color: '#64748b', roof: '#cbd5e1' },
-            moto:       { name: 'موتورسیکلت', color: '#ec4899', roof: '#f9a8d4' },
-            bike:       { name: 'دوچرخه', color: '#06b6d4', roof: '#67e8f9' },
-            scooter:    { name: 'اسکوتر برقی', color: '#a855f7', roof: '#d8b4fe' },
-            police:     { name: 'خودرو پلیس/امداد', color: '#1e40af', roof: '#ffffff' }
+            car_yellow: { name: 'خودرو زرد' },
+            car_green:  { name: 'خودرو سبز' },
+            car_blue:   { name: 'خودرو آبی' },
+            car_red:    { name: 'خودرو قرمز' },
+            bus:        { name: 'اتوبوس' },
+            truck:      { name: 'کامیون' },
+            moto:       { name: 'موتورسیکلت' },
+            bike:       { name: 'دوچرخه' },
+            scooter:    { name: 'اسکوتر برقی' },
+            police:     { name: 'خودرو پلیس/امداد' }
         };
 
         const PEDESTRIAN_CATALOG = {
-            pedestrian: { name: 'عابر پیاده', color: '#10b981' },
-            ped_child:  { name: 'کودک در پیاده‌رو', color: '#f43f5e' },
-            ped_bike:   { name: 'دوچرخه در گذرگاه', color: '#0ea5e9' },
-            ped_scooter:{ name: 'اسکوتر در پیاده‌رو', color: '#8b5cf6' }
-        };
-
-        const BRANCH_GEOMETRY = {
-            bottom: { vehicleStart: { x: 337, y: 495, angle: 0 },   pedStart: { x: 392, y: 412, angle: -90 }, pedEnd: { x: 208, y: 412 }, signSlot: { x: 428, y: 458 } },
-            top:    { vehicleStart: { x: 263, y: 105, angle: 180 }, pedStart: { x: 208, y: 188, angle: 90 },  pedEnd: { x: 392, y: 188 }, signSlot: { x: 172, y: 142 } },
-            right:  { vehicleStart: { x: 495, y: 263, angle: -90 }, pedStart: { x: 412, y: 208, angle: 180 }, pedEnd: { x: 412, y: 392 }, signSlot: { x: 458, y: 172 } },
-            left:   { vehicleStart: { x: 105, y: 337, angle: 90 },  pedStart: { x: 188, y: 392, angle: 0 },   pedEnd: { x: 188, y: 208 }, signSlot: { x: 142, y: 428 } }
+            pedestrian: { name: 'عابر پیاده' },
+            ped_child:  { name: 'کودک در پیاده‌رو' },
+            ped_bike:   { name: 'دوچرخه در گذرگاه' },
+            ped_scooter:{ name: 'اسکوتر در پیاده‌رو' }
         };
 
         let currentStageIdx = 0;
         let currentScenarioState = null;
         let userClickedKeys = [];
         let stageEvaluated = null;
-        let animatedPositions = {};
-        let runningAnimFrames = {};
         let totalScore = 0;
         let winStagesCount = 0;
         let loseStagesCount = 0;
-
-        function renderTopDownVehicleSVG(typeId) {
-            const item = VEHICLE_CATALOG[typeId] || VEHICLE_CATALOG.car_yellow;
-            if (typeId === 'bus') {
-                return `
-                    <g>
-                        <rect x="-18" y="-36" width="36" height="72" rx="7" fill="${item.color}" stroke="#0f172a" stroke-width="3"/>
-                        <rect x="-14" y="-31" width="28" height="11" rx="3" fill="#bae6fd" stroke="#0f172a" stroke-width="2"/>
-                        <rect x="-13" y="-15" width="26" height="38" rx="4" fill="${item.roof}" stroke="#0f172a" stroke-width="1.5"/>
-                        <circle cx="-11" cy="-35" r="3" fill="#fef08a"/>
-                        <circle cx="11" cy="-35" r="3" fill="#fef08a"/>
-                    </g>
-                `;
-            }
-            if (typeId === 'truck') {
-                return `
-                    <g>
-                        <rect x="-18" y="-12" width="36" height="46" rx="4" fill="#e2e8f0" stroke="#0f172a" stroke-width="3"/>
-                        <rect x="-16" y="-34" width="32" height="22" rx="5" fill="${item.color}" stroke="#0f172a" stroke-width="3"/>
-                        <rect x="-13" y="-30" width="26" height="8" rx="2" fill="#bae6fd" stroke="#0f172a" stroke-width="1.8"/>
-                    </g>
-                `;
-            }
-            if (typeId === 'moto') {
-                return `
-                    <g>
-                        <rect x="-4" y="-22" width="8" height="44" rx="4" fill="#1e293b"/>
-                        <line x1="-13" y1="-12" x2="13" y2="-12" stroke="#0f172a" stroke-width="3.5" stroke-linecap="round"/>
-                        <rect x="-7" y="-10" width="14" height="22" rx="6" fill="${item.color}" stroke="#0f172a" stroke-width="2.5"/>
-                        <circle cx="0" cy="0" r="7" fill="#fde047" stroke="#0f172a" stroke-width="2.5"/>
-                    </g>
-                `;
-            }
-            if (typeId === 'bike' || typeId === 'scooter') {
-                return `
-                    <g>
-                        <rect x="-3" y="-19" width="6" height="38" rx="3" fill="${item.color}" stroke="#0f172a" stroke-width="2"/>
-                        <line x1="-11" y1="-10" x2="11" y2="-10" stroke="#0f172a" stroke-width="3" stroke-linecap="round"/>
-                        <circle cx="0" cy="0" r="6.5" fill="${item.roof}" stroke="#0f172a" stroke-width="2.5"/>
-                    </g>
-                `;
-            }
-            if (typeId === 'police') {
-                return `
-                    <g>
-                        <rect x="-16" y="-28" width="32" height="56" rx="9" fill="#1e40af" stroke="#0f172a" stroke-width="3"/>
-                        <rect x="-12" y="-20" width="24" height="10" rx="3" fill="#bae6fd" stroke="#0f172a" stroke-width="2"/>
-                        <rect x="-12" y="-9" width="24" height="22" rx="4" fill="#ffffff" stroke="#0f172a" stroke-width="2"/>
-                        <rect x="-9" y="-2" width="8" height="5" rx="2" fill="#ef4444"/>
-                        <rect x="1" y="-2" width="8" height="5" rx="2" fill="#3b82f6"/>
-                    </g>
-                `;
-            }
-            return `
-                <g>
-                    <rect x="-18" y="-21" width="4" height="11" rx="2" fill="#0f172a"/>
-                    <rect x="14" y="-21" width="4" height="11" rx="2" fill="#0f172a"/>
-                    <rect x="-18" y="10" width="4" height="11" rx="2" fill="#0f172a"/>
-                    <rect x="14" y="10" width="4" height="11" rx="2" fill="#0f172a"/>
-                    <rect x="-15" y="-27" width="30" height="54" rx="10" fill="${item.color}" stroke="#0f172a" stroke-width="3"/>
-                    <path d="M-11 -17 L11 -17 L9 -7 L-9 -7 Z" fill="#e0f2fe" stroke="#0f172a" stroke-width="2"/>
-                    <rect x="-10" y="-7" width="20" height="18" rx="4" fill="${item.roof}" stroke="#0f172a" stroke-width="2"/>
-                    <path d="M-9 11 L9 11 L11 18 L-11 18 Z" fill="#bae6fd" stroke="#0f172a" stroke-width="1.8"/>
-                    <circle cx="-9" cy="-25" r="2.8" fill="#fef9c3"/>
-                    <circle cx="9" cy="-25" r="2.8" fill="#fef9c3"/>
-                </g>
-            `;
-        }
-
-        function renderTopDownPedestrianSVG(typeId) {
-            const item = PEDESTRIAN_CATALOG[typeId] || PEDESTRIAN_CATALOG.pedestrian;
-            if (typeId === 'ped_bike' || typeId === 'ped_scooter') {
-                return `
-                    <g>
-                        <rect x="-3" y="-15" width="6" height="30" rx="3" fill="${item.color}" stroke="#0f172a" stroke-width="2"/>
-                        <circle cx="0" cy="0" r="7" fill="#fde047" stroke="#0f172a" stroke-width="2.5"/>
-                    </g>
-                `;
-            }
-            return `
-                <g>
-                    <rect x="-11" y="-6" width="22" height="12" rx="6" fill="${item.color}" stroke="#0f172a" stroke-width="2.5"/>
-                    <circle cx="0" cy="0" r="8" fill="#fde047" stroke="#0f172a" stroke-width="2.5"/>
-                </g>
-            `;
-        }
-
-        function renderSignIconSVG(signId) {
-            switch (signId) {
-                case 's306_priority_road':
-                    return `<g><rect x="-13" y="-13" width="26" height="26" rx="2" transform="rotate(45)" fill="#ffffff" stroke="#0f172a" stroke-width="2"/><rect x="-8.5" y="-8.5" width="17" height="17" rx="1" transform="rotate(45)" fill="#facc15" stroke="#0f172a" stroke-width="1.5"/></g>`;
-                case 's307_end_priority':
-                    return `<g><rect x="-13" y="-13" width="26" height="26" rx="2" transform="rotate(45)" fill="#ffffff" stroke="#0f172a" stroke-width="2"/><rect x="-8.5" y="-8.5" width="17" height="17" rx="1" transform="rotate(45)" fill="#facc15" stroke="#0f172a" stroke-width="1.5"/><line x1="-11" y1="11" x2="11" y2="-11" stroke="#0f172a" stroke-width="3.5"/></g>`;
-                case 's205_yield':
-                    return `<g><polygon points="-16,-12 16,-12 0,15" fill="#ffffff" stroke="#dc2626" stroke-width="4" stroke-linejoin="round"/></g>`;
-                case 's206_stop':
-                    return `<g><polygon points="-7,-16 7,-16 16,-7 16,7 7,16 -7,16 -16,7 -16,-7" fill="#dc2626" stroke="#ffffff" stroke-width="2.5"/><text x="0" y="4" text-anchor="middle" fill="#ffffff" font-size="8.5" font-weight="900" font-family="sans-serif">STOP</text></g>`;
-                case 's301_priority_next':
-                case 's102_rvl':
-                    return `<g><polygon points="0,-15 16,13 -16,13" fill="#ffffff" stroke="#dc2626" stroke-width="4" stroke-linejoin="round"/>${signId === 's102_rvl' ? `<path d="M-5,2 L5,10 M5,2 L-5,10" stroke="#0f172a" stroke-width="2.5" stroke-linecap="round"/>` : `<path d="M0,10 L0,-3 M-4,1 L0,-4 L4,1" stroke="#0f172a" stroke-width="2.5" stroke-linecap="round" fill="none"/>`}</g>`;
-                case 's350_crosswalk':
-                    return `<g><rect x="-14" y="-14" width="28" height="28" rx="4" fill="#2563eb" stroke="#ffffff" stroke-width="2"/><polygon points="0,-10 11,9 -11,9" fill="#ffffff"/></g>`;
-                case 'abk_bottom_left':
-                    return `<g><rect x="-14" y="-11" width="28" height="22" rx="3" fill="#ffffff" stroke="#0f172a" stroke-width="2"/><path d="M0,9 L0,0 L-10,0" stroke="#0f172a" stroke-width="4.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/><line x1="0" y1="-9" x2="0" y2="-2" stroke="#64748b" stroke-width="2"/><line x1="2" y1="0" x2="10" y2="0" stroke="#64748b" stroke-width="2"/></g>`;
-                case 'abk_bottom_right':
-                    return `<g><rect x="-14" y="-11" width="28" height="22" rx="3" fill="#ffffff" stroke="#0f172a" stroke-width="2"/><path d="M0,9 L0,0 L10,0" stroke="#0f172a" stroke-width="4.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/><line x1="0" y1="-9" x2="0" y2="-2" stroke="#64748b" stroke-width="2"/><line x1="-10" y1="0" x2="-2" y2="0" stroke="#64748b" stroke-width="2"/></g>`;
-                case 'abk_top_left':
-                    return `<g><rect x="-14" y="-11" width="28" height="22" rx="3" fill="#ffffff" stroke="#0f172a" stroke-width="2"/><path d="M0,-9 L0,0 L-10,0" stroke="#0f172a" stroke-width="4.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/><line x1="0" y1="2" x2="0" y2="9" stroke="#64748b" stroke-width="2"/><line x1="2" y1="0" x2="10" y2="0" stroke="#64748b" stroke-width="2"/></g>`;
-                case 'abk_top_right':
-                    return `<g><rect x="-14" y="-11" width="28" height="22" rx="3" fill="#ffffff" stroke="#0f172a" stroke-width="2"/><path d="M0,-9 L0,0 L10,0" stroke="#0f172a" stroke-width="4.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/><line x1="0" y1="2" x2="0" y2="9" stroke="#64748b" stroke-width="2"/><line x1="-10" y1="0" x2="-2" y2="0" stroke="#64748b" stroke-width="2"/></g>`;
-                case 'rad_cross':
-                    return `<g><rect x="-14" y="-11" width="28" height="22" rx="3" fill="#ffffff" stroke="#0f172a" stroke-width="2"/><path d="M-9,-5 L9,-5 M-9,5 L9,5" stroke="#0f172a" stroke-width="2.2" stroke-linecap="round"/></g>`;
-                default:
-                    return '';
-            }
-        }
-
-        function renderTrafficLightSVG(lightState) {
-            if (!lightState || lightState === 'none') return '';
-            const isRed = lightState === 'red';
-            const isYellow = lightState === 'yellow';
-            const isGreen = lightState === 'green';
-            return `
-                <g>
-                    <rect x="-10" y="-22" width="20" height="44" rx="6" fill="#1e293b" stroke="#020617" stroke-width="2.5"/>
-                    <circle cx="0" cy="-13" r="5" fill="${isRed ? '#ef4444' : '#450a0a'}" stroke="#020617" stroke-width="1.2"/>
-                    <circle cx="0" cy="0" r="5" fill="${isYellow ? '#facc15' : '#422006'}" stroke="#020617" stroke-width="1.2"/>
-                    <circle cx="0" cy="13" r="5" fill="${isGreen ? '#22c55e' : '#052e16'}" stroke="#020617" stroke-width="1.2"/>
-                </g>
-            `;
-        }
+        let scene3D = null;
 
         function getStageActors() {
             if (!currentScenarioState || !currentScenarioState.branches) return [];
@@ -909,45 +754,10 @@ $scenarios = ensureAndFetchPriorityScenarios($pdo);
             return list;
         }
 
-        function getTrajectoryPathD(actor) {
-            const b = actor.branch;
-            if (actor.slotType === 'pedestrian') {
-                const g = BRANCH_GEOMETRY[b];
-                return `M ${g.pedStart.x} ${g.pedStart.y} L ${g.pedEnd.x} ${g.pedEnd.y}`;
-            }
-            const start = BRANCH_GEOMETRY[b].vehicleStart;
-            const dir = actor.direction || 'straight';
-
-            if (b === 'bottom') {
-                if (dir === 'straight') return `M ${start.x} ${start.y} L 337 65`;
-                if (dir === 'right')    return `M ${start.x} ${start.y} L 337 365 Q 337 337 365 337 L 535 337`;
-                if (dir === 'left')     return `M ${start.x} ${start.y} L 337 315 Q 337 263 285 263 L 65 263`;
-            }
-            if (b === 'top') {
-                if (dir === 'straight') return `M ${start.x} ${start.y} L 263 535`;
-                if (dir === 'right')    return `M ${start.x} ${start.y} L 263 235 Q 263 263 235 263 L 65 263`;
-                if (dir === 'left')     return `M ${start.x} ${start.y} L 263 285 Q 263 337 315 337 L 535 337`;
-            }
-            if (b === 'right') {
-                if (dir === 'straight') return `M ${start.x} ${start.y} L 65 263`;
-                if (dir === 'right')    return `M ${start.x} ${start.y} L 365 263 Q 337 263 337 235 L 337 65`;
-                if (dir === 'left')     return `M ${start.x} ${start.y} L 315 263 Q 263 263 263 315 L 263 535`;
-            }
-            if (b === 'left') {
-                if (dir === 'straight') return `M ${start.x} ${start.y} L 535 337`;
-                if (dir === 'right')    return `M ${start.x} ${start.y} L 235 337 Q 263 337 263 365 L 263 535`;
-                if (dir === 'left')     return `M ${start.x} ${start.y} L 285 337 Q 337 337 337 285 L 337 65`;
-            }
-            return `M ${start.x} ${start.y} L 300 300`;
-        }
-
         function loadStage(index) {
             const sc = SCENARIOS[index];
             if (!sc) return;
 
-            Object.keys(runningAnimFrames).forEach(k => cancelAnimationFrame(runningAnimFrames[k]));
-            runningAnimFrames = {};
-            animatedPositions = {};
             userClickedKeys = [];
             stageEvaluated = null;
 
@@ -971,191 +781,10 @@ $scenarios = ensureAndFetchPriorityScenarios($pdo);
             document.getElementById('solveButtonWrapper').style.display = 'block';
 
             renderUserSequencePills();
-            renderStageSVG();
-        }
-
-        function renderStageSVG() {
-            const svg = document.getElementById('priorityGameSvg');
-            const activeBranches = INTERSECTION_BRANCHES[currentScenarioState.intersectionType] || INTERSECTION_BRANCHES.cross4;
-            const actors = getStageActors();
-
-            let html = `
-                <defs>
-                    <marker id="arrow-normal" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="5.5" markerHeight="5.5" orient="auto-start-reverse">
-                        <path d="M 0 1 L 10 5 L 0 9 z" fill="#fde047" stroke="#0f172a" stroke-width="1"/>
-                    </marker>
-                    <marker id="arrow-green" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-                        <path d="M 0 1 L 10 5 L 0 9 z" fill="#22c55e" stroke="#052e16" stroke-width="1"/>
-                    </marker>
-                    <marker id="arrow-red" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-                        <path d="M 0 1 L 10 5 L 0 9 z" fill="#ef4444" stroke="#450a0a" stroke-width="1"/>
-                    </marker>
-                </defs>
-                <rect x="0" y="0" width="600" height="600" fill="#4ade80"/>
-                <g opacity="0.85">
-                    <circle cx="65" cy="65" r="28" fill="#16a34a" stroke="#14532d" stroke-width="3"/><circle cx="58" cy="58" r="18" fill="#22c55e"/>
-                    <circle cx="535" cy="65" r="28" fill="#16a34a" stroke="#14532d" stroke-width="3"/><circle cx="528" cy="58" r="18" fill="#22c55e"/>
-                    <circle cx="65" cy="535" r="28" fill="#16a34a" stroke="#14532d" stroke-width="3"/><circle cx="58" cy="528" r="18" fill="#22c55e"/>
-                    <circle cx="535" cy="535" r="28" fill="#16a34a" stroke="#14532d" stroke-width="3"/><circle cx="528" cy="528" r="18" fill="#22c55e"/>
-                </g>
-            `;
-
-            // Sidewalks & Roads
-            let sidewalkHTML = `<rect x="205" y="205" width="190" height="190" rx="18" fill="#cbd5e1" stroke="#475569" stroke-width="3"/>`;
-            let asphaltHTML = `<rect x="225" y="225" width="150" height="150" fill="#334155"/>`;
-            let markingsHTML = '';
-
-            if (activeBranches.includes('top')) {
-                sidewalkHTML += `<rect x="205" y="0" width="190" height="225" fill="#cbd5e1" stroke="#475569" stroke-width="3"/>`;
-                asphaltHTML  += `<rect x="225" y="0" width="150" height="230" fill="#334155"/>`;
-                markingsHTML += `<line x1="300" y1="10" x2="300" y2="170" stroke="#f8fafc" stroke-width="4" stroke-dasharray="18 14"/>`;
+            if (scene3D) {
+                scene3D.resetPositions();
+                scene3D.renderScenario(currentScenarioState, userClickedKeys, stageEvaluated, false);
             }
-            if (activeBranches.includes('bottom')) {
-                sidewalkHTML += `<rect x="205" y="375" width="190" height="225" fill="#cbd5e1" stroke="#475569" stroke-width="3"/>`;
-                asphaltHTML  += `<rect x="225" y="370" width="150" height="230" fill="#334155"/>`;
-                markingsHTML += `<line x1="300" y1="430" x2="300" y2="590" stroke="#f8fafc" stroke-width="4" stroke-dasharray="18 14"/>`;
-            }
-            if (activeBranches.includes('right')) {
-                sidewalkHTML += `<rect x="375" y="205" width="225" height="190" fill="#cbd5e1" stroke="#475569" stroke-width="3"/>`;
-                asphaltHTML  += `<rect x="370" y="225" width="230" height="150" fill="#334155"/>`;
-                markingsHTML += `<line x1="430" y1="300" x2="590" y2="300" stroke="#f8fafc" stroke-width="4" stroke-dasharray="18 14"/>`;
-            }
-            if (activeBranches.includes('left')) {
-                sidewalkHTML += `<rect x="0" y="205" width="225" height="190" fill="#cbd5e1" stroke="#475569" stroke-width="3"/>`;
-                asphaltHTML  += `<rect x="0" y="225" width="230" height="150" fill="#334155"/>`;
-                markingsHTML += `<line x1="10" y1="300" x2="170" y2="300" stroke="#f8fafc" stroke-width="4" stroke-dasharray="18 14"/>`;
-            }
-
-            html += sidewalkHTML + asphaltHTML + markingsHTML;
-
-            // Crosswalks & Road Stop/Yield markings
-            activeBranches.forEach(branch => {
-                const b = currentScenarioState.branches ? currentScenarioState.branches[branch] : null;
-                if (!b) return;
-                if (b.hasCrosswalk) {
-                    if (branch === 'bottom') {
-                        for (let x = 232; x <= 362; x += 18) html += `<rect x="${x}" y="395" width="10" height="32" rx="2" fill="#f8fafc" opacity="0.92"/>`;
-                    } else if (branch === 'top') {
-                        for (let x = 232; x <= 362; x += 18) html += `<rect x="${x}" y="173" width="10" height="32" rx="2" fill="#f8fafc" opacity="0.92"/>`;
-                    } else if (branch === 'right') {
-                        for (let y = 232; y <= 362; y += 18) html += `<rect x="395" y="${y}" width="32" height="10" rx="2" fill="#f8fafc" opacity="0.92"/>`;
-                    } else if (branch === 'left') {
-                        for (let y = 232; y <= 362; y += 18) html += `<rect x="173" y="${y}" width="32" height="10" rx="2" fill="#f8fafc" opacity="0.92"/>`;
-                    }
-                }
-                if (b.primarySign === 's206_stop' || b.primarySign === 's205_yield') {
-                    const dash = b.primarySign === 's206_stop' ? '' : 'stroke-dasharray="8 6"';
-                    if (branch === 'bottom') html += `<line x1="302" y1="435" x2="373" y2="435" stroke="#ffffff" stroke-width="6" ${dash}/>`;
-                    if (branch === 'top')    html += `<line x1="227" y1="165" x2="298" y2="165" stroke="#ffffff" stroke-width="6" ${dash}/>`;
-                    if (branch === 'right')  html += `<line x1="435" y1="227" x2="435" y2="298" stroke="#ffffff" stroke-width="6" ${dash}/>`;
-                    if (branch === 'left')   html += `<line x1="165" y1="302" x2="165" y2="373" stroke="#ffffff" stroke-width="6" ${dash}/>`;
-                }
-            });
-
-            // Trajectory Paths (Yellow before solve; Green/Red after solve)
-            actors.forEach(actor => {
-                const d = getTrajectoryPathD(actor);
-                let strokeColor = '#fde047';
-                let markerId = 'arrow-normal';
-                let strokeWidth = 4.5;
-
-                if (stageEvaluated && stageEvaluated.detailsByKey) {
-                    const ok = stageEvaluated.detailsByKey[actor.key];
-                    strokeColor = ok ? '#22c55e' : '#ef4444';
-                    markerId = ok ? 'arrow-green' : 'arrow-red';
-                    strokeWidth = 6.5;
-                }
-
-                html += `
-                    <path id="game_traj_${actor.key}" d="${d}" fill="none" stroke="#0f172a" stroke-width="${strokeWidth + 3}" stroke-linecap="round" opacity="0.45"/>
-                    <path d="${d}" fill="none" stroke="${strokeColor}" stroke-width="${strokeWidth}" stroke-dasharray="10 7" stroke-linecap="round" marker-end="url(#${markerId})"/>
-                `;
-            });
-
-            // Signs & Traffic Lights
-            activeBranches.forEach(branch => {
-                const b = currentScenarioState.branches ? currentScenarioState.branches[branch] : null;
-                if (!b) return;
-                const pos = BRANCH_GEOMETRY[branch].signSlot;
-                const hasPrimary = b.primarySign && b.primarySign !== 'none';
-                const hasSecondary = b.secondarySign && b.secondarySign !== 'none';
-                const hasLight = b.trafficLight && b.trafficLight !== 'none';
-                if (!hasPrimary && !hasSecondary && !hasLight) return;
-
-                html += `<g transform="translate(${pos.x}, ${pos.y})">`;
-                html += `<rect x="-3" y="-28" width="6" height="62" rx="2" fill="#475569" stroke="#0f172a" stroke-width="1.5"/>`;
-                html += `<ellipse cx="0" cy="34" rx="12" ry="5" fill="#1e293b" stroke="#0f172a" stroke-width="1.5"/>`;
-
-                if (hasLight) {
-                    const lx = (hasPrimary || hasSecondary) ? -22 : 0;
-                    html += `<g transform="translate(${lx}, -4)">${renderTrafficLightSVG(b.trafficLight)}</g>`;
-                }
-                if (hasPrimary && hasSecondary) {
-                    html += `<g transform="translate(0, -16) scale(0.92)">${renderSignIconSVG(b.primarySign)}</g>`;
-                    html += `<g transform="translate(0, 13) scale(0.88)">${renderSignIconSVG(b.secondarySign)}</g>`;
-                } else if (hasPrimary) {
-                    html += `<g transform="translate(0, -4)">${renderSignIconSVG(b.primarySign)}</g>`;
-                } else if (hasSecondary) {
-                    html += `<g transform="translate(0, -4)">${renderSignIconSVG(b.secondarySign)}</g>`;
-                }
-                html += `</g>`;
-            });
-
-            // Placed Road Users (Clickable to move in order!)
-            actors.forEach(actor => {
-                const basePos = actor.slotType === 'pedestrian'
-                    ? BRANCH_GEOMETRY[actor.branch].pedStart
-                    : BRANCH_GEOMETRY[actor.branch].vehicleStart;
-
-                const anim = animatedPositions[actor.key];
-                const x = anim ? anim.x : basePos.x;
-                const y = anim ? anim.y : basePos.y;
-                const angle = anim ? anim.angle : basePos.angle;
-
-                const clickIdx = userClickedKeys.indexOf(actor.key);
-                const userOrder = clickIdx !== -1 ? (clickIdx + 1) : null;
-
-                let turnSignalHTML = '';
-                if (actor.slotType === 'vehicle' && (actor.direction === 'left' || actor.direction === 'right')) {
-                    const sigX = actor.direction === 'left' ? -13 : 13;
-                    turnSignalHTML = `<circle class="turn-signal-blink" cx="${sigX}" cy="-25" r="4.5" fill="#f97316" stroke="#ffffff" stroke-width="1.5"/>`;
-                }
-
-                let badgeBg = '#0f172a';
-                let badgeStroke = '#fde047';
-                let badgeLabel = userOrder !== null ? userOrder : '؟';
-
-                if (stageEvaluated && stageEvaluated.detailsByKey) {
-                    const ok = stageEvaluated.detailsByKey[actor.key];
-                    badgeBg = ok ? '#16a34a' : '#dc2626';
-                    badgeStroke = '#ffffff';
-                    badgeLabel = `${userOrder || '؟'}`;
-                } else if (userOrder !== null) {
-                    badgeBg = '#2563eb';
-                    badgeStroke = '#fde047';
-                }
-
-                const graphic = actor.slotType === 'pedestrian'
-                    ? renderTopDownPedestrianSVG(actor.type)
-                    : renderTopDownVehicleSVG(actor.type);
-
-                html += `
-                    <g class="placed-actor-group" id="game_actor_${actor.key}"
-                       transform="translate(${x}, ${y})"
-                       onclick="onUserClickRoadActor('${actor.key}')">
-                        <g transform="rotate(${angle})">
-                            ${graphic}
-                            ${turnSignalHTML}
-                        </g>
-                        <g transform="translate(22, -24)">
-                            <rect x="-14" y="-12" width="28" height="24" rx="8" fill="${badgeBg}" stroke="${badgeStroke}" stroke-width="2.5"/>
-                            <text x="0" y="4" text-anchor="middle" fill="#ffffff" font-size="11.5" font-weight="900">${badgeLabel}</text>
-                        </g>
-                    </g>
-                `;
-            });
-
-            svg.innerHTML = html;
         }
 
         function onUserClickRoadActor(actorKey) {
@@ -1168,62 +797,20 @@ $scenarios = ensureAndFetchPriorityScenarios($pdo);
             if (!userClickedKeys.includes(actorKey)) {
                 userClickedKeys.push(actorKey);
             }
-            animateActorMove(actor);
             renderUserSequencePills();
-            renderStageSVG();
-        }
-
-        function animateActorMove(actor) {
-            const pathEl = document.getElementById(`game_traj_${actor.key}`);
-            if (!pathEl) return;
-
-            const totalLen = pathEl.getTotalLength();
-            if (!totalLen || totalLen <= 0) return;
-
-            if (runningAnimFrames[actor.key]) {
-                cancelAnimationFrame(runningAnimFrames[actor.key]);
+            if (scene3D) {
+                scene3D.animateActorMovement(actorKey, userClickedKeys);
             }
-
-            const duration = 1050;
-            const startTime = performance.now();
-
-            function step(now) {
-                const elapsed = now - startTime;
-                const t = Math.min(elapsed / duration, 1);
-                const eased = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
-
-                const dist = eased * (totalLen * 0.88);
-                const pt = pathEl.getPointAtLength(dist);
-                const ptAhead = pathEl.getPointAtLength(Math.min(dist + 4, totalLen));
-                const deg = (Math.atan2(ptAhead.y - pt.y, ptAhead.x - pt.x) * 180 / Math.PI) + 90;
-
-                animatedPositions[actor.key] = { x: pt.x, y: pt.y, angle: deg };
-
-                const gNode = document.getElementById(`game_actor_${actor.key}`);
-                if (gNode) {
-                    gNode.setAttribute('transform', `translate(${pt.x}, ${pt.y})`);
-                    const innerRot = gNode.querySelector('g');
-                    if (innerRot) innerRot.setAttribute('transform', `rotate(${deg})`);
-                }
-
-                if (t < 1) {
-                    runningAnimFrames[actor.key] = requestAnimationFrame(step);
-                } else {
-                    delete runningAnimFrames[actor.key];
-                }
-            }
-
-            runningAnimFrames[actor.key] = requestAnimationFrame(step);
         }
 
         function resetCurrentStageMoves() {
             if (stageEvaluated) return;
-            Object.keys(runningAnimFrames).forEach(k => cancelAnimationFrame(runningAnimFrames[k]));
-            runningAnimFrames = {};
-            animatedPositions = {};
             userClickedKeys = [];
             renderUserSequencePills();
-            renderStageSVG();
+            if (scene3D) {
+                scene3D.resetPositions();
+                scene3D.renderScenario(currentScenarioState, userClickedKeys, stageEvaluated, false);
+            }
         }
 
         function renderUserSequencePills() {
@@ -1231,7 +818,7 @@ $scenarios = ensureAndFetchPriorityScenarios($pdo);
             const actors = getStageActors();
 
             if (userClickedKeys.length === 0) {
-                container.innerHTML = `<span class="text-muted small">هنوز روی هیچ کاربری در تقاطع کلیک نکرده‌اید. روی کسی که اول حق تقدم دارد کلیک کنید!</span>`;
+                container.innerHTML = `<span class="text-muted small">هنوز روی هیچ کاربری در تقاطع ۳ بعدی کلیک نکرده‌اید. روی کسی که اول حق تقدم دارد کلیک کنید!</span>`;
                 return;
             }
 
@@ -1296,8 +883,10 @@ $scenarios = ensureAndFetchPriorityScenarios($pdo);
                 loseStagesCount++;
             }
 
-            // Re-render SVG so lines turn Green or Red!
-            renderStageSVG();
+            // Re-render 3D scene so trajectory lines turn Green or Red!
+            if (scene3D) {
+                scene3D.renderScenario(currentScenarioState, userClickedKeys, stageEvaluated, false);
+            }
 
             const banner = document.getElementById('priorityResultBanner');
             if (allCorrect) {
@@ -1306,7 +895,7 @@ $scenarios = ensureAndFetchPriorityScenarios($pdo);
                     <i class="fas fa-trophy fa-2x"></i>
                     <div>
                         <div class="fs-6">آفرین! ترتیب حق تقدم این تقاطع را کاملاً درست تشخیص دادید (+۵۰ امتیاز)</div>
-                        <div class="fw-normal small">تمام مسیرهای حرکت روی نقشه سبز شدند.</div>
+                        <div class="fw-normal small">تمام مسیرهای حرکت ۳ بعدی روی تقاطع سبز شدند.</div>
                     </div>
                 `;
             } else {
@@ -1315,7 +904,7 @@ $scenarios = ensureAndFetchPriorityScenarios($pdo);
                     <i class="fas fa-exclamation-triangle fa-2x"></i>
                     <div>
                         <div class="fs-6">دقت کنید! در تشخیص ترتیب حق تقدم اشتباه داشتید.</div>
-                        <div class="fw-normal small">مسیرهای قرمز روی نقشه نشان‌دهنده اولویت‌هایی هستند که اشتباه انتخاب کردید.</div>
+                        <div class="fw-normal small">مسیرهای قرمز روی نقشه ۳ بعدی نشان‌دهنده اولویت‌هایی هستند که اشتباه انتخاب کردید.</div>
                     </div>
                 `;
             }
@@ -1352,6 +941,15 @@ $scenarios = ensureAndFetchPriorityScenarios($pdo);
         }
 
         document.addEventListener('DOMContentLoaded', function() {
+            const stageEl = document.getElementById('priority3DStage');
+            if (stageEl && window.Priority3DScene) {
+                scene3D = new window.Priority3DScene(stageEl, {
+                    showDropZones: false,
+                    onActorClick: function(actorKey) {
+                        onUserClickRoadActor(actorKey);
+                    }
+                });
+            }
             loadStage(0);
         });
     </script>

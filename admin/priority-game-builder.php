@@ -283,57 +283,37 @@ $csrf_token = $_SESSION['csrf_token'] ?? generate_csrf_token();
             justify-content: center;
         }
 
-        /* 2D Intersection Canvas Stage */
+        /* 3D Intersection Canvas Stage */
         .canvas-stage-wrapper {
             position: relative;
             width: 100%;
-            max-width: 620px;
+            max-width: 650px;
             margin: 0 auto;
-            aspect-ratio: 1 / 1;
+            aspect-ratio: 6 / 5;
+            min-height: 380px;
             border: 5px solid #020617;
             border-radius: 24px;
             box-shadow: 0 10px 0 #020617, 0 20px 40px rgba(0, 0, 0, 0.45);
             overflow: hidden;
-            background: #4ade80;
+            background: linear-gradient(180deg, #38bdf8 0%, #bae6fd 55%, #4ade80 100%);
             user-select: none;
         }
 
-        #intersectionSvg {
-            width: 100%;
-            height: 100%;
-            display: block;
-        }
-
-        /* Interactive Drop Slots on the 2D Intersection */
+        /* Interactive Drop Slots on the 3D Intersection */
         .drop-slot-group {
             cursor: pointer;
-            transition: opacity 0.2s ease;
-        }
-
-        .drop-slot-box {
-            fill: rgba(255, 255, 255, 0.18);
-            stroke: rgba(255, 255, 255, 0.75);
-            stroke-width: 2.5;
-            stroke-dasharray: 6 4;
-            rx: 12;
             transition: all 0.18s ease;
         }
 
-        .drop-slot-group:hover .drop-slot-box,
-        .drop-slot-group.drag-hover .drop-slot-box {
-            fill: rgba(56, 189, 248, 0.42);
-            stroke: #fde047;
-            stroke-width: 3.5;
-            stroke-dasharray: none;
-        }
-
-        .placed-actor-group {
-            cursor: pointer;
-            transition: filter 0.18s ease;
-        }
-
-        .placed-actor-group:hover {
-            filter: drop-shadow(0 0 8px rgba(250, 204, 21, 0.95));
+        .drop-slot-group:hover,
+        .drop-slot-group.drag-hover {
+            background: rgba(34, 197, 94, 0.95) !important;
+            color: #ffffff !important;
+            border-color: #ffffff !important;
+            border-style: solid !important;
+            transform: translate(-50%, -50%) scale(1.16) !important;
+            box-shadow: 0 0 14px rgba(34, 197, 94, 0.9);
+            z-index: 20;
         }
 
         /* Priority Badge on Canvas */
@@ -594,14 +574,14 @@ $csrf_token = $_SESSION['csrf_token'] ?? generate_csrf_token();
             </div>
 
             <!-- =========================================================
-                 CENTER COLUMN: 2D TOP-DOWN INTERSECTION CANVAS & SIMULATOR CONTROLS
+                 CENTER COLUMN: 3D INTERSECTION CANVAS & SIMULATOR CONTROLS
                  ========================================================= -->
             <div class="col-12 col-xl-5">
                 <div class="studio-card">
                     <div class="studio-card-header">
                         <span id="canvasHeaderTitle">
-                            <i class="fas fa-map-marked-alt text-success me-2"></i>
-                            محیط ۲ بعدی تقاطع (اجزا را روی نقاط مشخص‌شده بکشید یا کلیک کنید)
+                            <i class="fas fa-cube text-success me-2"></i>
+                            محیط ۳ بعدی تقاطع سه‌رخ (اجزا را روی نقاط مشخص‌شده بکشید یا کلیک کنید)
                         </span>
                         <div class="d-flex align-items-center gap-2">
                             <button type="button" class="btn btn-sm btn-warning fw-bold" onclick="resetVehiclesAnimation()" title="بازگرداندن خودروها به نقطه شروع">
@@ -625,10 +605,8 @@ $csrf_token = $_SESSION['csrf_token'] ?? generate_csrf_token();
                             <div class="small text-muted mt-1" dir="ltr" id="liveQuestionDeDisplay" style="display: none;"></div>
                         </div>
 
-                        <!-- 2D Interactive Intersection SVG (600x600) -->
-                        <div class="canvas-stage-wrapper" id="canvasStageWrapper">
-                            <svg id="intersectionSvg" viewBox="0 0 600 600" xmlns="http://www.w3.org/2000/svg"></svg>
-                        </div>
+                        <!-- 3D Interactive Intersection Stage (Three.js 3/4 Elevated View) -->
+                        <div class="canvas-stage-wrapper" id="canvasStageWrapper"></div>
 
                         <!-- Simulator Action Bar (Click Sequence & Check Answer Button) -->
                         <div class="mt-3 p-3 rounded-4 border border-3 border-dark" style="background: var(--panel-sub);">
@@ -729,6 +707,8 @@ $csrf_token = $_SESSION['csrf_token'] ?? generate_csrf_token();
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="assets/js/priority-3d-engine.js?v=1.1"></script>
 
     <script>
         const CSRF_TOKEN = <?= json_encode($csrf_token) ?>;
@@ -1339,295 +1319,31 @@ $csrf_token = $_SESSION['csrf_token'] ?? generate_csrf_token();
         }
 
         // =========================================================================
-        // 6. RENDERING THE 2D INTERSECTION SVG (ROADS, CROSSWALKS, SIGNS, PATHS, ACTORS)
+        // 6. RENDERING THE 3D INTERSECTION (THREE.JS 3/4 ELEVATED PERSPECTIVE)
         // =========================================================================
+        let scene3D = null;
+
         function renderIntersectionSVG() {
-            const svg = document.getElementById('intersectionSvg');
-            const activeBranches = INTERSECTION_BRANCHES[scenarioState.intersectionType] || INTERSECTION_BRANCHES.cross4;
-            const actors = getAllPlacedActors();
-
-            let defsHTML = `
-                <defs>
-                    <marker id="arrow-normal" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="5.5" markerHeight="5.5" orient="auto-start-reverse">
-                        <path d="M 0 1 L 10 5 L 0 9 z" fill="#fde047" stroke="#0f172a" stroke-width="1"/>
-                    </marker>
-                    <marker id="arrow-green" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-                        <path d="M 0 1 L 10 5 L 0 9 z" fill="#22c55e" stroke="#052e16" stroke-width="1"/>
-                    </marker>
-                    <marker id="arrow-red" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-                        <path d="M 0 1 L 10 5 L 0 9 z" fill="#ef4444" stroke="#450a0a" stroke-width="1"/>
-                    </marker>
-                </defs>
-            `;
-
-            // 1. Grass environment & decorative 2D trees
-            let envHTML = `
-                <rect x="0" y="0" width="600" height="600" fill="#4ade80"/>
-                <!-- Decorative 2D Trees in Corners -->
-                <g opacity="0.85">
-                    <circle cx="65" cy="65" r="28" fill="#16a34a" stroke="#14532d" stroke-width="3"/>
-                    <circle cx="58" cy="58" r="18" fill="#22c55e"/>
-                    <circle cx="535" cy="65" r="28" fill="#16a34a" stroke="#14532d" stroke-width="3"/>
-                    <circle cx="528" cy="58" r="18" fill="#22c55e"/>
-                    <circle cx="65" cy="535" r="28" fill="#16a34a" stroke="#14532d" stroke-width="3"/>
-                    <circle cx="58" cy="528" r="18" fill="#22c55e"/>
-                    <circle cx="535" cy="535" r="28" fill="#16a34a" stroke="#14532d" stroke-width="3"/>
-                    <circle cx="528" cy="528" r="18" fill="#22c55e"/>
-                </g>
-            `;
-
-            // 2. Sidewalk Curbs & Road Asphalt per active branch
-            let sidewalkHTML = `<rect x="205" y="205" width="190" height="190" rx="18" fill="#cbd5e1" stroke="#475569" stroke-width="3"/>`;
-            let asphaltHTML = `<rect x="225" y="225" width="150" height="150" fill="#334155"/>`;
-            let markingsHTML = '';
-
-            if (activeBranches.includes('top')) {
-                sidewalkHTML += `<rect x="205" y="0" width="190" height="225" fill="#cbd5e1" stroke="#475569" stroke-width="3"/>`;
-                asphaltHTML  += `<rect x="225" y="0" width="150" height="230" fill="#334155"/>`;
-                markingsHTML += `<line x1="300" y1="10" x2="300" y2="170" stroke="#f8fafc" stroke-width="4" stroke-dasharray="18 14"/>`;
-            }
-            if (activeBranches.includes('bottom')) {
-                sidewalkHTML += `<rect x="205" y="375" width="190" height="225" fill="#cbd5e1" stroke="#475569" stroke-width="3"/>`;
-                asphaltHTML  += `<rect x="225" y="370" width="150" height="230" fill="#334155"/>`;
-                markingsHTML += `<line x1="300" y1="430" x2="300" y2="590" stroke="#f8fafc" stroke-width="4" stroke-dasharray="18 14"/>`;
-            }
-            if (activeBranches.includes('right')) {
-                sidewalkHTML += `<rect x="375" y="205" width="225" height="190" fill="#cbd5e1" stroke="#475569" stroke-width="3"/>`;
-                asphaltHTML  += `<rect x="370" y="225" width="230" height="150" fill="#334155"/>`;
-                markingsHTML += `<line x1="430" y1="300" x2="590" y2="300" stroke="#f8fafc" stroke-width="4" stroke-dasharray="18 14"/>`;
-            }
-            if (activeBranches.includes('left')) {
-                sidewalkHTML += `<rect x="0" y="205" width="225" height="190" fill="#cbd5e1" stroke="#475569" stroke-width="3"/>`;
-                asphaltHTML  += `<rect x="0" y="225" width="230" height="150" fill="#334155"/>`;
-                markingsHTML += `<line x1="10" y1="300" x2="170" y2="300" stroke="#f8fafc" stroke-width="4" stroke-dasharray="18 14"/>`;
-            }
-
-            // 3. Crosswalk Zebra Stripes & Stop/Yield Road Lines
-            let crosswalksHTML = '';
-            activeBranches.forEach(branch => {
-                const b = scenarioState.branches[branch];
-                if (!b) return;
-
-                if (b.hasCrosswalk) {
-                    if (branch === 'bottom') {
-                        for (let x = 232; x <= 362; x += 18) {
-                            crosswalksHTML += `<rect x="${x}" y="395" width="10" height="32" rx="2" fill="#f8fafc" opacity="0.92"/>`;
-                        }
-                    } else if (branch === 'top') {
-                        for (let x = 232; x <= 362; x += 18) {
-                            crosswalksHTML += `<rect x="${x}" y="173" width="10" height="32" rx="2" fill="#f8fafc" opacity="0.92"/>`;
-                        }
-                    } else if (branch === 'right') {
-                        for (let y = 232; y <= 362; y += 18) {
-                            crosswalksHTML += `<rect x="395" y="${y}" width="32" height="10" rx="2" fill="#f8fafc" opacity="0.92"/>`;
-                        }
-                    } else if (branch === 'left') {
-                        for (let y = 232; y <= 362; y += 18) {
-                            crosswalksHTML += `<rect x="173" y="${y}" width="32" height="10" rx="2" fill="#f8fafc" opacity="0.92"/>`;
-                        }
-                    }
-                }
-
-                // Stop line or Yield shark-teeth on road if sign is STOP or Yield
-                if (b.primarySign === 's206_stop' || b.primarySign === 's205_yield') {
-                    const isStop = b.primarySign === 's206_stop';
-                    const dash = isStop ? '' : 'stroke-dasharray="8 6"';
-                    if (branch === 'bottom') {
-                        crosswalksHTML += `<line x1="302" y1="435" x2="373" y2="435" stroke="#ffffff" stroke-width="6" ${dash}/>`;
-                    } else if (branch === 'top') {
-                        crosswalksHTML += `<line x1="227" y1="165" x2="298" y2="165" stroke="#ffffff" stroke-width="6" ${dash}/>`;
-                    } else if (branch === 'right') {
-                        crosswalksHTML += `<line x1="435" y1="227" x2="435" y2="298" stroke="#ffffff" stroke-width="6" ${dash}/>`;
-                    } else if (branch === 'left') {
-                        crosswalksHTML += `<line x1="165" y1="302" x2="165" y2="373" stroke="#ffffff" stroke-width="6" ${dash}/>`;
-                    }
-                }
-            });
-
-            // 4. Drop Zones (Shown in Design Mode so Admin can drag & drop onto specific points)
-            let dropZonesHTML = '';
-            if (studioMode === 'design') {
-                activeBranches.forEach(branch => {
-                    const g = BRANCH_GEOMETRY[branch];
-                    const isSelectedBranch = activeInspectorBranch === branch;
-                    const branchLabelShort = { bottom: 'پایین', top: 'بالا', right: 'راست', left: 'چپ' }[branch];
-
-                    // Vehicle Slot
-                    dropZonesHTML += `
-                        <g class="drop-slot-group" data-branch="${branch}" data-slot-type="vehicle" onclick="selectActiveBranch('${branch}')">
-                            <rect class="drop-slot-box" x="${g.vehicleStart.x - 28}" y="${g.vehicleStart.y - 34}" width="56" height="68"
-                                  style="${isSelectedBranch ? 'stroke:#fde047; stroke-width:3;' : ''}"/>
-                            <text x="${g.vehicleStart.x}" y="${g.vehicleStart.y + 46}" text-anchor="middle" fill="#e2e8f0" font-size="10" font-weight="800">خودرو (${branchLabelShort})</text>
-                        </g>
-                    `;
-
-                    // Sidewalk / Pedestrian Slot
-                    dropZonesHTML += `
-                        <g class="drop-slot-group" data-branch="${branch}" data-slot-type="pedestrian" onclick="selectActiveBranch('${branch}')">
-                            <rect class="drop-slot-box" x="${g.pedStart.x - 20}" y="${g.pedStart.y - 20}" width="40" height="40"/>
-                            <text x="${g.pedStart.x}" y="${g.pedStart.y - 24}" text-anchor="middle" fill="#0f172a" font-size="9.5" font-weight="900">پیاده‌رو</text>
-                        </g>
-                    `;
-
-                    // Signpost & Traffic Light Slot
-                    dropZonesHTML += `
-                        <g class="drop-slot-group" data-branch="${branch}" data-slot-type="sign" onclick="selectActiveBranch('${branch}')">
-                            <rect class="drop-slot-box" x="${g.signSlot.x - 24}" y="${g.signSlot.y - 34}" width="48" height="68"/>
-                            <text x="${g.signSlot.x}" y="${g.signSlot.y + 45}" text-anchor="middle" fill="#0f172a" font-size="9.5" font-weight="900">تابلو/چراغ (${branchLabelShort})</text>
-                        </g>
-                    `;
-                });
-            }
-
-            // 5. Trajectory Arrow Lines for each placed actor
-            let trajectoriesHTML = '';
-            actors.forEach(actor => {
-                const d = getActorTrajectoryPathData(actor);
-                let strokeColor = '#fde047';
-                let markerId = 'arrow-normal';
-                let strokeWidth = 4.5;
-
-                if (simEvaluationResult && simEvaluationResult.detailsByKey) {
-                    const isActorCorrect = simEvaluationResult.detailsByKey[actor.key];
-                    if (isActorCorrect === true) {
-                        strokeColor = '#22c55e';
-                        markerId = 'arrow-green';
-                        strokeWidth = 6;
-                    } else if (isActorCorrect === false) {
-                        strokeColor = '#ef4444';
-                        markerId = 'arrow-red';
-                        strokeWidth = 6;
-                    }
-                }
-
-                trajectoriesHTML += `
-                    <path id="traj_${actor.key}" d="${d}" fill="none"
-                          stroke="#0f172a" stroke-width="${strokeWidth + 3}" stroke-linecap="round" opacity="0.45"/>
-                    <path d="${d}" fill="none"
-                          stroke="${strokeColor}" stroke-width="${strokeWidth}"
-                          stroke-dasharray="10 7" stroke-linecap="round"
-                          marker-end="url(#${markerId})"/>
-                `;
-            });
-
-            // 6. Traffic Signs (Single or Stacked Dual Signs) & Traffic Lights per Branch
-            let signsAndLightsHTML = '';
-            activeBranches.forEach(branch => {
-                const b = scenarioState.branches[branch];
-                if (!b) return;
-                const pos = BRANCH_GEOMETRY[branch].signSlot;
-
-                const hasPrimary = b.primarySign && b.primarySign !== 'none';
-                const hasSecondary = b.secondarySign && b.secondarySign !== 'none';
-                const hasLight = b.trafficLight && b.trafficLight !== 'none';
-
-                if (!hasPrimary && !hasSecondary && !hasLight) return;
-
-                signsAndLightsHTML += `<g transform="translate(${pos.x}, ${pos.y})" style="cursor:pointer;" onclick="selectActiveBranch('${branch}')">`;
-                // Post pole
-                signsAndLightsHTML += `<rect x="-3" y="-28" width="6" height="62" rx="2" fill="#475569" stroke="#0f172a" stroke-width="1.5"/>`;
-                signsAndLightsHTML += `<ellipse cx="0" cy="34" rx="12" ry="5" fill="#1e293b" stroke="#0f172a" stroke-width="1.5"/>`;
-
-                if (hasLight) {
-                    const lightX = (hasPrimary || hasSecondary) ? -22 : 0;
-                    signsAndLightsHTML += `<g transform="translate(${lightX}, -4)">${renderTrafficLightSVG(b.trafficLight)}</g>`;
-                }
-
-                if (hasPrimary && hasSecondary) {
-                    // Stacked dual signs (دو تابلو زیر هم روی یک پایه)
-                    signsAndLightsHTML += `<g transform="translate(0, -16) scale(0.92)">${renderSignIconSVG(b.primarySign)}</g>`;
-                    signsAndLightsHTML += `<g transform="translate(0, 13) scale(0.88)">${renderSignIconSVG(b.secondarySign)}</g>`;
-                } else if (hasPrimary) {
-                    signsAndLightsHTML += `<g transform="translate(0, -4)">${renderSignIconSVG(b.primarySign)}</g>`;
-                } else if (hasSecondary) {
-                    signsAndLightsHTML += `<g transform="translate(0, -4)">${renderSignIconSVG(b.secondarySign)}</g>`;
-                }
-
-                signsAndLightsHTML += `</g>`;
-            });
-
-            // 7. Placed Vehicles & Pedestrians (with Turn Signals, Priority Badge & Click-to-Move!)
-            let actorsHTML = '';
-            actors.forEach(actor => {
-                const basePos = actor.slotType === 'pedestrian'
-                    ? BRANCH_GEOMETRY[actor.branch].pedStart
-                    : BRANCH_GEOMETRY[actor.branch].vehicleStart;
-
-                const animPos = simAnimatedPositions[actor.key];
-                const x = animPos ? animPos.x : basePos.x;
-                const y = animPos ? animPos.y : basePos.y;
-                const angle = animPos ? animPos.angle : basePos.angle;
-
-                const clickIdx = simClickedSequence.indexOf(actor.key);
-                const userClickedOrder = clickIdx !== -1 ? (clickIdx + 1) : null;
-
-                // Blinking Turn Signal on Vehicles turning left or right
-                let turnSignalHTML = '';
-                if (actor.slotType === 'vehicle' && (actor.direction === 'left' || actor.direction === 'right')) {
-                    const sigX = actor.direction === 'left' ? -13 : 13;
-                    turnSignalHTML = `
-                        <circle class="turn-signal-blink" cx="${sigX}" cy="-25" r="4.5" fill="#f97316" stroke="#ffffff" stroke-width="1.5"/>
-                    `;
-                }
-
-                // Badge showing Admin Priority (in Design mode) or User Clicked Order / Evaluation (in Preview/Eval)
-                let badgeBg = '#1e1b4b';
-                let badgeText = actor.priority;
-                let badgeStroke = '#fde047';
-
-                if (simEvaluationResult && simEvaluationResult.detailsByKey) {
-                    const ok = simEvaluationResult.detailsByKey[actor.key];
-                    badgeBg = ok ? '#16a34a' : '#dc2626';
-                    badgeStroke = '#ffffff';
-                    badgeText = userClickedOrder ? `${userClickedOrder} (${actor.priority})` : `؟ (${actor.priority})`;
-                } else if (studioMode === 'preview') {
-                    if (userClickedOrder !== null) {
-                        badgeBg = '#2563eb';
-                        badgeStroke = '#fde047';
-                        badgeText = userClickedOrder;
-                    } else {
-                        badgeBg = '#0f172a';
-                        badgeStroke = '#94a3b8';
-                        badgeText = '؟';
-                    }
-                }
-
-                const svgGraphic = actor.slotType === 'pedestrian'
-                    ? renderTopDownPedestrianSVG(actor.type, 1.15)
-                    : renderTopDownVehicleSVG(actor.type, 1.0);
-
-                actorsHTML += `
-                    <g class="placed-actor-group" id="actor_node_${actor.key}"
-                       transform="translate(${x}, ${y})"
-                       onclick="handleCanvasActorClick('${actor.key}', '${actor.branch}', event)">
-                        <g transform="rotate(${angle})">
-                            ${svgGraphic}
-                            ${turnSignalHTML}
-                        </g>
-                        <!-- Priority / Click Order Badge -->
-                        <g class="actor-priority-badge" transform="translate(22, -24)">
-                            <rect x="-15" y="-12" width="30" height="24" rx="8" fill="${badgeBg}" stroke="${badgeStroke}" stroke-width="2.5"/>
-                            <text x="0" y="4" text-anchor="middle" fill="#ffffff" font-size="11" font-weight="900">${badgeText}</text>
-                        </g>
-                    </g>
-                `;
-            });
-
-            svg.innerHTML = defsHTML + envHTML + sidewalkHTML + asphaltHTML + markingsHTML + crosswalksHTML + dropZonesHTML + trajectoriesHTML + signsAndLightsHTML + actorsHTML;
+            if (!scene3D) return;
+            scene3D.renderScenario(
+                scenarioState,
+                simClickedSequence,
+                simEvaluationResult,
+                studioMode === 'design'
+            );
         }
 
         // =========================================================================
         // 7. INTERACTIVE CLICK-TO-MOVE ANIMATION & PRIORITY EVALUATION
         // =========================================================================
-        function handleCanvasActorClick(actorKey, branch, ev) {
-            if (ev) ev.stopPropagation();
-
-            // Select branch in inspector when in design mode
-            if (studioMode === 'design') {
-                selectActiveBranch(branch);
+        function handleCanvasActorClick(actorKey, branch) {
+            if (studioMode === 'design' && branch) {
+                const activeBranches = INTERSECTION_BRANCHES[scenarioState.intersectionType] || INTERSECTION_BRANCHES.cross4;
+                if (activeBranches.includes(branch)) {
+                    activeInspectorBranch = branch;
+                    renderBranchInspector();
+                }
             }
-
-            // Trigger movement along trajectory & record priority click!
             triggerActorMoveAndSelect(actorKey);
         }
 
@@ -1639,74 +1355,17 @@ $csrf_token = $_SESSION['csrf_token'] ?? generate_csrf_token();
             simEvaluationResult = null;
             document.getElementById('simResultBox').style.display = 'none';
 
-            // If not yet clicked, add to sequence and animate along path
             if (!simClickedSequence.includes(actorKey)) {
                 simClickedSequence.push(actorKey);
-                animateActorAlongPath(actor);
-            } else {
-                // Re-animate from start if clicked again
-                animateActorAlongPath(actor);
             }
 
             renderClickedOrderPills();
-            renderIntersectionSVG();
-        }
-
-        function animateActorAlongPath(actor) {
-            const pathEl = document.getElementById(`traj_${actor.key}`);
-            if (!pathEl) return;
-
-            const totalLen = pathEl.getTotalLength();
-            if (!totalLen || totalLen <= 0) return;
-
-            if (activeAnimations[actor.key]) {
-                cancelAnimationFrame(activeAnimations[actor.key]);
+            if (scene3D) {
+                scene3D.animateActorMovement(actorKey, simClickedSequence);
             }
-
-            const duration = 1050; // ms
-            const startTime = performance.now();
-
-            function step(now) {
-                const elapsed = now - startTime;
-                const t = Math.min(elapsed / duration, 1);
-                // Smooth easeInOutQuad
-                const eased = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
-
-                const dist = eased * (totalLen * 0.88);
-                const pt = pathEl.getPointAtLength(dist);
-                const ptAhead = pathEl.getPointAtLength(Math.min(dist + 4, totalLen));
-                const rad = Math.atan2(ptAhead.y - pt.y, ptAhead.x - pt.x);
-                const deg = (rad * 180 / Math.PI) + 90;
-
-                simAnimatedPositions[actor.key] = {
-                    x: pt.x,
-                    y: pt.y,
-                    angle: deg
-                };
-
-                const gNode = document.getElementById(`actor_node_${actor.key}`);
-                if (gNode) {
-                    gNode.setAttribute('transform', `translate(${pt.x}, ${pt.y})`);
-                    const innerRot = gNode.querySelector('g');
-                    if (innerRot) {
-                        innerRot.setAttribute('transform', `rotate(${deg})`);
-                    }
-                }
-
-                if (t < 1) {
-                    activeAnimations[actor.key] = requestAnimationFrame(step);
-                } else {
-                    delete activeAnimations[actor.key];
-                }
-            }
-
-            activeAnimations[actor.key] = requestAnimationFrame(step);
         }
 
         function resetVehiclesAnimation() {
-            Object.keys(activeAnimations).forEach(k => cancelAnimationFrame(activeAnimations[k]));
-            activeAnimations = {};
-            simAnimatedPositions = {};
             simClickedSequence = [];
             simEvaluationResult = null;
 
@@ -1714,7 +1373,10 @@ $csrf_token = $_SESSION['csrf_token'] ?? generate_csrf_token();
             if (resBox) resBox.style.display = 'none';
 
             renderClickedOrderPills();
-            renderIntersectionSVG();
+            if (scene3D) {
+                scene3D.resetPositions();
+                scene3D.renderScenario(scenarioState, simClickedSequence, simEvaluationResult, studioMode === 'design');
+            }
         }
 
         function renderClickedOrderPills() {
@@ -2317,6 +1979,18 @@ $csrf_token = $_SESSION['csrf_token'] ?? generate_csrf_token();
         }
 
         document.addEventListener('DOMContentLoaded', function() {
+            const stageEl = document.getElementById('canvasStageWrapper');
+            if (stageEl && window.Priority3DScene) {
+                scene3D = new window.Priority3DScene(stageEl, {
+                    showDropZones: true,
+                    onActorClick: function(actorKey, branch) {
+                        handleCanvasActorClick(actorKey, branch);
+                    },
+                    onBranchSelect: function(branch) {
+                        selectActiveBranch(branch);
+                    }
+                });
+            }
             initPaletteGrids();
             loadPresetScenario('preset1');
             fetchSavedScenarios();
