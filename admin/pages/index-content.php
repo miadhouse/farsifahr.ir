@@ -136,11 +136,13 @@ if ($userConfig) {
             margin-left: -4px !important;
             margin-right: -4px !important;
         }
-        .base-btn .col-6 {
+        .base-btn .col-6,
+        .base-btn .row > .col-12 {
             padding-left: 4px !important;
             padding-right: 4px !important;
         }
-        .base-btn .col-6.mb-3 {
+        .base-btn .col-6.mb-3,
+        .base-btn .row > .col-12.mb-3 {
             margin-bottom: 8px !important;
         }
         .readiness-comparison-wrapper .row {
@@ -277,6 +279,20 @@ if ($userConfig) {
             margin-bottom: 12px !important;
         }
     }
+
+    @media (min-width: 768px) {
+        .base-btn .nav-hover-zoom {
+            min-height: 95px;
+        }
+        .base-btn .nav-icons {
+            height: 95px !important;
+            width: 95px !important;
+        }
+    }
+
+    .nav-mistake-blue {
+        background: linear-gradient(311.75deg, rgba(37, 99, 235, 0.72) -18.71%, rgba(56, 189, 248, 0.55) 120.42%);
+    }
     </style>
     <div class="row">
         <!-- Activity -->
@@ -303,7 +319,7 @@ if ($userConfig) {
                         </div>
                     </div>
                 </div>
-                <div class="col-6 mb-0 col-md-6 ">
+                <div class="col-6 mb-3 col-md-6 ">
                     <div class="col-12  h-100 vh-25  w-100 position-relative text-white nav-hover-zoom nav-purple-soft">
                         <img class="nav-img" src="assets/img/backgrounds/about-4-1.png" alt="...">
                         <div class="card-img-overlay d-flex align-items-center h-100 px-5"><img class="nav-icons"
@@ -313,13 +329,23 @@ if ($userConfig) {
                         </div>
                     </div>
                 </div>
-                <div class="col-6 mb-0 col-md-6 ">
+                <div class="col-6 mb-3 col-md-6 ">
                     <div class="col-12  h-100 vh-25  w-100 position-relative text-white nav-hover-zoom nav-indigo-soft">
                         <img class="nav-img" src="assets/img/backgrounds/about-4-1.png" alt="...">
                         <div class="card-img-overlay d-flex align-items-center h-100 px-5"><img class="nav-icons"
                                 src="assets/img/illustrations/4.png" alt="icon">
                             <a class="text-white fs-3 fs-xl-2 fs-xxl-3 stretched-link items fw-bold ps-4"
                                 href="workshop.php">کارگاه آموزش</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 mb-0 col-md-12 ">
+                    <div class="col-12  h-100 vh-25  w-100 position-relative text-white nav-hover-zoom nav-mistake-blue">
+                        <img class="nav-img" src="assets/img/backgrounds/about-4-1.png" alt="...">
+                        <div class="card-img-overlay d-flex align-items-center h-100 px-5"><img class="nav-icons"
+                                src="assets/img/illustrations/22.png" alt="icon">
+                            <a class="text-white fs-3 fs-xl-2 fs-xxl-3 stretched-link items fw-bold ps-4"
+                                href="mistakes-game.php">بازی و یادگیری</a>
                         </div>
                     </div>
                 </div>
