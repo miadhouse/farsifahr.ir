@@ -89,9 +89,27 @@ $stmtCount5Points = $pdo->prepare($count5PointsSql);
 $stmtCount5Points->execute();
 $total5PointsCount = (int) $stmtCount5Points->fetchColumn();
 
+// شمارش کل سوالات مارک‌شده (نشان‌شده) کاربر
+$countBookmarksSql = "
+    SELECT COUNT(*)
+    FROM questions q
+    INNER JOIN question_bookmarks b ON q.id = b.question_id
+    WHERE b.user_id = :user_id
+      $availableCondition
+      $accessCondition
+      AND EXISTS (
+          SELECT 1 FROM answers a
+          WHERE a.question_number = q.number
+            AND (a.asw_type IS NULL OR a.asw_type != 2)
+      )
+";
+$stmtCountBookmarks = $pdo->prepare($countBookmarksSql);
+$stmtCountBookmarks->execute([':user_id' => $user_id]);
+$totalBookmarksCount = (int) $stmtCountBookmarks->fetchColumn();
+
 // بررسی حالت انتخاب شده بازی
 $selectedMode = $_GET['mode'] ?? '';
-$validModes = ['mistakes', '5points'];
+$validModes = ['mistakes', '5points', 'bookmarks'];
 $isLobby = !in_array($selectedMode, $validModes, true);
 
 $gameQuestions = [];
@@ -138,6 +156,27 @@ if (!$isLobby) {
         ";
         $stmtQuestions = $pdo->prepare($questionsSql);
         $stmtQuestions->execute([':user_id' => $user_id]);
+        $rawQuestions = $stmtQuestions->fetchAll(PDO::FETCH_ASSOC);
+    } elseif ($selectedMode === 'bookmarks') {
+        $modeTitle = 'بازی با سوالات مارک‌شده';
+        $questionsSql = "
+            SELECT q.*, COALESCE(uqs.correct, 0) AS stat_correct, COALESCE(uqs.incorrect, 0) AS stat_incorrect
+            FROM questions q
+            INNER JOIN question_bookmarks b ON q.id = b.question_id
+            LEFT JOIN user_question_stats uqs ON q.id = uqs.question_id AND uqs.user_id = :user_id
+            WHERE b.user_id = :bookmark_user_id
+              $availableCondition
+              $accessCondition
+              AND EXISTS (
+                  SELECT 1 FROM answers a
+                  WHERE a.question_number = q.number
+                    AND (a.asw_type IS NULL OR a.asw_type != 2)
+              )
+            ORDER BY b.created_at DESC, q.id ASC
+            LIMIT 30
+        ";
+        $stmtQuestions = $pdo->prepare($questionsSql);
+        $stmtQuestions->execute([':user_id' => $user_id, ':bookmark_user_id' => $user_id]);
         $rawQuestions = $stmtQuestions->fetchAll(PDO::FETCH_ASSOC);
     }
 
@@ -454,6 +493,11 @@ if (!$isLobby) {
             border-color: #92400e;
         }
 
+        .lobby-mode-bookmarks {
+            box-shadow: 0 8px 0 #1d4ed8, inset 0 4px 0 rgba(59, 130, 246, 0.18);
+            border-color: #1e40af;
+        }
+
         .lobby-mode-card:hover {
             transform: translateY(-4px);
             color: var(--text-main);
@@ -484,6 +528,11 @@ if (!$isLobby) {
         .mode-icon-5points {
             background: linear-gradient(180deg, #fcd34d 0%, #f59e0b 100%);
             color: #1e1b4b;
+        }
+
+        .mode-icon-bookmarks {
+            background: linear-gradient(180deg, #60a5fa 0%, #2563eb 100%);
+            color: #ffffff;
         }
 
         .mode-count-pill {
@@ -522,6 +571,12 @@ if (!$isLobby) {
             background: linear-gradient(180deg, #fbbf24 0%, #d97706 100%);
             color: #1e1b4b;
             box-shadow: 0 5px 0 #78350f, inset 0 2px 0 rgba(255, 255, 255, 0.55);
+        }
+
+        .btn-play-blue {
+            background: linear-gradient(180deg, #3b82f6 0%, #1d4ed8 100%);
+            color: #ffffff;
+            box-shadow: 0 5px 0 #1e3a8a, inset 0 2px 0 rgba(255, 255, 255, 0.4);
         }
 
         /* =========================================================
@@ -1231,7 +1286,7 @@ if (!$isLobby) {
 
             <div class="row g-3">
                 <!-- Mode 1: Play with 30 Recent Mistakes -->
-                <div class="col-12 col-md-6">
+                <div class="col-12 col-md-4">
                     <a href="mistakes-game.php?mode=mistakes" class="lobby-mode-card lobby-mode-mistakes text-center">
                         <div>
                             <div class="mode-icon-box mode-icon-mistakes">
@@ -1241,8 +1296,8 @@ if (!$isLobby) {
                                 <i class="fas fa-exclamation-circle"></i>
                                 <span><?= $totalMistakesCount ?> سوال اشتباه در آمار شما</span>
                             </span>
-                            <h4 style="font-weight: 900; font-size: 1.2rem;" class="mb-2">بازی با ۳۰ اشتباه اخیر</h4>
-                            <p class="text-muted mb-0" style="font-size: 0.85rem; line-height: 1.6;">
+                            <h4 style="font-weight: 900; font-size: 1.15rem;" class="mb-2">بازی با ۳۰ اشتباه اخیر</h4>
+                            <p class="text-muted mb-0" style="font-size: 0.84rem; line-height: 1.6;">
                                 سوالاتی که ۱ یا ۲ بار اشتباه پاسخ داده‌اید را در محیط بازی تمرین کنید تا به نقاط قوت شما تبدیل شوند.
                             </p>
                         </div>
@@ -1254,7 +1309,7 @@ if (!$isLobby) {
                 </div>
 
                 <!-- Mode 2: Play with 30 5-Point Questions -->
-                <div class="col-12 col-md-6">
+                <div class="col-12 col-md-4">
                     <a href="mistakes-game.php?mode=5points" class="lobby-mode-card lobby-mode-5points text-center">
                         <div>
                             <div class="mode-icon-box mode-icon-5points">
@@ -1264,14 +1319,37 @@ if (!$isLobby) {
                                 <i class="fas fa-bolt"></i>
                                 <span><?= $total5PointsCount ?> سوال ۵ نمره‌ای مهم</span>
                             </span>
-                            <h4 style="font-weight: 900; font-size: 1.2rem;" class="mb-2">بازی با ۳۰ سوال ۵ نمره‌ای</h4>
-                            <p class="text-muted mb-0" style="font-size: 0.85rem; line-height: 1.6;">
+                            <h4 style="font-weight: 900; font-size: 1.15rem;" class="mb-2">بازی با ۳۰ سوال ۵ نمره‌ای</h4>
+                            <p class="text-muted mb-0" style="font-size: 0.84rem; line-height: 1.6;">
                                 مهم‌ترین و پرنمره‌ترین سوالات آزمون (۵ امتیازی) را به شکل بازی تفکیک کنید و تسلط خود را به ۱۰۰٪ برسانید.
                             </p>
                         </div>
                         <div class="btn-play-mode btn-play-gold">
                             <i class="fas fa-play"></i>
                             <span>شروع بازی ۳۰ سوال ۵ نمره‌ای</span>
+                        </div>
+                    </a>
+                </div>
+
+                <!-- Mode 3: Play with Marked (Bookmarked) Questions -->
+                <div class="col-12 col-md-4">
+                    <a href="mistakes-game.php?mode=bookmarks" class="lobby-mode-card lobby-mode-bookmarks text-center">
+                        <div>
+                            <div class="mode-icon-box mode-icon-bookmarks">
+                                <i class="fas fa-bookmark"></i>
+                            </div>
+                            <span class="mode-count-pill" style="background: #dbeafe; color: #1e40af;">
+                                <i class="fas fa-bookmark"></i>
+                                <span><?= $totalBookmarksCount ?> سوال مارک‌شده شما</span>
+                            </span>
+                            <h4 style="font-weight: 900; font-size: 1.15rem;" class="mb-2">بازی با سوالات مارک‌شده</h4>
+                            <p class="text-muted mb-0" style="font-size: 0.84rem; line-height: 1.6;">
+                                سوالاتی که هنگام مطالعه مارک (نشان) کرده‌اید را در قالب بازی مرور و تثبیت کنید.
+                            </p>
+                        </div>
+                        <div class="btn-play-mode btn-play-blue">
+                            <i class="fas fa-play"></i>
+                            <span>شروع بازی سوالات مارک‌شده</span>
                         </div>
                     </a>
                 </div>
