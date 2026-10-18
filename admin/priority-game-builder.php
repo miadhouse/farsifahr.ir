@@ -456,9 +456,9 @@ $csrf_token = $_SESSION['csrf_token'] ?? generate_csrf_token();
                         <i class="bx bx-home-alt"></i>
                         <span>داشبورد</span>
                     </a>
-                    <a href="mistakes-game.php" class="btn-2d btn-2d-cyan">
+                    <a href="priority-game.php" class="btn-2d btn-2d-cyan">
                         <i class="fas fa-gamepad"></i>
-                        <span>صفحه بازی و یادگیری</span>
+                        <span>اجرای بازی حق تقدم‌ها (کاربر)</span>
                     </a>
                     <span class="fw-black fs-6 ms-2 d-none d-md-inline" style="font-weight: 900;">
                         <i class="fas fa-traffic-light text-warning me-1"></i>

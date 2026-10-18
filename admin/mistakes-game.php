@@ -1246,9 +1246,13 @@ if (!$isLobby) {
                         <span>تغییر حالت بازی</span>
                     </a>
                     <?php endif; ?>
+                    <a href="priority-game.php" class="btn-2d btn-2d-cyan" style="background: linear-gradient(180deg, #14b8a6 0%, #0d9488 100%); box-shadow: 0 4px 0 #115e59;">
+                        <i class="fas fa-traffic-light"></i>
+                        <span>بازی حق تقدم‌ها</span>
+                    </a>
                     <?php if (is_super_admin() || is_admin()): ?>
                     <a href="priority-game-builder.php" class="btn-2d btn-2d-cyan" style="background: linear-gradient(180deg, #a855f7 0%, #7e22ce 100%); box-shadow: 0 4px 0 #4c1d95;">
-                        <i class="fas fa-traffic-light"></i>
+                        <i class="fas fa-drafting-compass"></i>
                         <span>طراحی بازی اولویت‌ها (ادمین)</span>
                     </a>
                     <?php endif; ?>
