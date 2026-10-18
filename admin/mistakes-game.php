@@ -1235,7 +1235,7 @@ if (!$isLobby) {
     <header class="arcade-hud">
         <div class="container game-container">
             <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
-                <div class="d-flex align-items-center gap-2">
+                <div class="d-flex align-items-center gap-2 flex-wrap">
                     <a href="index.php" class="btn-2d btn-2d-yellow">
                         <i class="bx bx-home-alt"></i>
                         <span>داشبورد</span>
@@ -1244,6 +1244,12 @@ if (!$isLobby) {
                     <a href="mistakes-game.php" class="btn-2d btn-2d-cyan">
                         <i class="fas fa-th-large"></i>
                         <span>تغییر حالت بازی</span>
+                    </a>
+                    <?php endif; ?>
+                    <?php if (is_super_admin() || is_admin()): ?>
+                    <a href="priority-game-builder.php" class="btn-2d btn-2d-cyan" style="background: linear-gradient(180deg, #a855f7 0%, #7e22ce 100%); box-shadow: 0 4px 0 #4c1d95;">
+                        <i class="fas fa-traffic-light"></i>
+                        <span>طراحی بازی اولویت‌ها (ادمین)</span>
                     </a>
                     <?php endif; ?>
                 </div>

@@ -24,11 +24,17 @@
         <div><?= __('dashboard') ?></div>
       </a>
     </li>
-    <?php if (is_super_admin()): ?>
+    <?php if (is_super_admin() || is_admin()): ?>
     <li class="menu-item">
       <a href="/panel" class="menu-link">
         <i class="menu-icon tf-icons bx bx-shield-quarter"></i>
         <div class="text-warning"><?= __('admin_panel', 'پنل مدیریت اصلی') ?></div>
+      </a>
+    </li>
+    <li class="menu-item">
+      <a href="priority-game-builder.php" class="menu-link">
+        <i class="menu-icon tf-icons bx bx-traffic-cone text-info"></i>
+        <div class="text-info fw-bold">ساخت بازی اولویت‌ها (ادمین)</div>
       </a>
     </li>
     <?php endif; ?>
