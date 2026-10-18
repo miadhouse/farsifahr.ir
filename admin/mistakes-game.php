@@ -137,26 +137,6 @@ if (!$isLobby) {
         $stmtQuestions = $pdo->prepare($questionsSql);
         $stmtQuestions->execute([':user_id' => $user_id]);
         $rawQuestions = $stmtQuestions->fetchAll(PDO::FETCH_ASSOC);
-    } elseif ($selectedMode === '5points') {
-        $modeTitle = 'بازی با ۳۰ سوال ۵ نمره‌ای';
-        $questionsSql = "
-            SELECT q.*, COALESCE(uqs.correct, 0) AS stat_correct, COALESCE(uqs.incorrect, 0) AS stat_incorrect
-            FROM questions q
-            LEFT JOIN user_question_stats uqs ON q.id = uqs.question_id AND uqs.user_id = :user_id
-            WHERE q.points = 5
-              $availableCondition
-              $accessCondition
-              AND EXISTS (
-                  SELECT 1 FROM answers a
-                  WHERE a.question_number = q.number
-                    AND (a.asw_type IS NULL OR a.asw_type != 2)
-              )
-            ORDER BY COALESCE(uqs.incorrect, 0) DESC, COALESCE(uqs.correct, 0) ASC, q.id ASC
-            LIMIT 30
-        ";
-        $stmtQuestions = $pdo->prepare($questionsSql);
-        $stmtQuestions->execute([':user_id' => $user_id]);
-        $rawQuestions = $stmtQuestions->fetchAll(PDO::FETCH_ASSOC);
     } elseif ($selectedMode === 'bookmarks') {
         $modeTitle = 'بازی با سوالات مارک‌شده';
         $questionsSql = "
@@ -173,10 +153,28 @@ if (!$isLobby) {
                     AND (a.asw_type IS NULL OR a.asw_type != 2)
               )
             ORDER BY b.created_at DESC, q.id ASC
-            LIMIT 30
         ";
         $stmtQuestions = $pdo->prepare($questionsSql);
         $stmtQuestions->execute([':user_id' => $user_id, ':bookmark_user_id' => $user_id]);
+        $rawQuestions = $stmtQuestions->fetchAll(PDO::FETCH_ASSOC);
+    } elseif ($selectedMode === '5points') {
+        $modeTitle = 'بازی با سوالات ۵ نمره‌ای';
+        $questionsSql = "
+            SELECT q.*, COALESCE(uqs.correct, 0) AS stat_correct, COALESCE(uqs.incorrect, 0) AS stat_incorrect
+            FROM questions q
+            LEFT JOIN user_question_stats uqs ON q.id = uqs.question_id AND uqs.user_id = :user_id
+            WHERE q.points = 5
+              $availableCondition
+              $accessCondition
+              AND EXISTS (
+                  SELECT 1 FROM answers a
+                  WHERE a.question_number = q.number
+                    AND (a.asw_type IS NULL OR a.asw_type != 2)
+              )
+            ORDER BY COALESCE(uqs.incorrect, 0) DESC, COALESCE(uqs.correct, 0) ASC, q.id ASC
+        ";
+        $stmtQuestions = $pdo->prepare($questionsSql);
+        $stmtQuestions->execute([':user_id' => $user_id]);
         $rawQuestions = $stmtQuestions->fetchAll(PDO::FETCH_ASSOC);
     }
 
@@ -1308,30 +1306,7 @@ if (!$isLobby) {
                     </a>
                 </div>
 
-                <!-- Mode 2: Play with 30 5-Point Questions -->
-                <div class="col-12 col-md-4">
-                    <a href="mistakes-game.php?mode=5points" class="lobby-mode-card lobby-mode-5points text-center">
-                        <div>
-                            <div class="mode-icon-box mode-icon-5points">
-                                <i class="fas fa-star"></i>
-                            </div>
-                            <span class="mode-count-pill" style="background: #fef3c7; color: #92400e;">
-                                <i class="fas fa-bolt"></i>
-                                <span><?= $total5PointsCount ?> سوال ۵ نمره‌ای مهم</span>
-                            </span>
-                            <h4 style="font-weight: 900; font-size: 1.15rem;" class="mb-2">بازی با ۳۰ سوال ۵ نمره‌ای</h4>
-                            <p class="text-muted mb-0" style="font-size: 0.84rem; line-height: 1.6;">
-                                مهم‌ترین و پرنمره‌ترین سوالات آزمون (۵ امتیازی) را به شکل بازی تفکیک کنید و تسلط خود را به ۱۰۰٪ برسانید.
-                            </p>
-                        </div>
-                        <div class="btn-play-mode btn-play-gold">
-                            <i class="fas fa-play"></i>
-                            <span>شروع بازی ۳۰ سوال ۵ نمره‌ای</span>
-                        </div>
-                    </a>
-                </div>
-
-                <!-- Mode 3: Play with Marked (Bookmarked) Questions -->
+                <!-- Mode 2: Play with Marked (Bookmarked) Questions -->
                 <div class="col-12 col-md-4">
                     <a href="mistakes-game.php?mode=bookmarks" class="lobby-mode-card lobby-mode-bookmarks text-center">
                         <div>
@@ -1350,6 +1325,29 @@ if (!$isLobby) {
                         <div class="btn-play-mode btn-play-blue">
                             <i class="fas fa-play"></i>
                             <span>شروع بازی سوالات مارک‌شده</span>
+                        </div>
+                    </a>
+                </div>
+
+                <!-- Mode 3: Play with All 5-Point Questions -->
+                <div class="col-12 col-md-4">
+                    <a href="mistakes-game.php?mode=5points" class="lobby-mode-card lobby-mode-5points text-center">
+                        <div>
+                            <div class="mode-icon-box mode-icon-5points">
+                                <i class="fas fa-star"></i>
+                            </div>
+                            <span class="mode-count-pill" style="background: #fef3c7; color: #92400e;">
+                                <i class="fas fa-bolt"></i>
+                                <span><?= $total5PointsCount ?> سوال ۵ نمره‌ای مهم</span>
+                            </span>
+                            <h4 style="font-weight: 900; font-size: 1.15rem;" class="mb-2">بازی با سوالات ۵ نمره‌ای</h4>
+                            <p class="text-muted mb-0" style="font-size: 0.84rem; line-height: 1.6;">
+                                مهم‌ترین و پرنمره‌ترین سوالات آزمون (۵ امتیازی) را به شکل بازی تفکیک کنید و تسلط خود را به ۱۰۰٪ برسانید.
+                            </p>
+                        </div>
+                        <div class="btn-play-mode btn-play-gold">
+                            <i class="fas fa-play"></i>
+                            <span>شروع بازی سوالات ۵ نمره‌ای</span>
                         </div>
                     </a>
                 </div>
