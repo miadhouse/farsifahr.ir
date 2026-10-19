@@ -1,8 +1,8 @@
 /**
  * FarsiFahr 3D Intersection & Right-of-Way Engine (Three.js)
  * Renders a 3/4 Top-Down (Elevated Isometric Perspective) 3D Intersection
- * with 3D Vehicles, Pedestrians, Stacked Traffic Signs, Traffic Lights,
- * 3D Trajectory Arrows, Raycasting, and Smooth Curve Animations.
+ * with 3D Vehicles, Detailed 3D Pedestrians & Sidewalks, Large Billboarded Traffic Signs,
+ * 3D Traffic Lights, 3D Trajectory Arrows, Raycasting, and Smooth Curve Animations.
  */
 (function (window) {
     'use strict';
@@ -29,115 +29,131 @@
     };
 
     const PEDESTRIAN_SPECS = {
-        pedestrian:  { name: 'عابر پیاده', color: 0x10b981, kind: 'walker' },
-        ped_child:   { name: 'کودک در پیاده‌رو', color: 0xf43f5e, kind: 'child' },
-        ped_bike:    { name: 'دوچرخه در گذرگاه', color: 0x0ea5e9, kind: 'cyclist' },
-        ped_scooter: { name: 'اسکوتر در پیاده‌رو', color: 0x8b5cf6, kind: 'scooter' }
+        pedestrian:  { name: 'عابر پیاده', color: 0x10b981, pants: 0x1e3a8a, hair: 0x451a03, kind: 'walker' },
+        ped_child:   { name: 'کودک در پیاده‌رو', color: 0xf43f5e, pants: 0x1e293b, hair: 0x78350f, kind: 'child' },
+        ped_bike:    { name: 'دوچرخه در گذرگاه', color: 0x0ea5e9, pants: 0x0f172a, hair: 0x1e293b, kind: 'cyclist' },
+        ped_scooter: { name: 'اسکوتر در پیاده‌رو', color: 0x8b5cf6, pants: 0x1e1b4b, hair: 0x312e81, kind: 'scooter' }
     };
 
     /**
      * 3D World Coordinates (Center of intersection = (0, 0, 0))
-     * Road width = 10 units (-5 to +5), Lane center offset = 2.4 units
+     * Road asphalt width = 9.6 units (-4.8 to +4.8), Sidewalks extend from ±4.8 to ±8.6
      * top = North (-Z), bottom = South (+Z), right = East (+X), left = West (-X)
      */
     const BRANCH_3D = {
         bottom: {
-            vehicleStart: { x: 2.4, z: 12.2, rotY: Math.PI },       // Facing -Z (North)
-            pedStart:     { x: 5.8, z: 6.8,  rotY: -Math.PI / 2 },  // Walking West (-X)
-            pedEnd:       { x: -5.8, z: 6.8 },
-            signSlot:     { x: 6.6, z: 8.6,  rotY: 0 },             // Facing South (+Z)
+            vehicleStart: { x: 2.4, z: 12.6, rotY: Math.PI },       // Facing -Z (North)
+            pedStart:     { x: 6.3, z: 6.8,  rotY: -Math.PI / 2 },  // Standing on East sidewalk, walking West (-X)
+            pedEnd:       { x: -6.3, z: 6.8 },
+            signSlot:     { x: 8.2, z: 10.2, rotY: 0 },             // Outer sidewalk corner
             dropZones: {
-                vehicle:    { x: 2.4, y: 0.8, z: 12.2 },
-                pedestrian: { x: 5.8, y: 0.8, z: 6.8 },
-                sign:       { x: 6.6, y: 2.5, z: 8.6 }
+                vehicle:    { x: 2.4, y: 0.9, z: 12.6 },
+                pedestrian: { x: 6.3, y: 1.2, z: 6.8 },
+                sign:       { x: 8.2, y: 3.5, z: 10.2 }
             }
         },
         top: {
-            vehicleStart: { x: -2.4, z: -12.2, rotY: 0 },           // Facing +Z (South)
-            pedStart:     { x: -5.8, z: -6.8,  rotY: Math.PI / 2 }, // Walking East (+X)
-            pedEnd:       { x: 5.8,  z: -6.8 },
-            signSlot:     { x: -6.6, z: -8.6,  rotY: Math.PI },     // Facing North (-Z)
+            vehicleStart: { x: -2.4, z: -12.6, rotY: 0 },           // Facing +Z (South)
+            pedStart:     { x: -6.3, z: -6.8,  rotY: Math.PI / 2 }, // Standing on West sidewalk, walking East (+X)
+            pedEnd:       { x: 6.3,  z: -6.8 },
+            signSlot:     { x: -8.2, z: -10.2, rotY: Math.PI },     // Outer sidewalk corner
             dropZones: {
-                vehicle:    { x: -2.4, y: 0.8, z: -12.2 },
-                pedestrian: { x: -5.8, y: 0.8, z: -6.8 },
-                sign:       { x: -6.6, y: 2.5, z: -8.6 }
+                vehicle:    { x: -2.4, y: 0.9, z: -12.6 },
+                pedestrian: { x: -6.3, y: 1.2, z: -6.8 },
+                sign:       { x: -8.2, y: 3.5, z: -10.2 }
             }
         },
         right: {
-            vehicleStart: { x: 12.2, z: -2.4, rotY: -Math.PI / 2 }, // Facing -X (West)
-            pedStart:     { x: 6.8,  z: -5.8, rotY: 0 },            // Walking South (+Z)
-            pedEnd:       { x: 6.8,  z: 5.8 },
-            signSlot:     { x: 8.6,  z: -6.6, rotY: Math.PI / 2 },  // Facing East (+X)
+            vehicleStart: { x: 12.6, z: -2.4, rotY: -Math.PI / 2 }, // Facing -X (West)
+            pedStart:     { x: 6.8,  z: -6.3, rotY: 0 },            // Standing on North sidewalk, walking South (+Z)
+            pedEnd:       { x: 6.8,  z: 6.3 },
+            signSlot:     { x: 10.2, z: -8.2, rotY: Math.PI / 2 },  // Outer sidewalk corner
             dropZones: {
-                vehicle:    { x: 12.2, y: 0.8, z: -2.4 },
-                pedestrian: { x: 6.8,  y: 0.8, z: -5.8 },
-                sign:       { x: 8.6,  y: 2.5, z: -6.6 }
+                vehicle:    { x: 12.6, y: 0.9, z: -2.4 },
+                pedestrian: { x: 6.8,  y: 1.2, z: -6.3 },
+                sign:       { x: 10.2, y: 3.5, z: -8.2 }
             }
         },
         left: {
-            vehicleStart: { x: -12.2, z: 2.4, rotY: Math.PI / 2 },  // Facing +X (East)
-            pedStart:     { x: -6.8,  z: 5.8, rotY: Math.PI },      // Walking North (-Z)
-            pedEnd:       { x: -6.8,  z: -5.8 },
-            signSlot:     { x: -8.6,  z: 6.6, rotY: -Math.PI / 2 }, // Facing West (-X)
+            vehicleStart: { x: -12.6, z: 2.4, rotY: Math.PI / 2 },  // Facing +X (East)
+            pedStart:     { x: -6.8,  z: 6.3, rotY: Math.PI },      // Standing on South sidewalk, walking North (-Z)
+            pedEnd:       { x: -6.8,  z: -6.3 },
+            signSlot:     { x: -10.2, z: 8.2, rotY: -Math.PI / 2 }, // Outer sidewalk corner
             dropZones: {
-                vehicle:    { x: -12.2, y: 0.8, z: 2.4 },
-                pedestrian: { x: -6.8,  y: 0.8, z: 5.8 },
-                sign:       { x: -8.6,  y: 2.5, z: 6.6 }
+                vehicle:    { x: -12.6, y: 0.9, z: 2.4 },
+                pedestrian: { x: -6.8,  y: 1.2, z: 6.3 },
+                sign:       { x: -10.2, y: 3.5, z: 8.2 }
             }
         }
     };
 
     /**
-     * Draw crisp German StVO traffic sign on an HTML5 Canvas and return THREE.CanvasTexture
+     * Draw high-resolution (512x512) German StVO traffic sign on an HTML5 Canvas
+     * with bold strokes and high contrast so it is crystal clear from any distance.
      */
     const signTextureCache = {};
     function getSignCanvasTexture(signId) {
         if (signTextureCache[signId]) return signTextureCache[signId];
 
         const canvas = document.createElement('canvas');
-        canvas.width = 256;
-        canvas.height = 256;
+        canvas.width = 512;
+        canvas.height = 512;
         const ctx = canvas.getContext('2d');
-        ctx.clearRect(0, 0, 256, 256);
+        ctx.clearRect(0, 0, 512, 512);
 
         ctx.save();
-        ctx.translate(128, 128);
+        ctx.translate(256, 256);
+
+        // Subtle outer drop shadow for strong contrast against sky/trees/road
+        ctx.shadowColor = 'rgba(2, 6, 23, 0.55)';
+        ctx.shadowBlur = 18;
+        ctx.shadowOffsetY = 6;
 
         if (signId === 's306_priority_road' || signId === 's307_end_priority') {
             ctx.rotate(Math.PI / 4);
+            // Outer white diamond with thick dark rim
             ctx.fillStyle = '#ffffff';
             ctx.strokeStyle = '#0f172a';
-            ctx.lineWidth = 10;
-            ctx.fillRect(-78, -78, 156, 156);
-            ctx.strokeRect(-78, -78, 156, 156);
+            ctx.lineWidth = 18;
+            ctx.fillRect(-162, -162, 324, 324);
+            ctx.strokeRect(-162, -162, 324, 324);
 
+            ctx.shadowColor = 'transparent';
+            // Inner yellow diamond
             ctx.fillStyle = '#facc15';
-            ctx.fillRect(-52, -52, 104, 104);
-            ctx.lineWidth = 6;
-            ctx.strokeRect(-52, -52, 104, 104);
+            ctx.fillRect(-112, -112, 224, 224);
+            ctx.lineWidth = 10;
+            ctx.strokeStyle = '#0f172a';
+            ctx.strokeRect(-112, -112, 224, 224);
 
             if (signId === 's307_end_priority') {
                 ctx.strokeStyle = '#0f172a';
-                ctx.lineWidth = 16;
+                ctx.lineWidth = 28;
                 ctx.beginPath();
-                ctx.moveTo(-70, -70);
-                ctx.lineTo(70, 70);
+                ctx.moveTo(-148, -148);
+                ctx.lineTo(148, 148);
                 ctx.stroke();
             }
         } else if (signId === 's205_yield') {
+            // Downward triangle (Vorfahrt gewähren)
             ctx.beginPath();
-            ctx.moveTo(-102, -82);
-            ctx.lineTo(102, -82);
-            ctx.lineTo(0, 96);
+            ctx.moveTo(-215, -175);
+            ctx.lineTo(215, -175);
+            ctx.lineTo(0, 205);
             ctx.closePath();
             ctx.fillStyle = '#ffffff';
             ctx.fill();
-            ctx.lineWidth = 24;
+            ctx.shadowColor = 'transparent';
+            ctx.lineWidth = 52;
             ctx.strokeStyle = '#dc2626';
             ctx.lineJoin = 'round';
             ctx.stroke();
+            // Thin outer dark outline for crispness
+            ctx.lineWidth = 8;
+            ctx.strokeStyle = '#0f172a';
+            ctx.stroke();
         } else if (signId === 's206_stop') {
-            const r = 104;
+            const r = 222;
             ctx.beginPath();
             for (let i = 0; i < 8; i++) {
                 const a = (i * Math.PI / 4) + (Math.PI / 8);
@@ -149,100 +165,153 @@
             ctx.closePath();
             ctx.fillStyle = '#dc2626';
             ctx.fill();
-            ctx.lineWidth = 12;
+            ctx.shadowColor = 'transparent';
+            ctx.lineWidth = 22;
             ctx.strokeStyle = '#ffffff';
+            ctx.stroke();
+            ctx.lineWidth = 8;
+            ctx.strokeStyle = '#0f172a';
             ctx.stroke();
 
             ctx.fillStyle = '#ffffff';
-            ctx.font = '900 58px sans-serif';
+            ctx.font = '900 122px sans-serif';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            ctx.fillText('STOP', 0, 4);
+            ctx.fillText('STOP', 0, 8);
         } else if (signId === 's301_priority_next' || signId === 's102_rvl') {
+            // Upward warning triangle
             ctx.beginPath();
-            ctx.moveTo(0, -96);
-            ctx.lineTo(102, 84);
-            ctx.lineTo(-102, 84);
+            ctx.moveTo(0, -205);
+            ctx.lineTo(215, 178);
+            ctx.lineTo(-215, 178);
             ctx.closePath();
             ctx.fillStyle = '#ffffff';
             ctx.fill();
-            ctx.lineWidth = 24;
+            ctx.shadowColor = 'transparent';
+            ctx.lineWidth = 50;
             ctx.strokeStyle = '#dc2626';
             ctx.lineJoin = 'round';
             ctx.stroke();
+            ctx.lineWidth = 8;
+            ctx.strokeStyle = '#0f172a';
+            ctx.stroke();
 
             ctx.strokeStyle = '#0f172a';
-            ctx.lineWidth = 16;
+            ctx.lineWidth = 34;
             ctx.lineCap = 'round';
             if (signId === 's102_rvl') {
                 ctx.beginPath();
-                ctx.moveTo(-32, 0); ctx.lineTo(32, 54);
-                ctx.moveTo(32, 0);  ctx.lineTo(-32, 54);
+                ctx.moveTo(-68, -5); ctx.lineTo(68, 115);
+                ctx.moveTo(68, -5);  ctx.lineTo(-68, 115);
                 ctx.stroke();
             } else {
                 ctx.beginPath();
-                ctx.moveTo(0, 58); ctx.lineTo(0, -24);
-                ctx.moveTo(-26, 4); ctx.lineTo(0, -28); ctx.lineTo(26, 4);
+                ctx.moveTo(0, 125); ctx.lineTo(0, -55);
+                ctx.moveTo(-55, 8); ctx.lineTo(0, -62); ctx.lineTo(55, 8);
+                ctx.stroke();
+                ctx.lineWidth = 20;
+                ctx.beginPath();
+                ctx.moveTo(-55, 48); ctx.lineTo(55, 48);
                 ctx.stroke();
             }
         } else if (signId === 's350_crosswalk') {
             ctx.fillStyle = '#2563eb';
             ctx.strokeStyle = '#ffffff';
-            ctx.lineWidth = 12;
-            ctx.fillRect(-92, -92, 184, 184);
-            ctx.strokeRect(-92, -92, 184, 184);
+            ctx.lineWidth = 24;
+            ctx.fillRect(-195, -195, 390, 390);
+            ctx.strokeRect(-195, -195, 390, 390);
+            ctx.shadowColor = 'transparent';
+            ctx.lineWidth = 8;
+            ctx.strokeStyle = '#0f172a';
+            ctx.strokeRect(-205, -205, 410, 410);
 
             ctx.beginPath();
-            ctx.moveTo(0, -68);
-            ctx.lineTo(74, 62);
-            ctx.lineTo(-74, 62);
+            ctx.moveTo(0, -145);
+            ctx.lineTo(155, 132);
+            ctx.lineTo(-155, 132);
             ctx.closePath();
             ctx.fillStyle = '#ffffff';
             ctx.fill();
 
+            // Zebra stripes & walking person icon inside triangle
             ctx.strokeStyle = '#0f172a';
-            ctx.lineWidth = 12;
-            ctx.setLineDash([14, 10]);
+            ctx.lineWidth = 22;
+            ctx.setLineDash([26, 18]);
             ctx.beginPath();
-            ctx.moveTo(-45, 42);
-            ctx.lineTo(45, 42);
+            ctx.moveTo(-95, 92);
+            ctx.lineTo(95, 92);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            ctx.fillStyle = '#0f172a';
+            ctx.beginPath();
+            ctx.arc(0, -42, 22, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.lineWidth = 20;
+            ctx.lineCap = 'round';
+            ctx.beginPath();
+            ctx.moveTo(0, -15); ctx.lineTo(0, 35);
+            ctx.moveTo(0, 35);  ctx.lineTo(-28, 78);
+            ctx.moveTo(0, 35);  ctx.lineTo(28, 78);
+            ctx.moveTo(-32, 8); ctx.lineTo(32, -2);
             ctx.stroke();
         } else if (signId.startsWith('abk_') || signId === 'rad_cross') {
+            // Rectangular Zusatzzeichen (Supplemental white board)
             ctx.fillStyle = '#ffffff';
             ctx.strokeStyle = '#0f172a';
-            ctx.lineWidth = 12;
-            ctx.fillRect(-92, -74, 184, 148);
-            ctx.strokeRect(-92, -74, 184, 148);
+            ctx.lineWidth = 22;
+            ctx.fillRect(-205, -162, 410, 324);
+            ctx.strokeRect(-205, -162, 410, 324);
+            ctx.shadowColor = 'transparent';
 
             if (signId === 'rad_cross') {
-                ctx.fillStyle = '#0f172a';
-                ctx.font = '900 44px sans-serif';
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.fillText('🚲 ↔', 0, 0);
+                // Draw crisp vector bicycle + left/right arrows
+                ctx.strokeStyle = '#0f172a';
+                ctx.lineWidth = 16;
+                ctx.lineCap = 'round';
+                // Two wheels
+                ctx.beginPath();
+                ctx.arc(-65, 15, 36, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.arc(65, 15, 36, 0, Math.PI * 2);
+                ctx.stroke();
+                // Frame
+                ctx.beginPath();
+                ctx.moveTo(-65, 15); ctx.lineTo(-10, -35); ctx.lineTo(50, -35); ctx.lineTo(65, 15);
+                ctx.moveTo(-10, -35); ctx.lineTo(5, 15); ctx.lineTo(-65, 15);
+                ctx.stroke();
+                // Two-way horizontal arrow above
+                ctx.lineWidth = 18;
+                ctx.beginPath();
+                ctx.moveTo(-120, -95); ctx.lineTo(120, -95);
+                ctx.moveTo(-85, -120); ctx.lineTo(-122, -95); ctx.lineTo(-85, -70);
+                ctx.moveTo(85, -120);  ctx.lineTo(122, -95);  ctx.lineTo(85, -70);
+                ctx.stroke();
             } else {
                 // Thin side roads
                 ctx.strokeStyle = '#94a3b8';
-                ctx.lineWidth = 12;
+                ctx.lineWidth = 26;
                 ctx.lineCap = 'round';
                 ctx.beginPath();
-                ctx.moveTo(0, -54); ctx.lineTo(0, 54);
-                ctx.moveTo(-64, 0); ctx.lineTo(64, 0);
+                ctx.moveTo(0, -118); ctx.lineTo(0, 118);
+                ctx.moveTo(-138, 0); ctx.lineTo(138, 0);
                 ctx.stroke();
 
-                // Thick priority road curve
+                // Thick priority road curve (Abknickende Vorfahrt)
                 ctx.strokeStyle = '#0f172a';
-                ctx.lineWidth = 26;
+                ctx.lineWidth = 58;
                 ctx.lineJoin = 'round';
+                ctx.lineCap = 'round';
                 ctx.beginPath();
                 if (signId === 'abk_bottom_left') {
-                    ctx.moveTo(0, 54); ctx.lineTo(0, 0); ctx.lineTo(-64, 0);
+                    ctx.moveTo(0, 118); ctx.lineTo(0, 0); ctx.lineTo(-138, 0);
                 } else if (signId === 'abk_bottom_right') {
-                    ctx.moveTo(0, 54); ctx.lineTo(0, 0); ctx.lineTo(64, 0);
+                    ctx.moveTo(0, 118); ctx.lineTo(0, 0); ctx.lineTo(138, 0);
                 } else if (signId === 'abk_top_left') {
-                    ctx.moveTo(0, -54); ctx.lineTo(0, 0); ctx.lineTo(-64, 0);
+                    ctx.moveTo(0, -118); ctx.lineTo(0, 0); ctx.lineTo(-138, 0);
                 } else if (signId === 'abk_top_right') {
-                    ctx.moveTo(0, -54); ctx.lineTo(0, 0); ctx.lineTo(64, 0);
+                    ctx.moveTo(0, -118); ctx.lineTo(0, 0); ctx.lineTo(138, 0);
                 }
                 ctx.stroke();
             }
@@ -251,6 +320,8 @@
         ctx.restore();
 
         const tex = new THREE.CanvasTexture(canvas);
+        tex.minFilter = THREE.LinearFilter;
+        tex.magFilter = THREE.LinearFilter;
         tex.needsUpdate = true;
         signTextureCache[signId] = tex;
         return tex;
@@ -297,14 +368,12 @@
                 group.add(w);
             });
         } else if (spec.kind === 'truck') {
-            // Cargo box
             const cargoMat = new THREE.MeshStandardMaterial({ color: 0xf1f5f9, roughness: 0.45 });
             const cargo = new THREE.Mesh(new THREE.BoxGeometry(2.35, 1.95, 3.4), cargoMat);
             cargo.position.set(0, 1.25, -0.75);
             cargo.castShadow = true;
             group.add(cargo);
 
-            // Cab
             const cab = new THREE.Mesh(new THREE.BoxGeometry(2.2, 1.5, 1.6), bodyMat);
             cab.position.set(0, 1.0, 1.85);
             cab.castShadow = true;
@@ -330,7 +399,6 @@
             handle.position.set(0, 1.15, 0.55);
             group.add(handle);
 
-            // Rider torso & helmet
             const rider = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.36, 0.85, 12), bodyMat);
             rider.position.set(0, 1.2, -0.1);
             rider.castShadow = true;
@@ -372,7 +440,6 @@
                 group.add(barR, barB);
             }
 
-            // Headlights (+Z is front)
             [-0.68, 0.68].forEach(hx => {
                 const hl = new THREE.Mesh(new THREE.SphereGeometry(0.18, 10, 10), headlightMat);
                 hl.position.set(hx, 0.72, 1.92);
@@ -383,7 +450,6 @@
                 group.add(tl);
             });
 
-            // 4 Wheels
             [[-1.02, -1.18], [1.02, -1.18], [-1.02, 1.18], [1.02, 1.18]].forEach(([wx, wz]) => {
                 const w = new THREE.Mesh(wheelGeo, wheelMat);
                 w.position.set(wx, 0.42, wz);
@@ -391,17 +457,16 @@
             });
         }
 
-        // Blinking 3D Turn Signal (راهنمای چشمک‌زن سه‌بعدی در گردش به چپ یا راست)
+        // Blinking 3D Turn Signal
         if (direction === 'left' || direction === 'right') {
-            // In local space (+Z forward), driver's left is +X, driver's right is -X
             const sigX = direction === 'left' ? 0.96 : -0.96;
             const sigZ = spec.kind === 'bus' ? 2.68 : (spec.kind === 'truck' ? 2.62 : 1.92);
             const blinkerMat = new THREE.MeshStandardMaterial({
                 color: 0xf97316,
                 emissive: 0xf59e0b,
-                emissiveIntensity: 1.2
+                emissiveIntensity: 1.3
             });
-            const blinker = new THREE.Mesh(new THREE.SphereGeometry(0.24, 12, 12), blinkerMat);
+            const blinker = new THREE.Mesh(new THREE.SphereGeometry(0.26, 12, 12), blinkerMat);
             blinker.position.set(sigX, 0.85, sigZ);
             blinker.userData.isBlinker = true;
             group.add(blinker);
@@ -411,39 +476,184 @@
     }
 
     /**
-     * Build a 3D Pedestrian / Cyclist Mesh Group
+     * Build a Detailed, High-Visibility 3D Pedestrian / Cyclist / Scooter Mesh Group
+     * Clearly recognizable from a 3/4 top-down perspective, with legs, shoes, torso,
+     * backpack, arms, head, hair/cap, and a bright glowing ground locator ring!
      */
     function create3DPedestrianMesh(typeId) {
         const spec = PEDESTRIAN_SPECS[typeId] || PEDESTRIAN_SPECS.pedestrian;
         const group = new THREE.Group();
 
-        const bodyMat = new THREE.MeshStandardMaterial({ color: spec.color, roughness: 0.4 });
-        const headMat = new THREE.MeshStandardMaterial({ color: 0xfde047, roughness: 0.3 });
+        const scale = spec.kind === 'child' ? 0.88 : 1.15;
 
-        const scale = spec.kind === 'child' ? 0.78 : 1.0;
+        const shirtMat = new THREE.MeshStandardMaterial({ color: spec.color, roughness: 0.35 });
+        const pantsMat = new THREE.MeshStandardMaterial({ color: spec.pants || 0x1e293b, roughness: 0.6 });
+        const skinMat  = new THREE.MeshStandardMaterial({ color: 0xfdba74, roughness: 0.4 });
+        const hairMat  = new THREE.MeshStandardMaterial({ color: spec.hair || 0x451a03, roughness: 0.5 });
+        const shoeMat  = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.3 });
+        const darkMat  = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.6 });
 
-        const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.38 * scale, 0.46 * scale, 1.25 * scale, 14), bodyMat);
-        torso.position.y = 0.75 * scale;
+        // 1. High-Contrast Ground Highlight Base Disc & Ring (so pedestrian stands out immediately!)
+        const baseDisc = new THREE.Mesh(
+            new THREE.CylinderGeometry(1.15, 1.15, 0.08, 24),
+            new THREE.MeshBasicMaterial({ color: 0x0f172a, transparent: true, opacity: 0.6 })
+        );
+        baseDisc.position.y = 0.05;
+        group.add(baseDisc);
+
+        const baseRing = new THREE.Mesh(
+            new THREE.CylinderGeometry(1.3, 1.3, 0.06, 24),
+            new THREE.MeshStandardMaterial({
+                color: 0xfacc15,
+                emissive: 0xfacc15,
+                emissiveIntensity: 0.65
+            })
+        );
+        baseRing.position.y = 0.03;
+        group.add(baseRing);
+
+        // 2. Character Body Group (animated bobbing during walk)
+        const charBody = new THREE.Group();
+        charBody.userData.isPedBody = true;
+        group.add(charBody);
+
+        // Legs in walking stride (+Z is forward)
+        const legGeo = new THREE.CylinderGeometry(0.18 * scale, 0.16 * scale, 0.95 * scale, 12);
+        const shoeGeo = new THREE.BoxGeometry(0.28 * scale, 0.18 * scale, 0.48 * scale);
+
+        const leftLeg = new THREE.Group();
+        const leftLegMesh = new THREE.Mesh(legGeo, pantsMat);
+        leftLegMesh.position.y = 0.48 * scale;
+        leftLegMesh.castShadow = true;
+        const leftShoe = new THREE.Mesh(shoeGeo, shoeMat);
+        leftShoe.position.set(0, 0.1 * scale, 0.12 * scale);
+        leftLeg.add(leftLegMesh, leftShoe);
+        leftLeg.position.set(-0.24 * scale, 0.05, 0.18 * scale);
+        leftLeg.rotation.x = -0.22;
+        charBody.add(leftLeg);
+
+        const rightLeg = new THREE.Group();
+        const rightLegMesh = new THREE.Mesh(legGeo, pantsMat);
+        rightLegMesh.position.y = 0.48 * scale;
+        rightLegMesh.castShadow = true;
+        const rightShoe = new THREE.Mesh(shoeGeo, shoeMat);
+        rightShoe.position.set(0, 0.1 * scale, 0.12 * scale);
+        rightLeg.add(rightLegMesh, rightShoe);
+        rightLeg.position.set(0.24 * scale, 0.05, -0.18 * scale);
+        rightLeg.rotation.x = 0.22;
+        charBody.add(rightLeg);
+
+        // Torso / Jacket
+        const torso = new THREE.Mesh(
+            new THREE.BoxGeometry(0.92 * scale, 1.12 * scale, 0.56 * scale),
+            shirtMat
+        );
+        torso.position.y = 1.42 * scale;
         torso.castShadow = true;
-        group.add(torso);
+        charBody.add(torso);
 
-        const head = new THREE.Mesh(new THREE.SphereGeometry(0.38 * scale, 16, 16), headMat);
-        head.position.y = 1.65 * scale;
+        // High-visibility safety vest stripe / collar
+        const stripe = new THREE.Mesh(
+            new THREE.BoxGeometry(0.95 * scale, 0.18 * scale, 0.59 * scale),
+            new THREE.MeshStandardMaterial({ color: 0xfef08a, emissive: 0xfacc15, emissiveIntensity: 0.35 })
+        );
+        stripe.position.y = 1.48 * scale;
+        charBody.add(stripe);
+
+        // Backpack on back (-Z) so front/back orientation is unmistakable
+        const pack = new THREE.Mesh(
+            new THREE.BoxGeometry(0.62 * scale, 0.68 * scale, 0.32 * scale),
+            new THREE.MeshStandardMaterial({ color: 0xf59e0b, roughness: 0.4 })
+        );
+        pack.position.set(0, 1.46 * scale, -0.38 * scale);
+        pack.castShadow = true;
+        charBody.add(pack);
+
+        // Left & Right Arms + Hands
+        const armGeo = new THREE.CylinderGeometry(0.14 * scale, 0.13 * scale, 0.85 * scale, 10);
+        const handGeo = new THREE.SphereGeometry(0.16 * scale, 10, 10);
+
+        [-1, 1].forEach(side => {
+            const armGroup = new THREE.Group();
+            const armMesh = new THREE.Mesh(armGeo, shirtMat);
+            armMesh.position.y = -0.32 * scale;
+            armMesh.castShadow = true;
+            const handMesh = new THREE.Mesh(handGeo, skinMat);
+            handMesh.position.y = -0.76 * scale;
+            armGroup.add(armMesh, handMesh);
+            armGroup.position.set(side * 0.6 * scale, 1.82 * scale, 0);
+            armGroup.rotation.x = side * 0.28;
+            armGroup.rotation.z = side * -0.12;
+            charBody.add(armGroup);
+        });
+
+        // Head + Hair/Cap + Eyes facing +Z
+        const head = new THREE.Mesh(new THREE.SphereGeometry(0.46 * scale, 18, 18), skinMat);
+        head.position.y = 2.38 * scale;
         head.castShadow = true;
-        group.add(head);
+        charBody.add(head);
 
+        // Cap / Hair on top + visor pointing forward (+Z)
+        const capCrown = new THREE.Mesh(
+            new THREE.SphereGeometry(0.48 * scale, 16, 12, 0, Math.PI * 2, 0, Math.PI * 0.58),
+            hairMat
+        );
+        capCrown.position.y = 2.42 * scale;
+        charBody.add(capCrown);
+
+        const capVisor = new THREE.Mesh(
+            new THREE.BoxGeometry(0.56 * scale, 0.1 * scale, 0.42 * scale),
+            hairMat
+        );
+        capVisor.position.set(0, 2.52 * scale, 0.36 * scale);
+        charBody.add(capVisor);
+
+        // Eyes on front face (+Z)
+        [-0.15, 0.15].forEach(ex => {
+            const eye = new THREE.Mesh(new THREE.SphereGeometry(0.065 * scale, 8, 8), darkMat);
+            eye.position.set(ex * scale, 2.38 * scale, 0.42 * scale);
+            charBody.add(eye);
+        });
+
+        // 3. If Cyclist or Scooter on crosswalk, add 3D Bicycle / Scooter frame & wheels
         if (spec.kind === 'cyclist' || spec.kind === 'scooter') {
-            const wheelMat = new THREE.MeshStandardMaterial({ color: 0x0f172a });
-            const base = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.25, 1.45), wheelMat);
-            base.position.y = 0.22;
-            group.add(base);
+            const wheelGeo = new THREE.CylinderGeometry(0.42, 0.42, 0.16, 16);
+            wheelGeo.rotateZ(Math.PI / 2);
+            [-0.75, 0.75].forEach(wz => {
+                const w = new THREE.Mesh(wheelGeo, darkMat);
+                w.position.set(0, 0.42, wz);
+                group.add(w);
+            });
+            const deck = new THREE.Mesh(
+                new THREE.BoxGeometry(0.32, 0.18, 1.65),
+                new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.3 })
+            );
+            deck.position.set(0, 0.38, 0);
+            group.add(deck);
+
+            const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 1.35, 8), darkMat);
+            stem.position.set(0, 1.05, 0.68);
+            const bar = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.95, 8), darkMat);
+            bar.rotation.z = Math.PI / 2;
+            bar.position.set(0, 1.68, 0.68);
+            group.add(stem, bar);
         }
+
+        // 4. Invisible larger hit cylinder so clicking/tapping the pedestrian is super easy
+        const hitBox = new THREE.Mesh(
+            new THREE.CylinderGeometry(1.45, 1.45, 3.6, 12),
+            new THREE.MeshBasicMaterial({ visible: false })
+        );
+        hitBox.position.y = 1.8;
+        group.add(hitBox);
 
         return group;
     }
 
     /**
-     * Build 3D Signpost (Single or Stacked Dual Signs) & 3D Traffic Light for a Branch
+     * Build Large, High-Visibility 3D Signpost (Single or Stacked Dual Signs) & 3D Traffic Light.
+     * The displayHead is automatically billboarded toward the camera in animateLoop() so
+     * signs and lights are ALWAYS 100% readable, large, and never viewed edge-on or backwards!
      */
     function create3DSignpostAndLightGroup(branchData) {
         const group = new THREE.Group();
@@ -453,67 +663,88 @@
 
         if (!hasPrimary && !hasSecondary && !hasLight) return group;
 
-        const poleMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.6, roughness: 0.3 });
-        const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.14, 4.8, 12), poleMat);
-        pole.position.y = 2.4;
+        const isStacked = hasPrimary && hasSecondary;
+        const poleHeight = 3.8;
+
+        // Thicker 3D metallic pole supporting the sign head from below
+        const poleMat = new THREE.MeshStandardMaterial({ color: 0xcbd5e1, metalness: 0.55, roughness: 0.3 });
+        const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.24, poleHeight, 14), poleMat);
+        pole.position.y = poleHeight / 2;
         pole.castShadow = true;
         group.add(pole);
 
-        const base = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.55, 0.22, 16), new THREE.MeshStandardMaterial({ color: 0x334155 }));
-        base.position.y = 0.11;
+        const base = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.72, 0.88, 0.34, 18),
+            new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.6 })
+        );
+        base.position.y = 0.17;
         group.add(base);
 
-        // Tilt head slightly toward the 3/4 camera so signs & lights are super readable
+        // Billboarded Display Head (faces camera screen plane directly so signs are huge & unmistakable!)
         const displayHead = new THREE.Group();
-        displayHead.position.y = 3.7;
-        displayHead.rotation.x = -0.28;
+        displayHead.position.y = isStacked ? 5.4 : 4.5;
+        displayHead.userData.isBillboardSignHead = true;
         group.add(displayHead);
 
+        // Primary Sign (Very Large: 4.35 x 4.35 units!)
         if (hasPrimary) {
             const tex1 = getSignCanvasTexture(branchData.primarySign);
+            const signY = hasSecondary ? 1.55 : 0.2;
+
             const signPlane1 = new THREE.Mesh(
-                new THREE.PlaneGeometry(2.1, 2.1),
+                new THREE.PlaneGeometry(4.35, 4.35),
                 new THREE.MeshBasicMaterial({ map: tex1, transparent: true, side: THREE.DoubleSide })
             );
-            signPlane1.position.set(0, hasSecondary ? 0.65 : 0.1, 0.16);
+            signPlane1.position.set(0, signY, 1.15);
             displayHead.add(signPlane1);
         }
 
+        // Secondary Stacked Sign Below Primary Sign (3.75 x 2.95 units!)
         if (hasSecondary) {
             const tex2 = getSignCanvasTexture(branchData.secondarySign);
+            const signY2 = hasPrimary ? -1.85 : 0.2;
+
             const signPlane2 = new THREE.Mesh(
-                new THREE.PlaneGeometry(1.85, 1.55),
+                new THREE.PlaneGeometry(3.75, 2.95),
                 new THREE.MeshBasicMaterial({ map: tex2, transparent: true, side: THREE.DoubleSide })
             );
-            signPlane2.position.set(0, hasPrimary ? -1.05 : 0.1, 0.16);
+            signPlane2.position.set(0, signY2, 1.15);
             displayHead.add(signPlane2);
         }
 
+        // Large 3D Traffic Light next to or on the post
         if (hasLight) {
-            const lightOffsetX = (hasPrimary || hasSecondary) ? -1.45 : 0;
+            const lightOffsetX = (hasPrimary || hasSecondary) ? -2.95 : 0;
             const boxGroup = new THREE.Group();
-            boxGroup.position.set(lightOffsetX, 0, 0.18);
+            boxGroup.position.set(lightOffsetX, 0.2, 1.15);
+
+            // Outer yellow/dark casing for high contrast
+            const borderBox = new THREE.Mesh(
+                new THREE.BoxGeometry(1.75, 4.0, 0.58),
+                new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.4 })
+            );
+            boxGroup.add(borderBox);
 
             const housing = new THREE.Mesh(
-                new THREE.BoxGeometry(0.95, 2.35, 0.55),
+                new THREE.BoxGeometry(1.52, 3.78, 0.66),
                 new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.5 })
             );
             boxGroup.add(housing);
 
             const st = branchData.trafficLight;
             const lamps = [
-                { y: 0.68, active: st === 'red',    onCol: 0xef4444, offCol: 0x450a0a },
-                { y: 0.0,  active: st === 'yellow', onCol: 0xfacc15, offCol: 0x422006 },
-                { y: -0.68,active: st === 'green',  onCol: 0x22c55e, offCol: 0x052e16 }
+                { y: 1.12,  active: st === 'red',    onCol: 0xef4444, offCol: 0x450a0a },
+                { y: 0.0,   active: st === 'yellow', onCol: 0xfacc15, offCol: 0x422006 },
+                { y: -1.12, active: st === 'green',  onCol: 0x22c55e, offCol: 0x052e16 }
             ];
             lamps.forEach(l => {
                 const mat = new THREE.MeshStandardMaterial({
                     color: l.active ? l.onCol : l.offCol,
                     emissive: l.active ? l.onCol : 0x000000,
-                    emissiveIntensity: l.active ? 1.4 : 0
+                    emissiveIntensity: l.active ? 1.8 : 0
                 });
-                const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.28, 16, 16), mat);
-                bulb.position.set(0, l.y, 0.24);
+                const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.48, 18, 18), mat);
+                bulb.position.set(0, l.y, 0.28);
                 boxGroup.add(bulb);
             });
 
@@ -531,36 +762,36 @@
         if (actor.slotType === 'pedestrian') {
             const g = BRANCH_3D[b];
             return new THREE.LineCurve3(
-                new THREE.Vector3(g.pedStart.x, 0.18, g.pedStart.z),
-                new THREE.Vector3(g.pedEnd.x, 0.18, g.pedEnd.z)
+                new THREE.Vector3(g.pedStart.x, 0.24, g.pedStart.z),
+                new THREE.Vector3(g.pedEnd.x, 0.24, g.pedEnd.z)
             );
         }
 
         const start = BRANCH_3D[b].vehicleStart;
         const dir = actor.direction || 'straight';
-        const p0 = new THREE.Vector3(start.x, 0.18, start.z);
+        const p0 = new THREE.Vector3(start.x, 0.2, start.z);
 
         if (b === 'bottom') {
-            if (dir === 'straight') return new THREE.LineCurve3(p0, new THREE.Vector3(2.4, 0.18, -14.5));
-            if (dir === 'right')    return new THREE.QuadraticBezierCurve3(p0, new THREE.Vector3(2.4, 0.18, 2.4), new THREE.Vector3(14.5, 0.18, 2.4));
-            if (dir === 'left')     return new THREE.QuadraticBezierCurve3(p0, new THREE.Vector3(2.4, 0.18, -2.4), new THREE.Vector3(-14.5, 0.18, -2.4));
+            if (dir === 'straight') return new THREE.LineCurve3(p0, new THREE.Vector3(2.4, 0.2, -14.5));
+            if (dir === 'right')    return new THREE.QuadraticBezierCurve3(p0, new THREE.Vector3(2.4, 0.2, 2.4), new THREE.Vector3(14.5, 0.2, 2.4));
+            if (dir === 'left')     return new THREE.QuadraticBezierCurve3(p0, new THREE.Vector3(2.4, 0.2, -2.4), new THREE.Vector3(-14.5, 0.2, -2.4));
         }
         if (b === 'top') {
-            if (dir === 'straight') return new THREE.LineCurve3(p0, new THREE.Vector3(-2.4, 0.18, 14.5));
-            if (dir === 'right')    return new THREE.QuadraticBezierCurve3(p0, new THREE.Vector3(-2.4, 0.18, -2.4), new THREE.Vector3(-14.5, 0.18, -2.4));
-            if (dir === 'left')     return new THREE.QuadraticBezierCurve3(p0, new THREE.Vector3(-2.4, 0.18, 2.4), new THREE.Vector3(14.5, 0.18, 2.4));
+            if (dir === 'straight') return new THREE.LineCurve3(p0, new THREE.Vector3(-2.4, 0.2, 14.5));
+            if (dir === 'right')    return new THREE.QuadraticBezierCurve3(p0, new THREE.Vector3(-2.4, 0.2, -2.4), new THREE.Vector3(-14.5, 0.2, -2.4));
+            if (dir === 'left')     return new THREE.QuadraticBezierCurve3(p0, new THREE.Vector3(-2.4, 0.2, 2.4), new THREE.Vector3(14.5, 0.2, 2.4));
         }
         if (b === 'right') {
-            if (dir === 'straight') return new THREE.LineCurve3(p0, new THREE.Vector3(-14.5, 0.18, -2.4));
-            if (dir === 'right')    return new THREE.QuadraticBezierCurve3(p0, new THREE.Vector3(2.4, 0.18, -2.4), new THREE.Vector3(2.4, 0.18, -14.5));
-            if (dir === 'left')     return new THREE.QuadraticBezierCurve3(p0, new THREE.Vector3(-2.4, 0.18, -2.4), new THREE.Vector3(-2.4, 0.18, 14.5));
+            if (dir === 'straight') return new THREE.LineCurve3(p0, new THREE.Vector3(-14.5, 0.2, -2.4));
+            if (dir === 'right')    return new THREE.QuadraticBezierCurve3(p0, new THREE.Vector3(2.4, 0.2, -2.4), new THREE.Vector3(2.4, 0.2, -14.5));
+            if (dir === 'left')     return new THREE.QuadraticBezierCurve3(p0, new THREE.Vector3(-2.4, 0.2, -2.4), new THREE.Vector3(-2.4, 0.2, 14.5));
         }
         if (b === 'left') {
-            if (dir === 'straight') return new THREE.LineCurve3(p0, new THREE.Vector3(14.5, 0.18, 2.4));
-            if (dir === 'right')    return new THREE.QuadraticBezierCurve3(p0, new THREE.Vector3(-2.4, 0.18, 2.4), new THREE.Vector3(-2.4, 0.18, 14.5));
-            if (dir === 'left')     return new THREE.QuadraticBezierCurve3(p0, new THREE.Vector3(2.4, 0.18, 2.4), new THREE.Vector3(2.4, 0.18, -14.5));
+            if (dir === 'straight') return new THREE.LineCurve3(p0, new THREE.Vector3(14.5, 0.2, 2.4));
+            if (dir === 'right')    return new THREE.QuadraticBezierCurve3(p0, new THREE.Vector3(-2.4, 0.2, 2.4), new THREE.Vector3(-2.4, 0.2, 14.5));
+            if (dir === 'left')     return new THREE.QuadraticBezierCurve3(p0, new THREE.Vector3(2.4, 0.2, 2.4), new THREE.Vector3(2.4, 0.2, -14.5));
         }
-        return new THREE.LineCurve3(p0, new THREE.Vector3(0, 0.18, 0));
+        return new THREE.LineCurve3(p0, new THREE.Vector3(0, 0.2, 0));
     }
 
     /**
@@ -575,7 +806,6 @@
             roughness: 0.3
         });
 
-        // Create dashed 3D segments along curve
         const segments = 18;
         for (let i = 1; i < segments - 1; i += 2) {
             const t1 = i / segments;
@@ -583,16 +813,15 @@
             const pt1 = curve.getPointAt(t1);
             const pt2 = curve.getPointAt(t2);
             const segCurve = new THREE.LineCurve3(pt1, pt2);
-            const tubeGeo = new THREE.TubeGeometry(segCurve, 4, 0.22, 8, false);
+            const tubeGeo = new THREE.TubeGeometry(segCurve, 4, 0.24, 8, false);
             const mesh = new THREE.Mesh(tubeGeo, mat);
             group.add(mesh);
         }
 
-        // Arrowhead cone at 92% of the curve
         const tipPt = curve.getPointAt(0.92);
         const tangent = curve.getTangentAt(0.92).normalize();
-        const coneGeo = new THREE.ConeGeometry(0.62, 1.45, 14);
-        coneGeo.rotateX(Math.PI / 2); // Align cone tip with +Z
+        const coneGeo = new THREE.ConeGeometry(0.68, 1.55, 14);
+        coneGeo.rotateX(Math.PI / 2);
         const cone = new THREE.Mesh(coneGeo, mat);
         cone.position.copy(tipPt);
         cone.lookAt(tipPt.clone().add(tangent));
@@ -612,7 +841,8 @@
             this.showDropZones = !!options.showDropZones;
 
             this.scenarioState = null;
-            this.actorsMap = {}; // key -> { actor, mesh, curve, worldBadgePos }
+            this.actorsMap = {};
+            this.billboardSignHeads = [];
             this.clickedKeys = [];
             this.evaluationResult = null;
             this.activeDropZoneEls = [];
@@ -643,7 +873,7 @@
             this.container.appendChild(this.renderer.domElement);
 
             // Lights
-            const hemi = new THREE.HemisphereLight(0xffffff, 0x4ade80, 0.78);
+            const hemi = new THREE.HemisphereLight(0xffffff, 0x4ade80, 0.82);
             hemi.position.set(0, 50, 0);
             this.scene.add(hemi);
 
@@ -668,13 +898,12 @@
             this.raycaster = new THREE.Raycaster();
             this.mouse = new THREE.Vector2();
 
-            // Camera drag rotation (right-click or two-finger / subtle drag on background)
             this.isDraggingCam = false;
             this.dragStart = { x: 0, y: 0 };
             this.pointerMoved = false;
-            this.camAzimuth = 0.42; // 3/4 angle!
+            this.camAzimuth = 0.42;
             this.camElevation = 0.88;
-            this.camDist = 43;
+            this.camDist = 42;
             this.updateCameraFromSpherical();
 
             const dom = this.renderer.domElement;
@@ -722,15 +951,15 @@
             if (preset === 'iso34') {
                 this.camAzimuth = 0.42;
                 this.camElevation = 0.88;
-                this.camDist = 43;
+                this.camDist = 42;
             } else if (preset === 'isoLeft') {
                 this.camAzimuth = -0.45;
                 this.camElevation = 0.86;
-                this.camDist = 43;
+                this.camDist = 42;
             } else if (preset === 'topDown') {
                 this.camAzimuth = 0;
                 this.camElevation = 1.45;
-                this.camDist = 44;
+                this.camDist = 43;
             } else if (preset === 'driverSouth') {
                 this.camAzimuth = 0;
                 this.camElevation = 0.52;
@@ -744,7 +973,6 @@
             this.overlayLayer.style.cssText = 'position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:5;';
             this.container.appendChild(this.overlayLayer);
 
-            // Camera angle switcher bar inside top-left of 3D stage
             const camBar = document.createElement('div');
             camBar.style.cssText = 'position:absolute;top:10px;left:10px;z-index:10;display:flex;gap:5px;flex-wrap:wrap;';
             camBar.innerHTML = `
@@ -805,12 +1033,12 @@
             this.evaluationResult = evaluationResult;
             this.showDropZones = showDropZones;
 
-            // Clear old 3D objects
             while (this.worldGroup.children.length > 0) {
                 this.worldGroup.remove(this.worldGroup.children[0]);
             }
             this.overlayLayer.innerHTML = '';
             this.actorsMap = {};
+            this.billboardSignHeads = [];
             this.activeDropZoneEls = [];
             this.badgeOverlayEls = {};
 
@@ -819,13 +1047,13 @@
 
             // 1. 3D Grass Ground
             const grassMat = new THREE.MeshStandardMaterial({ color: 0x4ade80, roughness: 0.9 });
-            const grass = new THREE.Mesh(new THREE.BoxGeometry(44, 0.6, 44), grassMat);
+            const grass = new THREE.Mesh(new THREE.BoxGeometry(48, 0.6, 48), grassMat);
             grass.position.y = -0.3;
             grass.receiveShadow = true;
             this.worldGroup.add(grass);
 
-            // 2. Decorative 3D Low-Poly Trees in the 4 outer corners
-            [[-13, -13], [13, -13], [-13, 13], [13, 13], [-16, -9], [16, -9], [-16, 9], [16, 9]].forEach(([tx, tz]) => {
+            // 2. Decorative 3D Low-Poly Trees in the outer corners (pushed further out so signs & sidewalks are 100% unobstructed)
+            [[-15.5, -15.5], [15.5, -15.5], [-15.5, 15.5], [15.5, 15.5], [-18, -11], [18, -11], [-18, 11], [18, 11]].forEach(([tx, tz]) => {
                 const tree = new THREE.Group();
                 const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.45, 1.8, 8), new THREE.MeshStandardMaterial({ color: 0x78350f }));
                 trunk.position.y = 0.9;
@@ -841,14 +1069,21 @@
                 this.worldGroup.add(tree);
             });
 
-            // 3. Sidewalks & Raised Curbs + Asphalt Roads
-            const curbMat = new THREE.MeshStandardMaterial({ color: 0xcbd5e1, roughness: 0.7 });
+            // 3. Wide, Clearly Defined 3D Sidewalks (پیاده‌رو) + Curbstones (جدول) + Asphalt Roads
+            const sidewalkMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.65 });
+            const curbBorderMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, roughness: 0.55 });
             const roadMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.85 });
             const lineMat = new THREE.MeshBasicMaterial({ color: 0xf8fafc });
+            const tactileMat = new THREE.MeshStandardMaterial({ color: 0xfef08a, roughness: 0.5 });
 
-            // Center sidewalk base & center intersection asphalt
-            const centerSidewalk = new THREE.Mesh(new THREE.BoxGeometry(13.2, 0.22, 13.2), curbMat);
-            centerSidewalk.position.y = 0.08;
+            // Center sidewalk plaza & raised curb border
+            const centerCurbBase = new THREE.Mesh(new THREE.BoxGeometry(17.2, 0.34, 17.2), curbBorderMat);
+            centerCurbBase.position.y = 0.12;
+            centerCurbBase.receiveShadow = true;
+            this.worldGroup.add(centerCurbBase);
+
+            const centerSidewalk = new THREE.Mesh(new THREE.BoxGeometry(16.6, 0.38, 16.6), sidewalkMat);
+            centerSidewalk.position.y = 0.15;
             centerSidewalk.receiveShadow = true;
             this.worldGroup.add(centerSidewalk);
 
@@ -858,70 +1093,120 @@
             this.worldGroup.add(centerAsphalt);
 
             const branchConfigs = {
-                top:    { sx: 0, sz: -13.5, sw: 13.2, sd: 17, rw: 9.6, rd: 17.5, isVert: true },
-                bottom: { sx: 0, sz: 13.5,  sw: 13.2, sd: 17, rw: 9.6, rd: 17.5, isVert: true },
-                right:  { sx: 13.5, sz: 0,  sw: 17, sd: 13.2, rw: 17.5, rd: 9.6, isVert: false },
-                left:   { sx: -13.5, sz: 0, sw: 17, sd: 13.2, rw: 17.5, rd: 9.6, isVert: false }
+                top:    { sx: 0, sz: -13.5, sw: 16.6, sd: 17.5, rw: 9.6, rd: 18.0, isVert: true },
+                bottom: { sx: 0, sz: 13.5,  sw: 16.6, sd: 17.5, rw: 9.6, rd: 18.0, isVert: true },
+                right:  { sx: 13.5, sz: 0,  sw: 17.5, sd: 16.6, rw: 18.0, rd: 9.6, isVert: false },
+                left:   { sx: -13.5, sz: 0, sw: 17.5, sd: 16.6, rw: 18.0, rd: 9.6, isVert: false }
             };
 
             activeBranches.forEach(bName => {
                 const cfg = branchConfigs[bName];
-                const sw = new THREE.Mesh(new THREE.BoxGeometry(cfg.sw, 0.22, cfg.sd), curbMat);
-                sw.position.set(cfg.sx, 0.08, cfg.sz);
+
+                // Outer curbstone rim for this branch's sidewalk
+                const curbRim = new THREE.Mesh(
+                    new THREE.BoxGeometry(cfg.isVert ? cfg.sw + 0.6 : cfg.sw, 0.34, cfg.isVert ? cfg.sd : cfg.sd + 0.6),
+                    curbBorderMat
+                );
+                curbRim.position.set(cfg.sx, 0.12, cfg.sz);
+                curbRim.receiveShadow = true;
+                this.worldGroup.add(curbRim);
+
+                // Raised light-concrete sidewalk (پیاده‌رو) on both sides of the street
+                const sw = new THREE.Mesh(new THREE.BoxGeometry(cfg.sw, 0.38, cfg.sd), sidewalkMat);
+                sw.position.set(cfg.sx, 0.15, cfg.sz);
                 sw.receiveShadow = true;
                 this.worldGroup.add(sw);
 
-                const rd = new THREE.Mesh(new THREE.BoxGeometry(cfg.rw, 0.24, cfg.rd), roadMat);
-                rd.position.set(cfg.sx, 0.1, cfg.sz);
+                // Sidewalk paving tile lines so the sidewalk surface is unmistakably a pedestrian walkway
+                for (let step = 6.5; step <= 20.5; step += 2.4) {
+                    const dirSign = (bName === 'top' || bName === 'left') ? -1 : 1;
+                    [-6.6, 6.6].forEach(sideOffset => {
+                        const seam = new THREE.Mesh(
+                            new THREE.BoxGeometry(cfg.isVert ? 3.2 : 0.08, 0.4, cfg.isVert ? 0.08 : 3.2),
+                            curbBorderMat
+                        );
+                        if (cfg.isVert) {
+                            seam.position.set(sideOffset, 0.16, dirSign * step);
+                        } else {
+                            seam.position.set(dirSign * step, 0.16, sideOffset);
+                        }
+                        this.worldGroup.add(seam);
+                    });
+                }
+
+                // Road Asphalt (carves through the center of the sidewalk)
+                const rd = new THREE.Mesh(new THREE.BoxGeometry(cfg.rw, 0.25, cfg.rd), roadMat);
+                rd.position.set(cfg.sx, 0.11, cfg.sz);
                 rd.receiveShadow = true;
                 this.worldGroup.add(rd);
 
                 // Dashed center lane markings
-                for (let d = 8.2; d <= 19.5; d += 3.0) {
+                for (let d = 8.8; d <= 20.2; d += 3.0) {
                     const sign = (bName === 'top' || bName === 'left') ? -1 : 1;
                     const dash = new THREE.Mesh(
-                        new THREE.BoxGeometry(cfg.isVert ? 0.22 : 1.6, 0.26, cfg.isVert ? 1.6 : 0.22),
+                        new THREE.BoxGeometry(cfg.isVert ? 0.24 : 1.65, 0.27, cfg.isVert ? 1.65 : 0.24),
                         lineMat
                     );
-                    dash.position.set(cfg.isVert ? 0 : sign * d, 0.11, cfg.isVert ? sign * d : 0);
+                    dash.position.set(cfg.isVert ? 0 : sign * d, 0.12, cfg.isVert ? sign * d : 0);
                     this.worldGroup.add(dash);
                 }
 
-                // Crosswalks & Stop/Yield road lines
+                // Crosswalks (گذرگاه عابر پیاده) & Tactile Curb Ramps
                 const bData = scenarioState.branches ? scenarioState.branches[bName] : null;
-                if (bData && bData.hasCrosswalk) {
-                    for (let offset = -3.8; offset <= 3.8; offset += 1.1) {
+                const hasCrosswalkOrPed = bData && (bData.hasCrosswalk || (bData.pedestrian && bData.pedestrian.type));
+
+                if (hasCrosswalkOrPed) {
+                    // Zebra stripes across the asphalt road
+                    for (let offset = -3.85; offset <= 3.85; offset += 1.1) {
                         const stripe = new THREE.Mesh(
-                            new THREE.BoxGeometry(cfg.isVert ? 0.55 : 2.1, 0.26, cfg.isVert ? 2.1 : 0.55),
+                            new THREE.BoxGeometry(cfg.isVert ? 0.62 : 2.35, 0.28, cfg.isVert ? 2.35 : 0.62),
                             lineMat
                         );
-                        if (bName === 'bottom') stripe.position.set(offset, 0.12, 6.8);
-                        if (bName === 'top')    stripe.position.set(offset, 0.12, -6.8);
-                        if (bName === 'right')  stripe.position.set(6.8, 0.12, offset);
-                        if (bName === 'left')   stripe.position.set(-6.8, 0.12, offset);
+                        if (bName === 'bottom') stripe.position.set(offset, 0.13, 6.8);
+                        if (bName === 'top')    stripe.position.set(offset, 0.13, -6.8);
+                        if (bName === 'right')  stripe.position.set(6.8, 0.13, offset);
+                        if (bName === 'left')   stripe.position.set(-6.8, 0.13, offset);
                         this.worldGroup.add(stripe);
                     }
+
+                    // Tactile yellow waiting strips on both sidewalk curbs flanking the crosswalk
+                    [-5.35, 5.35].forEach(sidePos => {
+                        const ramp = new THREE.Mesh(
+                            new THREE.BoxGeometry(cfg.isVert ? 0.75 : 2.4, 0.41, cfg.isVert ? 2.4 : 0.75),
+                            tactileMat
+                        );
+                        if (bName === 'bottom') ramp.position.set(sidePos, 0.16, 6.8);
+                        if (bName === 'top')    ramp.position.set(sidePos, 0.16, -6.8);
+                        if (bName === 'right')  ramp.position.set(6.8, 0.16, sidePos);
+                        if (bName === 'left')   ramp.position.set(-6.8, 0.16, sidePos);
+                        this.worldGroup.add(ramp);
+                    });
                 }
 
                 if (bData && (bData.primarySign === 's206_stop' || bData.primarySign === 's205_yield')) {
                     const stopLine = new THREE.Mesh(
-                        new THREE.BoxGeometry(cfg.isVert ? 4.4 : 0.45, 0.27, cfg.isVert ? 0.45 : 4.4),
+                        new THREE.BoxGeometry(cfg.isVert ? 4.4 : 0.48, 0.28, cfg.isVert ? 0.48 : 4.4),
                         lineMat
                     );
-                    if (bName === 'bottom') stopLine.position.set(2.4, 0.12, 8.2);
-                    if (bName === 'top')    stopLine.position.set(-2.4, 0.12, -8.2);
-                    if (bName === 'right')  stopLine.position.set(8.2, 0.12, -2.4);
-                    if (bName === 'left')   stopLine.position.set(-8.2, 0.12, 2.4);
+                    if (bName === 'bottom') stopLine.position.set(2.4, 0.13, 8.5);
+                    if (bName === 'top')    stopLine.position.set(-2.4, 0.13, -8.5);
+                    if (bName === 'right')  stopLine.position.set(8.5, 0.13, -2.4);
+                    if (bName === 'left')   stopLine.position.set(-8.5, 0.13, 2.4);
                     this.worldGroup.add(stopLine);
                 }
 
-                // 4. 3D Traffic Signs & Traffic Lights on Branch Corner
+                // 4. Large 3D Traffic Signs & Traffic Lights on Branch Sidewalk Corner
                 if (bData) {
                     const signGroup = create3DSignpostAndLightGroup(bData);
                     const sPos = BRANCH_3D[bName].signSlot;
-                    signGroup.position.set(sPos.x, 0.15, sPos.z);
-                    signGroup.rotation.y = sPos.rotY;
+                    signGroup.position.set(sPos.x, 0.34, sPos.z);
                     this.worldGroup.add(signGroup);
+
+                    signGroup.traverse(child => {
+                        if (child.userData && child.userData.isBillboardSignHead) {
+                            this.billboardSignHeads.push(child);
+                        }
+                    });
                 }
             });
 
@@ -970,8 +1255,8 @@
                         el.style.cssText = `
                             position:absolute;pointer-events:auto;cursor:pointer;
                             transform:translate(-50%,-50%);
-                            background:rgba(15,23,42,0.72);color:#fde047;
-                            border:2px dashed rgba(250,204,21,0.85);border-radius:10px;
+                            background:rgba(15,23,42,0.78);color:#fde047;
+                            border:2px dashed rgba(250,204,21,0.9);border-radius:10px;
                             padding:3px 7px;font-size:0.68rem;font-weight:900;white-space:nowrap;
                             transition:all 0.15s ease;
                         `;
@@ -993,7 +1278,6 @@
         spawnActor3D(actor) {
             const curve = buildActor3DCurve(actor);
 
-            // Determine trajectory color (Yellow default; Green/Red after evaluation)
             let trajHex = 0xfacc15;
             if (this.evaluationResult && this.evaluationResult.detailsByKey) {
                 const ok = this.evaluationResult.detailsByKey[actor.key];
@@ -1003,29 +1287,31 @@
             const trajMesh = create3DTrajectoryArrowMesh(curve, trajHex);
             this.worldGroup.add(trajMesh);
 
-            // Build 3D Mesh
-            const mesh = actor.slotType === 'pedestrian'
+            const isPed = actor.slotType === 'pedestrian';
+            const mesh = isPed
                 ? create3DPedestrianMesh(actor.type)
                 : create3DVehicleMesh(actor.type, actor.direction);
 
-            const startSpec = actor.slotType === 'pedestrian'
+            const startSpec = isPed
                 ? BRANCH_3D[actor.branch].pedStart
                 : BRANCH_3D[actor.branch].vehicleStart;
+
+            const baseY = isPed ? 0.34 : 0.2;
 
             if (this.completedMoves && this.completedMoves.has(actor.key)) {
                 const pt = curve.getPointAt(0.88);
                 const tangent = curve.getTangentAt(0.88).normalize();
-                mesh.position.set(pt.x, 0.2, pt.z);
-                mesh.lookAt(new THREE.Vector3(pt.x + tangent.x, 0.2, pt.z + tangent.z));
+                mesh.position.set(pt.x, baseY, pt.z);
+                mesh.lookAt(new THREE.Vector3(pt.x + tangent.x, baseY, pt.z + tangent.z));
             } else {
-                mesh.position.set(startSpec.x, 0.2, startSpec.z);
+                mesh.position.set(startSpec.x, baseY, startSpec.z);
                 mesh.rotation.y = startSpec.rotY;
             }
             mesh.userData.actorKey = actor.key;
             mesh.userData.branch = actor.branch;
             this.worldGroup.add(mesh);
 
-            // Floating HTML Priority / Click Order Badge anchored to 3D vehicle
+            // Floating HTML Priority / Click Order Badge anchored above the 3D actor
             const clickIdx = this.clickedKeys.indexOf(actor.key);
             const userOrder = clickIdx !== -1 ? (clickIdx + 1) : null;
 
@@ -1050,9 +1336,9 @@
                 transform:translate(-50%,-100%);
                 background:${badgeBg};color:#ffffff;
                 border:2.5px solid ${badgeBorder};border-radius:999px;
-                min-width:28px;height:28px;padding:0 7px;
+                min-width:30px;height:30px;padding:0 8px;
                 display:inline-flex;align-items:center;justify-content:center;
-                font-weight:900;font-size:0.8rem;box-shadow:0 3px 0 #020617;
+                font-weight:900;font-size:0.84rem;box-shadow:0 3px 0 #020617;
             `;
             badgeEl.textContent = badgeText;
             badgeEl.addEventListener('click', (ev) => {
@@ -1067,6 +1353,7 @@
                 curve: curve,
                 badgeEl: badgeEl,
                 startSpec: startSpec,
+                baseY: baseY,
                 animStartTime: null,
                 isAnimating: false
             };
@@ -1105,7 +1392,7 @@
             Object.values(this.actorsMap).forEach(entry => {
                 entry.isAnimating = false;
                 if (entry.mesh && entry.startSpec) {
-                    entry.mesh.position.set(entry.startSpec.x, 0.2, entry.startSpec.z);
+                    entry.mesh.position.set(entry.startSpec.x, entry.baseY || 0.2, entry.startSpec.z);
                     entry.mesh.rotation.set(0, entry.startSpec.rotY, 0);
                 }
                 if (entry.badgeEl) {
@@ -1121,11 +1408,10 @@
             const h = this.renderer.domElement.clientHeight;
             if (!w || !h) return;
 
-            // Project actor badges
             Object.values(this.actorsMap).forEach(entry => {
                 if (!entry.mesh || !entry.badgeEl) return;
                 const pos = entry.mesh.position.clone();
-                pos.y += 2.35;
+                pos.y += entry.actor.slotType === 'pedestrian' ? 3.35 : 2.45;
                 pos.project(this.camera);
                 const x = (pos.x * 0.5 + 0.5) * w;
                 const y = (-(pos.y * 0.5) + 0.5) * h;
@@ -1133,7 +1419,6 @@
                 entry.badgeEl.style.top = `${y}px`;
             });
 
-            // Project builder drop zones
             this.activeDropZoneEls.forEach(item => {
                 const pos = item.worldPos.clone().project(this.camera);
                 const x = (pos.x * 0.5 + 0.5) * w;
@@ -1149,12 +1434,29 @@
             const now = performance.now();
             const blinkOn = Math.floor(now / 380) % 2 === 0;
 
-            // Update vehicle turn signals & active curve movements
+            // Keep all 3D traffic signs & traffic lights facing the camera screen plane directly (billboarded)
+            // so they are always huge, upright, and 100% legible from every angle!
+            if (this.camera && this.billboardSignHeads && this.billboardSignHeads.length > 0) {
+                this.billboardSignHeads.forEach(head => {
+                    head.quaternion.copy(this.camera.quaternion);
+                });
+            }
+
+            // Update vehicle turn signals, pedestrian walking bob, & active curve movements
             Object.values(this.actorsMap).forEach(entry => {
                 if (entry.mesh) {
                     entry.mesh.traverse(child => {
                         if (child.userData && child.userData.isBlinker) {
                             child.visible = blinkOn;
+                        }
+                        if (child.userData && child.userData.isPedBody) {
+                            if (entry.isAnimating) {
+                                child.position.y = Math.abs(Math.sin(now * 0.016)) * 0.28;
+                                child.rotation.z = Math.sin(now * 0.016) * 0.1;
+                            } else {
+                                child.position.y = Math.abs(Math.sin(now * 0.004)) * 0.06;
+                                child.rotation.z = 0;
+                            }
                         }
                     });
                 }
@@ -1167,9 +1469,10 @@
                     const u = eased * 0.88;
                     const pt = entry.curve.getPointAt(u);
                     const tangent = entry.curve.getTangentAt(u).normalize();
+                    const yLevel = entry.baseY || 0.2;
 
-                    entry.mesh.position.set(pt.x, 0.2, pt.z);
-                    const targetLook = new THREE.Vector3(pt.x + tangent.x, 0.2, pt.z + tangent.z);
+                    entry.mesh.position.set(pt.x, yLevel, pt.z);
+                    const targetLook = new THREE.Vector3(pt.x + tangent.x, yLevel, pt.z + tangent.z);
                     entry.mesh.lookAt(targetLook);
 
                     if (t >= 1) {
