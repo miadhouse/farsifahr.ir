@@ -524,10 +524,13 @@ $csrf_token = $_SESSION['csrf_token'] ?? generate_csrf_token();
 
                         <!-- Quick Sample Presets -->
                         <div class="d-flex align-items-center justify-content-between flex-wrap gap-1 pt-2 border-top">
-                            <span class="small fw-bold text-muted">سوال طراحی‌شده:</span>
+                            <span class="small fw-bold text-muted">سوالات طراحی‌شده:</span>
                             <div class="d-flex gap-1 flex-wrap">
                                 <button type="button" class="btn btn-sm btn-outline-primary fw-bold" style="font-size: 0.74rem;" onclick="loadPresetScenario('preset1')">
-                                    سوال ۱: چهارراه بدون خط‌کشی (کامیون آبی و ماشین قرمز)
+                                    سوال ۱: تابلو ۲۰۵ (عبور همزمان)
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-warning fw-bold" style="font-size: 0.74rem;" onclick="loadPresetScenario('preset2')">
+                                    سوال ۲: تابلو ۳۰۱ (حق تقدم یکباره)
                                 </button>
                             </div>
                         </div>
@@ -714,7 +717,7 @@ $csrf_token = $_SESSION['csrf_token'] ?? generate_csrf_token();
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="assets/js/priority-3d-engine.js?v=1.6"></script>
+    <script src="assets/js/priority-3d-engine.js?v=1.7"></script>
 
     <script>
         const CSRF_TOKEN = <?= json_encode($csrf_token) ?>;
@@ -742,7 +745,7 @@ $csrf_token = $_SESSION['csrf_token'] ?? generate_csrf_token();
             car_green:  { id: 'car_green',  category: 'vehicle', name: 'خودرو سبز', color: '#22c55e', stroke: '#14532d', roof: '#86efac' },
             car_blue:   { id: 'car_blue',   category: 'vehicle', name: 'خودرو آبی', color: '#3b82f6', stroke: '#1e3a8a', roof: '#93c5fd' },
             car_red:    { id: 'car_red',    category: 'vehicle', name: 'خودرو قرمز', color: '#ef4444', stroke: '#7f1d1d', roof: '#fca5a5' },
-            bus:        { id: 'bus',        category: 'vehicle', name: 'اتوبوس', color: '#f97316', stroke: '#7c2d12', roof: '#fdba74' },
+            bus:        { id: 'bus',        category: 'vehicle', name: 'اتوبوس زرد', color: '#facc15', stroke: '#854d0e', roof: '#fef08a' },
             truck:      { id: 'truck',      category: 'vehicle', name: 'کامیون آبی', color: '#2563eb', stroke: '#1e3a8a', roof: '#93c5fd' },
             moto:       { id: 'moto',       category: 'vehicle', name: 'موتورسیکلت', color: '#ec4899', stroke: '#831843', roof: '#f9a8d4' },
             bike:       { id: 'bike',       category: 'vehicle', name: 'دوچرخه', color: '#06b6d4', stroke: '#164e63', roof: '#67e8f9' },
@@ -762,7 +765,7 @@ $csrf_token = $_SESSION['csrf_token'] ?? generate_csrf_token();
             s306_priority_road: { id: 's306_priority_road', name: 'جاده اصلی - حق تقدم (306)' },
             s205_yield:         { id: 's205_yield', name: 'رعایت حق تقدم (205)' },
             s206_stop:          { id: 's206_stop', name: 'ایست کامل STOP (206)' },
-            s301_priority_next: { id: 's301_priority_next', name: 'حق تقدم در تقاطع (301)' },
+            s301_priority_next: { id: 's301_priority_next', name: 'حق تقدم یکباره (301)' },
             s102_rvl:           { id: 's102_rvl', name: 'تقاطع راست به چپ (102)' },
             s307_end_priority:  { id: 's307_end_priority', name: 'پایان جاده اصلی (307)' },
             s350_crosswalk:     { id: 's350_crosswalk', name: 'گذرگاه عابر پیاده (350)' }
@@ -1797,9 +1800,9 @@ $csrf_token = $_SESSION['csrf_token'] ?? generate_csrf_token();
         // =========================================================================
         function loadPresetScenario(presetName) {
             currentScenarioId = 0;
-            document.getElementById('editingScenarioBadge').textContent = 'سوال ۱';
 
             if (presetName === 'preset1') {
+                document.getElementById('editingScenarioBadge').textContent = 'سوال ۱';
                 document.getElementById('scenarioTitleInput').value = 'سوال ۱: چهارراه با تابلو رعایت حق تقدم و عبور همزمان';
                 document.getElementById('scenarioQuestionInput').value = 'به چه ترتیبی وسایل نقلیه حق تقدم عبور دارند؟ (شما در ضلع پایین با تابلوی رعایت حق تقدم مستقیم می‌روید، ماشین قرمز در سمت راست به راست می‌پیچد و کامیون آبی در سمت چپ مستقیم می‌رود)';
                 document.getElementById('scenarioQuestionDeInput').value = 'In welcher Reihenfolge dürfen die Fahrzeuge diese Kreuzung überqueren?';
@@ -1814,6 +1817,24 @@ $csrf_token = $_SESSION['csrf_token'] ?? generate_csrf_token();
                         right:  { hasCrosswalk: false, trafficLight: 'none', primarySign: 'none', secondarySign: 'none', vehicle: { type: 'car_red', direction: 'right', priority: 1 }, pedestrian: null },
                         bottom: { hasCrosswalk: false, trafficLight: 'none', primarySign: 's205_yield', secondarySign: 'none', vehicle: { type: 'car_green', direction: 'straight', priority: 2 }, pedestrian: null },
                         left:   { hasCrosswalk: false, trafficLight: 'none', primarySign: 'none', secondarySign: 'none', vehicle: { type: 'truck', direction: 'straight', priority: 1 }, pedestrian: null }
+                    }
+                };
+            } else if (presetName === 'preset2') {
+                document.getElementById('editingScenarioBadge').textContent = 'سوال ۲';
+                document.getElementById('scenarioTitleInput').value = 'سوال ۲: چهارراه با تابلو حق تقدم یکباره (۳۰۱) و گردش به چپ';
+                document.getElementById('scenarioQuestionInput').value = 'به چه ترتیبی وسایل نقلیه حق تقدم عبور دارند؟ (شما در ضلع پایین با تابلوی ۳۰۱ «حق تقدم یکباره» قصد گردش به چپ دارید، در ضلع بالا موتورسیکلت مستقیم می‌رود و در سمت راست اتوبوس زرد مستقیم می‌رود)';
+                document.getElementById('scenarioQuestionDeInput').value = 'In welcher Reihenfolge dürfen die Fahrzeuge bei Zeichen 301 (einmalige Vorfahrt) fahren?';
+                document.getElementById('scenarioExplanationInput').value = 'ترتیب صحیح: ۱. موتورسیکلت، ۲. من (خودروی ضلع پایین)، ۳. اتوبوس زرد. دلیل: تابلوی شماره ۳۰۱ به معنای «حق تقدم یکباره» در تقاطع بعدی است. هر زمان شما این تابلو را دارید، مسیر روبروی شما (موتورسیکلت) نیز همین شرایط را دارد؛ بنابراین هر دوی شما نسبت به اتوبوس زرد در سمت راست حق تقدم دارید. از آنجا که شرایط شما و موتورسیکلت روبرو یکسان است، طبق قانون بین دو وسیله با شرایط یکسان، وسیله‌ای که مستقیم می‌رود بر وسیله‌ای که قصد گردش به چپ دارد مقدم است؛ پس ابتدا موتورسیکلت (۱)، سپس شما (۲) و در پایان اتوبوس زرد (۳) عبور می‌کنند.';
+
+                scenarioState = {
+                    intersectionType: 'cross4',
+                    hasSidewalks: false,
+                    hasRoadMarkings: false,
+                    branches: {
+                        top:    { hasCrosswalk: false, trafficLight: 'none', primarySign: 'none', secondarySign: 'none', vehicle: { type: 'moto', direction: 'straight', priority: 1 }, pedestrian: null },
+                        right:  { hasCrosswalk: false, trafficLight: 'none', primarySign: 'none', secondarySign: 'none', vehicle: { type: 'bus', direction: 'straight', priority: 3 }, pedestrian: null },
+                        bottom: { hasCrosswalk: false, trafficLight: 'none', primarySign: 's301_priority_next', secondarySign: 'none', vehicle: { type: 'car_green', direction: 'left', priority: 2 }, pedestrian: null },
+                        left:   { hasCrosswalk: false, trafficLight: 'none', primarySign: 'none', secondarySign: 'none', vehicle: null, pedestrian: null }
                     }
                 };
             }

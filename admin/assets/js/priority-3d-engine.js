@@ -20,7 +20,7 @@
         car_green:  { name: 'خودرو سبز', color: 0x22c55e, roof: 0x86efac, kind: 'car' },
         car_blue:   { name: 'خودرو آبی', color: 0x3b82f6, roof: 0x93c5fd, kind: 'car' },
         car_red:    { name: 'خودرو قرمز', color: 0xef4444, roof: 0xfca5a5, kind: 'car' },
-        bus:        { name: 'اتوبوس', color: 0xf97316, roof: 0xfdba74, kind: 'bus' },
+        bus:        { name: 'اتوبوس زرد', color: 0xfacc15, roof: 0xfef08a, kind: 'bus' },
         truck:      { name: 'کامیون آبی', color: 0x1d4ed8, roof: 0x93c5fd, kind: 'truck' },
         moto:       { name: 'موتورسیکلت', color: 0xec4899, roof: 0xfde047, kind: 'moto' },
         bike:       { name: 'دوچرخه', color: 0x06b6d4, roof: 0x67e8f9, kind: 'bike' },
@@ -197,6 +197,7 @@
             ctx.stroke();
 
             ctx.strokeStyle = '#0f172a';
+            ctx.fillStyle = '#0f172a';
             ctx.lineWidth = 34;
             ctx.lineCap = 'round';
             if (signId === 's102_rvl') {
@@ -205,14 +206,18 @@
                 ctx.moveTo(68, -5);  ctx.lineTo(-68, 115);
                 ctx.stroke();
             } else {
+                // Official StVO Zeichen 301 (Einmalige Vorfahrt):
+                // Thick vertical arrow-tipped shaft + thinner horizontal crossbar through its middle
                 ctx.beginPath();
-                ctx.moveTo(0, 125); ctx.lineTo(0, -55);
-                ctx.moveTo(-55, 8); ctx.lineTo(0, -62); ctx.lineTo(55, 8);
-                ctx.stroke();
-                ctx.lineWidth = 20;
-                ctx.beginPath();
-                ctx.moveTo(-55, 48); ctx.lineTo(55, 48);
-                ctx.stroke();
+                ctx.moveTo(-26, 134);
+                ctx.lineTo(-26, -18);
+                ctx.lineTo(0, -76);
+                ctx.lineTo(26, -18);
+                ctx.lineTo(26, 134);
+                ctx.closePath();
+                ctx.fill();
+
+                ctx.fillRect(-76, 28, 152, 24);
             }
         } else if (signId === 's350_crosswalk') {
             ctx.fillStyle = '#2563eb';

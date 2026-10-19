@@ -55,6 +55,24 @@ function ensureAndFetchPriorityScenarios(PDO $pdo): array
                         'left'   => ['hasCrosswalk' => false, 'trafficLight' => 'none', 'primarySign' => 'none', 'secondarySign' => 'none', 'vehicle' => ['type' => 'truck', 'direction' => 'straight', 'priority' => 1], 'pedestrian' => null]
                     ]
                 ]
+            ],
+            [
+                'title' => 'سوال ۲: چهارراه با تابلو حق تقدم یکباره (۳۰۱) و گردش به چپ',
+                'question_text' => 'به چه ترتیبی وسایل نقلیه حق تقدم عبور دارند؟ (شما در ضلع پایین با تابلوی ۳۰۱ «حق تقدم یکباره» قصد گردش به چپ دارید، در ضلع بالا موتورسیکلت مستقیم می‌رود و در سمت راست اتوبوس زرد مستقیم می‌رود)',
+                'question_de' => 'In welcher Reihenfolge dürfen die Fahrzeuge bei Zeichen 301 (einmalige Vorfahrt) fahren?',
+                'explanation' => 'ترتیب صحیح: ۱. موتورسیکلت، ۲. من (خودروی ضلع پایین)، ۳. اتوبوس زرد. دلیل: تابلوی شماره ۳۰۱ به معنای «حق تقدم یکباره» در تقاطع بعدی است. هر زمان شما این تابلو را دارید، مسیر روبروی شما (موتورسیکلت) نیز همین شرایط را دارد؛ بنابراین هر دوی شما نسبت به اتوبوس زرد در سمت راست حق تقدم دارید. از آنجا که شرایط شما و موتورسیکلت روبرو یکسان است، طبق قانون بین دو وسیله با شرایط یکسان، وسیله‌ای که مستقیم می‌رود بر وسیله‌ای که قصد گردش به چپ دارد مقدم است؛ پس ابتدا موتورسیکلت (۱)، سپس شما (۲) و در پایان اتوبوس زرد (۳) عبور می‌کنند.',
+                'intersection_type' => 'cross4',
+                'scenario_data' => [
+                    'intersectionType' => 'cross4',
+                    'hasSidewalks' => false,
+                    'hasRoadMarkings' => false,
+                    'branches' => [
+                        'top'    => ['hasCrosswalk' => false, 'trafficLight' => 'none', 'primarySign' => 'none', 'secondarySign' => 'none', 'vehicle' => ['type' => 'moto', 'direction' => 'straight', 'priority' => 1], 'pedestrian' => null],
+                        'right'  => ['hasCrosswalk' => false, 'trafficLight' => 'none', 'primarySign' => 'none', 'secondarySign' => 'none', 'vehicle' => ['type' => 'bus', 'direction' => 'straight', 'priority' => 3], 'pedestrian' => null],
+                        'bottom' => ['hasCrosswalk' => false, 'trafficLight' => 'none', 'primarySign' => 's301_priority_next', 'secondarySign' => 'none', 'vehicle' => ['type' => 'car_green', 'direction' => 'left', 'priority' => 2], 'pedestrian' => null],
+                        'left'   => ['hasCrosswalk' => false, 'trafficLight' => 'none', 'primarySign' => 'none', 'secondarySign' => 'none', 'vehicle' => null, 'pedestrian' => null]
+                    ]
+                ]
             ]
         ];
 
@@ -626,7 +644,7 @@ $scenarios = ensureAndFetchPriorityScenarios($pdo);
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="assets/js/priority-3d-engine.js?v=1.6"></script>
+    <script src="assets/js/priority-3d-engine.js?v=1.7"></script>
 
     <?php if (!empty($scenarios)): ?>
     <script>
@@ -652,7 +670,7 @@ $scenarios = ensureAndFetchPriorityScenarios($pdo);
             car_green:  { name: 'خودرو سبز' },
             car_blue:   { name: 'خودرو آبی' },
             car_red:    { name: 'خودرو قرمز' },
-            bus:        { name: 'اتوبوس' },
+            bus:        { name: 'اتوبوس زرد' },
             truck:      { name: 'کامیون آبی' },
             moto:       { name: 'موتورسیکلت' },
             bike:       { name: 'دوچرخه' },
