@@ -717,7 +717,7 @@ $csrf_token = $_SESSION['csrf_token'] ?? generate_csrf_token();
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="assets/js/priority-3d-engine.js?v=1.7"></script>
+    <script src="assets/js/priority-3d-engine.js?v=1.8"></script>
 
     <script>
         const CSRF_TOKEN = <?= json_encode($csrf_token) ?>;
@@ -746,6 +746,7 @@ $csrf_token = $_SESSION['csrf_token'] ?? generate_csrf_token();
             car_blue:   { id: 'car_blue',   category: 'vehicle', name: 'خودرو آبی', color: '#3b82f6', stroke: '#1e3a8a', roof: '#93c5fd' },
             car_red:    { id: 'car_red',    category: 'vehicle', name: 'خودرو قرمز', color: '#ef4444', stroke: '#7f1d1d', roof: '#fca5a5' },
             bus:        { id: 'bus',        category: 'vehicle', name: 'اتوبوس زرد', color: '#facc15', stroke: '#854d0e', roof: '#fef08a' },
+            tram:       { id: 'tram',       category: 'vehicle', name: 'تراموا', color: '#0891b2', stroke: '#164e63', roof: '#e0f2fe' },
             truck:      { id: 'truck',      category: 'vehicle', name: 'کامیون آبی', color: '#2563eb', stroke: '#1e3a8a', roof: '#93c5fd' },
             moto:       { id: 'moto',       category: 'vehicle', name: 'موتورسیکلت', color: '#ec4899', stroke: '#831843', roof: '#f9a8d4' },
             bike:       { id: 'bike',       category: 'vehicle', name: 'دوچرخه', color: '#06b6d4', stroke: '#164e63', roof: '#67e8f9' },
@@ -817,6 +818,21 @@ $csrf_token = $_SESSION['csrf_token'] ?? generate_csrf_token();
         // =========================================================================
         function renderTopDownVehicleSVG(typeId, scale = 1) {
             const item = VEHICLE_CATALOG[typeId] || VEHICLE_CATALOG.car_yellow;
+            if (typeId === 'tram') {
+                return `
+                    <g transform="scale(${scale})">
+                        <line x1="-6" y1="-39" x2="-6" y2="39" stroke="#64748b" stroke-width="1.5" stroke-dasharray="3 2"/>
+                        <line x1="6" y1="-39" x2="6" y2="39" stroke="#64748b" stroke-width="1.5" stroke-dasharray="3 2"/>
+                        <rect x="-16" y="-37" width="32" height="74" rx="9" fill="${item.color}" stroke="#0f172a" stroke-width="3"/>
+                        <rect x="-13" y="-33" width="26" height="9" rx="4" fill="#bae6fd" stroke="#0f172a" stroke-width="1.8"/>
+                        <rect x="-12" y="-21" width="24" height="44" rx="4" fill="${item.roof}" stroke="#0f172a" stroke-width="1.5"/>
+                        <polygon points="0,-13 8,-5 0,3 -8,-5" fill="none" stroke="#dc2626" stroke-width="2.2"/>
+                        <line x1="-10" y1="-13" x2="10" y2="-13" stroke="#1e293b" stroke-width="2.5"/>
+                        <circle cx="-9" cy="-35" r="2.5" fill="#fef08a"/>
+                        <circle cx="9" cy="-35" r="2.5" fill="#fef08a"/>
+                    </g>
+                `;
+            }
             if (typeId === 'bus') {
                 return `
                     <g transform="scale(${scale})">

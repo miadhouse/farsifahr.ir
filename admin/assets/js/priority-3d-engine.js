@@ -21,6 +21,7 @@
         car_blue:   { name: 'خودرو آبی', color: 0x3b82f6, roof: 0x93c5fd, kind: 'car' },
         car_red:    { name: 'خودرو قرمز', color: 0xef4444, roof: 0xfca5a5, kind: 'car' },
         bus:        { name: 'اتوبوس زرد', color: 0xfacc15, roof: 0xfef08a, kind: 'bus' },
+        tram:       { name: 'تراموا', color: 0x0891b2, roof: 0xf8fafc, kind: 'tram' },
         truck:      { name: 'کامیون آبی', color: 0x1d4ed8, roof: 0x93c5fd, kind: 'truck' },
         moto:       { name: 'موتورسیکلت', color: 0xec4899, roof: 0xfde047, kind: 'moto' },
         bike:       { name: 'دوچرخه', color: 0x06b6d4, roof: 0x67e8f9, kind: 'bike' },
@@ -372,6 +373,78 @@
                 w.position.set(wx, 0.42, wz);
                 group.add(w);
             });
+        } else if (spec.kind === 'tram') {
+            // 3D Modern City Tram (Straßenbahn) with Panoramic Windows & Roof Pantograph
+            const lowerSkirt = new THREE.Mesh(
+                new THREE.BoxGeometry(2.26, 0.42, 6.05),
+                new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.5 })
+            );
+            lowerSkirt.position.y = 0.36;
+            lowerSkirt.castShadow = true;
+            group.add(lowerSkirt);
+
+            const hull = new THREE.Mesh(new THREE.BoxGeometry(2.22, 1.55, 5.95), bodyMat);
+            hull.position.y = 1.12;
+            hull.castShadow = true;
+            group.add(hull);
+
+            // White/silver accent stripe & roof
+            const stripeBand = new THREE.Mesh(new THREE.BoxGeometry(2.25, 0.22, 5.98), roofMat);
+            stripeBand.position.y = 0.78;
+            group.add(stripeBand);
+
+            const roof = new THREE.Mesh(new THREE.BoxGeometry(2.05, 0.2, 5.5), roofMat);
+            roof.position.y = 1.96;
+            group.add(roof);
+
+            // Panoramic front, rear, and side windows
+            const frontGlass = new THREE.Mesh(new THREE.BoxGeometry(1.98, 0.82, 0.14), glassMat);
+            frontGlass.position.set(0, 1.32, 2.95);
+            group.add(frontGlass);
+
+            const sideGlass = new THREE.Mesh(new THREE.BoxGeometry(2.26, 0.68, 5.1), glassMat);
+            sideGlass.position.set(0, 1.34, 0);
+            group.add(sideGlass);
+
+            // Glowing yellow LED destination display on front brow
+            const destSign = new THREE.Mesh(
+                new THREE.BoxGeometry(1.35, 0.22, 0.16),
+                new THREE.MeshStandardMaterial({ color: 0xfde047, emissive: 0xfacc15, emissiveIntensity: 0.9 })
+            );
+            destSign.position.set(0, 1.78, 2.96);
+            group.add(destSign);
+
+            // 3D Roof Pantograph (برق‌گیر لوزی‌شکل بالای سقف تراموا)
+            const pantoMat = new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.7, roughness: 0.3 });
+            const pantoBase = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.12, 1.2), pantoMat);
+            pantoBase.position.set(0, 2.1, 0.4);
+            group.add(pantoBase);
+
+            const arm1 = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.85, 8), pantoMat);
+            arm1.position.set(0, 2.42, 0.15);
+            arm1.rotation.x = 0.52;
+            const arm2 = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.85, 8), pantoMat);
+            arm2.position.set(0, 2.42, 0.65);
+            arm2.rotation.x = -0.52;
+            const collectorBar = new THREE.Mesh(
+                new THREE.BoxGeometry(1.65, 0.08, 0.14),
+                new THREE.MeshStandardMaterial({ color: 0xfacc15, emissive: 0xf59e0b, emissiveIntensity: 0.4 })
+            );
+            collectorBar.position.set(0, 2.78, 0.4);
+            group.add(arm1, arm2, collectorBar);
+
+            // Headlights
+            [-0.72, 0.72].forEach(hx => {
+                const hl = new THREE.Mesh(new THREE.SphereGeometry(0.18, 10, 10), headlightMat);
+                hl.position.set(hx, 0.68, 2.98);
+                group.add(hl);
+            });
+
+            [[-0.95, -2.1], [0.95, -2.1], [-0.95, 0], [0.95, 0], [-0.95, 2.1], [0.95, 2.1]].forEach(([wx, wz]) => {
+                const w = new THREE.Mesh(wheelGeo, wheelMat);
+                w.position.set(wx, 0.36, wz);
+                group.add(w);
+            });
         } else if (spec.kind === 'truck') {
             const cargoMat = new THREE.MeshStandardMaterial({ color: 0x3b82f6, roughness: 0.4, metalness: 0.1 });
             const cargo = new THREE.Mesh(new THREE.BoxGeometry(2.35, 1.95, 3.4), cargoMat);
@@ -469,7 +542,7 @@
         // Blinking 3D Turn Signal
         if (direction === 'left' || direction === 'right') {
             const sigX = direction === 'left' ? 0.96 : -0.96;
-            const sigZ = spec.kind === 'bus' ? 2.68 : (spec.kind === 'truck' ? 2.62 : 1.92);
+            const sigZ = spec.kind === 'tram' ? 3.02 : (spec.kind === 'bus' ? 2.68 : (spec.kind === 'truck' ? 2.62 : 1.92));
             const blinkerMat = new THREE.MeshStandardMaterial({
                 color: 0xf97316,
                 emissive: 0xf59e0b,
@@ -780,9 +853,11 @@
     /**
      * Build 3D Curve (THREE.CurvePath / LineCurve3) for an Actor's Trajectory.
      * Turning vehicles follow a 3-part path (approach -> smooth intersection turn -> straight outgoing lane)
-     * so all vehicles entering the same target branch align collinearly in the lane and queue behind one another!
+     * so all vehicles entering the same target branch align collinearly in the lane and queue behind one another.
+     * When lateralOffset != 0 (used for trajectory guide arrows when multiple vehicles head to the same branch),
+     * the outgoing paths and arrowheads run parallel side-by-side with a clean gap instead of overlapping.
      */
-    function buildActor3DCurve(actor, exitDist = 14.5) {
+    function buildActor3DCurve(actor, exitDist = 14.5, lateralOffset = 0) {
         const b = actor.branch;
         if (actor.slotType === 'pedestrian') {
             const g = BRANCH_3D[b];
@@ -797,16 +872,17 @@
         const y = 0.28;
         const p0 = new THREE.Vector3(start.x, y, start.z);
         const targetBranch = getVehicleTargetBranch(b, dir);
+        const laneCoord = 2.4 + lateralOffset;
 
         const exitEndMap = {
-            top:    new THREE.Vector3(2.4, y, -exitDist),
-            bottom: new THREE.Vector3(-2.4, y, exitDist),
-            right:  new THREE.Vector3(exitDist, y, 2.4),
-            left:   new THREE.Vector3(-exitDist, y, -2.4)
+            top:    new THREE.Vector3(laneCoord, y, -exitDist),
+            bottom: new THREE.Vector3(-laneCoord, y, exitDist),
+            right:  new THREE.Vector3(exitDist, y, laneCoord),
+            left:   new THREE.Vector3(-exitDist, y, -laneCoord)
         };
         const exitEndPt = exitEndMap[targetBranch] || new THREE.Vector3(0, y, 0);
 
-        if (dir === 'straight') {
+        if (dir === 'straight' && Math.abs(lateralOffset) < 0.001) {
             return new THREE.LineCurve3(p0, exitEndPt);
         }
 
@@ -817,21 +893,25 @@
             left:   new THREE.Vector3(-4.8, y, 2.4)
         };
         const exitStartMap = {
-            top:    new THREE.Vector3(2.4, y, -4.8),
-            bottom: new THREE.Vector3(-2.4, y, 4.8),
-            right:  new THREE.Vector3(4.8, y, 2.4),
-            left:   new THREE.Vector3(-4.8, y, -2.4)
+            top:    new THREE.Vector3(laneCoord, y, -4.8),
+            bottom: new THREE.Vector3(-laneCoord, y, 4.8),
+            right:  new THREE.Vector3(4.8, y, laneCoord),
+            left:   new THREE.Vector3(-4.8, y, -laneCoord)
         };
 
         const entryPt = entryMap[b];
         const exitStartPt = exitStartMap[targetBranch];
-        const ctrlPt = (b === 'bottom' || b === 'top')
-            ? new THREE.Vector3(entryPt.x, y, exitStartPt.z)
-            : new THREE.Vector3(exitStartPt.x, y, entryPt.z);
 
         const path = new THREE.CurvePath();
         path.add(new THREE.LineCurve3(p0, entryPt));
-        path.add(new THREE.QuadraticBezierCurve3(entryPt, ctrlPt, exitStartPt));
+        if (dir === 'straight') {
+            path.add(new THREE.LineCurve3(entryPt, exitStartPt));
+        } else {
+            const ctrlPt = (b === 'bottom' || b === 'top')
+                ? new THREE.Vector3(entryPt.x, y, exitStartPt.z)
+                : new THREE.Vector3(exitStartPt.x, y, entryPt.z);
+            path.add(new THREE.QuadraticBezierCurve3(entryPt, ctrlPt, exitStartPt));
+        }
         path.add(new THREE.LineCurve3(exitStartPt, exitEndPt));
         return path;
     }
@@ -1371,8 +1451,50 @@
             return exitSlots[Math.min(queueIndex, exitSlots.length - 1)];
         }
 
+        /**
+         * Calculate a small lateral offset for trajectory guide arrows when 2 or 3 vehicles
+         * head toward the exact same target branch, so their dashed guide arrows run parallel
+         * side-by-side instead of overlapping on top of each other.
+         * Sorted by entry angle (left turn = inner/centerline side, straight = middle, right turn = outer/curb side)
+         * so the parallel paths never cross one another.
+         */
+        getVehicleArrowLateralOffset(actor) {
+            if (!actor || actor.slotType === 'pedestrian') return 0;
+            const targetBranch = getVehicleTargetBranch(actor.branch, actor.direction || 'straight');
+            const branchesObj = (this.scenarioState && this.scenarioState.branches)
+                ? this.scenarioState.branches
+                : {};
+
+            const rankMap = { left: 0, straight: 1, right: 2 };
+            const sharing = [];
+            ['bottom', 'right', 'top', 'left'].forEach(bName => {
+                const bData = branchesObj[bName];
+                if (bData && bData.vehicle && bData.vehicle.type) {
+                    const dir = bData.vehicle.direction || 'straight';
+                    if (getVehicleTargetBranch(bName, dir) === targetBranch) {
+                        sharing.push({
+                            key: 'vehicle_' + bName,
+                            rank: rankMap[dir] !== undefined ? rankMap[dir] : 1
+                        });
+                    }
+                }
+            });
+
+            if (sharing.length <= 1) return 0;
+            sharing.sort((a, b) => a.rank - b.rank);
+            const idx = sharing.findIndex(item => item.key === actor.key);
+            if (idx === -1) return 0;
+
+            if (sharing.length === 2) {
+                return idx === 0 ? -0.68 : 0.68;
+            }
+            return (idx - 1) * 0.85;
+        }
+
         spawnActor3D(actor) {
-            const arrowCurve = buildActor3DCurve(actor, 14.5);
+            const isPed = actor.slotType === 'pedestrian';
+            const arrowOffset = isPed ? 0 : this.getVehicleArrowLateralOffset(actor);
+            const arrowCurve = buildActor3DCurve(actor, 14.5, arrowOffset);
 
             let trajHex = 0xfacc15;
             if (this.evaluationResult && this.evaluationResult.detailsByKey) {
@@ -1383,7 +1505,6 @@
             const trajMesh = create3DTrajectoryArrowMesh(arrowCurve, trajHex);
             this.worldGroup.add(trajMesh);
 
-            const isPed = actor.slotType === 'pedestrian';
             const mesh = isPed
                 ? create3DPedestrianMesh(actor.type)
                 : create3DVehicleMesh(actor.type, actor.direction);
@@ -1394,7 +1515,7 @@
 
             const baseY = 0.22;
             const exitDist = isPed ? 14.5 : this.getVehicleExitDist(actor);
-            const moveCurve = isPed ? arrowCurve : buildActor3DCurve(actor, exitDist);
+            const moveCurve = isPed ? arrowCurve : buildActor3DCurve(actor, exitDist, 0);
             const uMax = isPed ? 0.88 : 0.999;
 
             if (this.completedMoves && this.completedMoves.has(actor.key)) {

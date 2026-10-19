@@ -644,7 +644,7 @@ $scenarios = ensureAndFetchPriorityScenarios($pdo);
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="assets/js/priority-3d-engine.js?v=1.7"></script>
+    <script src="assets/js/priority-3d-engine.js?v=1.8"></script>
 
     <?php if (!empty($scenarios)): ?>
     <script>
@@ -671,6 +671,7 @@ $scenarios = ensureAndFetchPriorityScenarios($pdo);
             car_blue:   { name: 'خودرو آبی' },
             car_red:    { name: 'خودرو قرمز' },
             bus:        { name: 'اتوبوس زرد' },
+            tram:       { name: 'تراموا' },
             truck:      { name: 'کامیون آبی' },
             moto:       { name: 'موتورسیکلت' },
             bike:       { name: 'دوچرخه' },
