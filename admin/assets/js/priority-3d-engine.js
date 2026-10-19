@@ -682,60 +682,60 @@
 
         // Billboarded Display Head (faces camera screen plane directly so signs are huge & unmistakable!)
         const displayHead = new THREE.Group();
-        displayHead.position.y = isStacked ? 5.4 : 4.5;
+        displayHead.position.y = isStacked ? 4.9 : 4.2;
         displayHead.userData.isBillboardSignHead = true;
         group.add(displayHead);
 
-        // Primary Sign (Very Large: 4.35 x 4.35 units!)
+        // Primary Sign (Large & Crisp: 3.5 x 3.5 units)
         if (hasPrimary) {
             const tex1 = getSignCanvasTexture(branchData.primarySign);
-            const signY = hasSecondary ? 1.55 : 0.2;
+            const signY = hasSecondary ? 1.3 : 0.2;
 
             const signPlane1 = new THREE.Mesh(
-                new THREE.PlaneGeometry(4.35, 4.35),
+                new THREE.PlaneGeometry(3.5, 3.5),
                 new THREE.MeshBasicMaterial({ map: tex1, transparent: true, side: THREE.DoubleSide })
             );
-            signPlane1.position.set(0, signY, 1.15);
+            signPlane1.position.set(0, signY, 1.05);
             displayHead.add(signPlane1);
         }
 
-        // Secondary Stacked Sign Below Primary Sign (3.75 x 2.95 units!)
+        // Secondary Stacked Sign Below Primary Sign (3.0 x 2.35 units)
         if (hasSecondary) {
             const tex2 = getSignCanvasTexture(branchData.secondarySign);
-            const signY2 = hasPrimary ? -1.85 : 0.2;
+            const signY2 = hasPrimary ? -1.55 : 0.2;
 
             const signPlane2 = new THREE.Mesh(
-                new THREE.PlaneGeometry(3.75, 2.95),
+                new THREE.PlaneGeometry(3.0, 2.35),
                 new THREE.MeshBasicMaterial({ map: tex2, transparent: true, side: THREE.DoubleSide })
             );
-            signPlane2.position.set(0, signY2, 1.15);
+            signPlane2.position.set(0, signY2, 1.05);
             displayHead.add(signPlane2);
         }
 
         // Large 3D Traffic Light next to or on the post
         if (hasLight) {
-            const lightOffsetX = (hasPrimary || hasSecondary) ? -2.95 : 0;
+            const lightOffsetX = (hasPrimary || hasSecondary) ? -2.45 : 0;
             const boxGroup = new THREE.Group();
-            boxGroup.position.set(lightOffsetX, 0.2, 1.15);
+            boxGroup.position.set(lightOffsetX, 0.2, 1.05);
 
             // Outer yellow/dark casing for high contrast
             const borderBox = new THREE.Mesh(
-                new THREE.BoxGeometry(1.75, 4.0, 0.58),
+                new THREE.BoxGeometry(1.5, 3.45, 0.52),
                 new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.4 })
             );
             boxGroup.add(borderBox);
 
             const housing = new THREE.Mesh(
-                new THREE.BoxGeometry(1.52, 3.78, 0.66),
+                new THREE.BoxGeometry(1.3, 3.25, 0.6),
                 new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.5 })
             );
             boxGroup.add(housing);
 
             const st = branchData.trafficLight;
             const lamps = [
-                { y: 1.12,  active: st === 'red',    onCol: 0xef4444, offCol: 0x450a0a },
+                { y: 0.96,  active: st === 'red',    onCol: 0xef4444, offCol: 0x450a0a },
                 { y: 0.0,   active: st === 'yellow', onCol: 0xfacc15, offCol: 0x422006 },
-                { y: -1.12, active: st === 'green',  onCol: 0x22c55e, offCol: 0x052e16 }
+                { y: -0.96, active: st === 'green',  onCol: 0x22c55e, offCol: 0x052e16 }
             ];
             lamps.forEach(l => {
                 const mat = new THREE.MeshStandardMaterial({
@@ -743,8 +743,8 @@
                     emissive: l.active ? l.onCol : 0x000000,
                     emissiveIntensity: l.active ? 1.8 : 0
                 });
-                const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.48, 18, 18), mat);
-                bulb.position.set(0, l.y, 0.28);
+                const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.42, 18, 18), mat);
+                bulb.position.set(0, l.y, 0.26);
                 boxGroup.add(bulb);
             });
 
@@ -762,36 +762,36 @@
         if (actor.slotType === 'pedestrian') {
             const g = BRANCH_3D[b];
             return new THREE.LineCurve3(
-                new THREE.Vector3(g.pedStart.x, 0.24, g.pedStart.z),
-                new THREE.Vector3(g.pedEnd.x, 0.24, g.pedEnd.z)
+                new THREE.Vector3(g.pedStart.x, 0.28, g.pedStart.z),
+                new THREE.Vector3(g.pedEnd.x, 0.28, g.pedEnd.z)
             );
         }
 
         const start = BRANCH_3D[b].vehicleStart;
         const dir = actor.direction || 'straight';
-        const p0 = new THREE.Vector3(start.x, 0.2, start.z);
+        const p0 = new THREE.Vector3(start.x, 0.28, start.z);
 
         if (b === 'bottom') {
-            if (dir === 'straight') return new THREE.LineCurve3(p0, new THREE.Vector3(2.4, 0.2, -14.5));
-            if (dir === 'right')    return new THREE.QuadraticBezierCurve3(p0, new THREE.Vector3(2.4, 0.2, 2.4), new THREE.Vector3(14.5, 0.2, 2.4));
-            if (dir === 'left')     return new THREE.QuadraticBezierCurve3(p0, new THREE.Vector3(2.4, 0.2, -2.4), new THREE.Vector3(-14.5, 0.2, -2.4));
+            if (dir === 'straight') return new THREE.LineCurve3(p0, new THREE.Vector3(2.4, 0.28, -14.5));
+            if (dir === 'right')    return new THREE.QuadraticBezierCurve3(p0, new THREE.Vector3(2.4, 0.28, 2.4), new THREE.Vector3(14.5, 0.28, 2.4));
+            if (dir === 'left')     return new THREE.QuadraticBezierCurve3(p0, new THREE.Vector3(2.4, 0.28, -2.4), new THREE.Vector3(-14.5, 0.28, -2.4));
         }
         if (b === 'top') {
-            if (dir === 'straight') return new THREE.LineCurve3(p0, new THREE.Vector3(-2.4, 0.2, 14.5));
-            if (dir === 'right')    return new THREE.QuadraticBezierCurve3(p0, new THREE.Vector3(-2.4, 0.2, -2.4), new THREE.Vector3(-14.5, 0.2, -2.4));
-            if (dir === 'left')     return new THREE.QuadraticBezierCurve3(p0, new THREE.Vector3(-2.4, 0.2, 2.4), new THREE.Vector3(14.5, 0.2, 2.4));
+            if (dir === 'straight') return new THREE.LineCurve3(p0, new THREE.Vector3(-2.4, 0.28, 14.5));
+            if (dir === 'right')    return new THREE.QuadraticBezierCurve3(p0, new THREE.Vector3(-2.4, 0.28, -2.4), new THREE.Vector3(-14.5, 0.28, -2.4));
+            if (dir === 'left')     return new THREE.QuadraticBezierCurve3(p0, new THREE.Vector3(-2.4, 0.28, 2.4), new THREE.Vector3(14.5, 0.28, 2.4));
         }
         if (b === 'right') {
-            if (dir === 'straight') return new THREE.LineCurve3(p0, new THREE.Vector3(-14.5, 0.2, -2.4));
-            if (dir === 'right')    return new THREE.QuadraticBezierCurve3(p0, new THREE.Vector3(2.4, 0.2, -2.4), new THREE.Vector3(2.4, 0.2, -14.5));
-            if (dir === 'left')     return new THREE.QuadraticBezierCurve3(p0, new THREE.Vector3(-2.4, 0.2, -2.4), new THREE.Vector3(-2.4, 0.2, 14.5));
+            if (dir === 'straight') return new THREE.LineCurve3(p0, new THREE.Vector3(-14.5, 0.28, -2.4));
+            if (dir === 'right')    return new THREE.QuadraticBezierCurve3(p0, new THREE.Vector3(2.4, 0.28, -2.4), new THREE.Vector3(2.4, 0.28, -14.5));
+            if (dir === 'left')     return new THREE.QuadraticBezierCurve3(p0, new THREE.Vector3(-2.4, 0.28, -2.4), new THREE.Vector3(-2.4, 0.28, 14.5));
         }
         if (b === 'left') {
-            if (dir === 'straight') return new THREE.LineCurve3(p0, new THREE.Vector3(14.5, 0.2, 2.4));
-            if (dir === 'right')    return new THREE.QuadraticBezierCurve3(p0, new THREE.Vector3(-2.4, 0.2, 2.4), new THREE.Vector3(-2.4, 0.2, 14.5));
-            if (dir === 'left')     return new THREE.QuadraticBezierCurve3(p0, new THREE.Vector3(2.4, 0.2, 2.4), new THREE.Vector3(2.4, 0.2, -14.5));
+            if (dir === 'straight') return new THREE.LineCurve3(p0, new THREE.Vector3(14.5, 0.28, 2.4));
+            if (dir === 'right')    return new THREE.QuadraticBezierCurve3(p0, new THREE.Vector3(-2.4, 0.28, 2.4), new THREE.Vector3(-2.4, 0.28, 14.5));
+            if (dir === 'left')     return new THREE.QuadraticBezierCurve3(p0, new THREE.Vector3(2.4, 0.28, 2.4), new THREE.Vector3(2.4, 0.28, -14.5));
         }
-        return new THREE.LineCurve3(p0, new THREE.Vector3(0, 0.2, 0));
+        return new THREE.LineCurve3(p0, new THREE.Vector3(0, 0.28, 0));
     }
 
     /**
@@ -860,9 +860,8 @@
             this.scene = new THREE.Scene();
             this.scene.background = new THREE.Color(0x7dd3fc);
 
-            // 3/4 Elevated Isometric-like Perspective Camera
-            this.camera = new THREE.PerspectiveCamera(38, w / h, 1, 200);
-            this.setCameraView('iso34');
+            // Perspective Camera — Default view set to Driver View ('driverSouth') and slightly zoomed out
+            this.camera = new THREE.PerspectiveCamera(38, w / h, 1, 220);
 
             this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
             this.renderer.setSize(w, h);
@@ -872,12 +871,12 @@
             this.container.innerHTML = '';
             this.container.appendChild(this.renderer.domElement);
 
-            // Lights
-            const hemi = new THREE.HemisphereLight(0xffffff, 0x4ade80, 0.82);
+            // Balanced Lights so road & sidewalk colors stay rich and never wash out to white
+            const hemi = new THREE.HemisphereLight(0xffffff, 0x334155, 0.65);
             hemi.position.set(0, 50, 0);
             this.scene.add(hemi);
 
-            const dirLight = new THREE.DirectionalLight(0xfffbeb, 0.95);
+            const dirLight = new THREE.DirectionalLight(0xfffbeb, 0.78);
             dirLight.position.set(22, 38, 24);
             dirLight.castShadow = true;
             dirLight.shadow.mapSize.width = 1024;
@@ -901,10 +900,9 @@
             this.isDraggingCam = false;
             this.dragStart = { x: 0, y: 0 };
             this.pointerMoved = false;
-            this.camAzimuth = 0.42;
-            this.camElevation = 0.88;
-            this.camDist = 42;
-            this.updateCameraFromSpherical();
+
+            // Default camera view: Driver View ('driverSouth') at comfortable zoomed-out distance
+            this.setCameraView('driverSouth');
 
             const dom = this.renderer.domElement;
             dom.addEventListener('pointerdown', (e) => {
@@ -948,24 +946,30 @@
         }
 
         setCameraView(preset) {
-            if (preset === 'iso34') {
+            if (preset === 'driverSouth') {
+                this.camAzimuth = 0;
+                this.camElevation = 0.68;
+                this.camDist = 52;
+            } else if (preset === 'iso34') {
                 this.camAzimuth = 0.42;
                 this.camElevation = 0.88;
-                this.camDist = 42;
+                this.camDist = 52;
             } else if (preset === 'isoLeft') {
                 this.camAzimuth = -0.45;
                 this.camElevation = 0.86;
-                this.camDist = 42;
+                this.camDist = 52;
             } else if (preset === 'topDown') {
                 this.camAzimuth = 0;
                 this.camElevation = 1.45;
-                this.camDist = 43;
-            } else if (preset === 'driverSouth') {
-                this.camAzimuth = 0;
-                this.camElevation = 0.52;
-                this.camDist = 38;
+                this.camDist = 54;
             }
             if (this.camera) this.updateCameraFromSpherical();
+            if (this.camBarEl) {
+                this.camBarEl.querySelectorAll('button').forEach(btn => {
+                    const isActive = btn.getAttribute('data-cam') === preset;
+                    btn.className = `btn btn-sm btn-dark border ${isActive ? 'border-warning text-warning' : 'border-light text-white'} fw-bold py-1 px-2`;
+                });
+            }
         }
 
         initOverlays() {
@@ -974,11 +978,12 @@
             this.container.appendChild(this.overlayLayer);
 
             const camBar = document.createElement('div');
+            this.camBarEl = camBar;
             camBar.style.cssText = 'position:absolute;top:10px;left:10px;z-index:10;display:flex;gap:5px;flex-wrap:wrap;';
             camBar.innerHTML = `
-                <button type="button" class="btn btn-sm btn-dark border border-warning fw-bold py-1 px-2" style="font-size:0.72rem;opacity:0.9;" data-cam="iso34">نمای سه‌رخ ۳ بعدی</button>
-                <button type="button" class="btn btn-sm btn-dark border border-light fw-bold py-1 px-2" style="font-size:0.72rem;opacity:0.85;" data-cam="driverSouth">نمای راننده</button>
-                <button type="button" class="btn btn-sm btn-dark border border-light fw-bold py-1 px-2" style="font-size:0.72rem;opacity:0.85;" data-cam="topDown">نمای بالا</button>
+                <button type="button" class="btn btn-sm btn-dark border border-warning text-warning fw-bold py-1 px-2" style="font-size:0.72rem;opacity:0.92;" data-cam="driverSouth">نمای راننده</button>
+                <button type="button" class="btn btn-sm btn-dark border border-light text-white fw-bold py-1 px-2" style="font-size:0.72rem;opacity:0.85;" data-cam="iso34">نمای سه‌رخ ۳ بعدی</button>
+                <button type="button" class="btn btn-sm btn-dark border border-light text-white fw-bold py-1 px-2" style="font-size:0.72rem;opacity:0.85;" data-cam="topDown">نمای بالا</button>
             `;
             camBar.querySelectorAll('button').forEach(btn => {
                 btn.addEventListener('click', (e) => {
@@ -1045,23 +1050,23 @@
             const interType = (scenarioState && scenarioState.intersectionType) || 'cross4';
             const activeBranches = INTERSECTION_BRANCHES[interType] || INTERSECTION_BRANCHES.cross4;
 
-            // 1. 3D Grass Ground
-            const grassMat = new THREE.MeshStandardMaterial({ color: 0x4ade80, roughness: 0.9 });
-            const grass = new THREE.Mesh(new THREE.BoxGeometry(48, 0.6, 48), grassMat);
+            // 1. 3D Grass Ground (Top at Y = 0.0)
+            const grassMat = new THREE.MeshStandardMaterial({ color: 0x22c55e, roughness: 0.92 });
+            const grass = new THREE.Mesh(new THREE.BoxGeometry(64, 0.6, 64), grassMat);
             grass.position.y = -0.3;
             grass.receiveShadow = true;
             this.worldGroup.add(grass);
 
-            // 2. Decorative 3D Low-Poly Trees in the outer corners (pushed further out so signs & sidewalks are 100% unobstructed)
-            [[-15.5, -15.5], [15.5, -15.5], [-15.5, 15.5], [15.5, 15.5], [-18, -11], [18, -11], [-18, 11], [18, 11]].forEach(([tx, tz]) => {
+            // 2. Decorative 3D Low-Poly Trees in the outer corners
+            [[-16, -16], [16, -16], [-16, 16], [16, 16], [-19, -11], [19, -11], [-19, 11], [19, 11]].forEach(([tx, tz]) => {
                 const tree = new THREE.Group();
                 const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.45, 1.8, 8), new THREE.MeshStandardMaterial({ color: 0x78350f }));
                 trunk.position.y = 0.9;
                 trunk.castShadow = true;
-                const crown1 = new THREE.Mesh(new THREE.ConeGeometry(1.75, 2.8, 10), new THREE.MeshStandardMaterial({ color: 0x16a34a, roughness: 0.7 }));
+                const crown1 = new THREE.Mesh(new THREE.ConeGeometry(1.75, 2.8, 10), new THREE.MeshStandardMaterial({ color: 0x15803d, roughness: 0.75 }));
                 crown1.position.y = 2.6;
                 crown1.castShadow = true;
-                const crown2 = new THREE.Mesh(new THREE.ConeGeometry(1.35, 2.2, 10), new THREE.MeshStandardMaterial({ color: 0x22c55e, roughness: 0.7 }));
+                const crown2 = new THREE.Mesh(new THREE.ConeGeometry(1.35, 2.2, 10), new THREE.MeshStandardMaterial({ color: 0x16a34a, roughness: 0.75 }));
                 crown2.position.y = 3.9;
                 crown2.castShadow = true;
                 tree.add(trunk, crown1, crown2);
@@ -1069,129 +1074,128 @@
                 this.worldGroup.add(tree);
             });
 
-            // 3. Wide, Clearly Defined 3D Sidewalks (پیاده‌رو) + Curbstones (جدول) + Asphalt Roads
-            const sidewalkMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.65 });
-            const curbBorderMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, roughness: 0.55 });
-            const roadMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.85 });
-            const lineMat = new THREE.MeshBasicMaterial({ color: 0xf8fafc });
-            const tactileMat = new THREE.MeshStandardMaterial({ color: 0xfef08a, roughness: 0.5 });
+            // 3. Properly Layered Sidewalks (پیاده‌رو: Y_top = 0.17) & Dark Asphalt Roads (خیابان: Y_top = 0.22)
+            const sidewalkMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, roughness: 0.8 });
+            const curbBorderMat = new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.7 });
+            const roadMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.88 });
+            const lineMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+            const tactileMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.5 });
 
-            // Center sidewalk plaza & raised curb border
-            const centerCurbBase = new THREE.Mesh(new THREE.BoxGeometry(17.2, 0.34, 17.2), curbBorderMat);
-            centerCurbBase.position.y = 0.12;
+            // Center sidewalk base (Y_top = 0.14 for border, 0.17 for concrete sidewalk)
+            const centerCurbBase = new THREE.Mesh(new THREE.BoxGeometry(17.2, 0.14, 17.2), curbBorderMat);
+            centerCurbBase.position.y = 0.07;
             centerCurbBase.receiveShadow = true;
             this.worldGroup.add(centerCurbBase);
 
-            const centerSidewalk = new THREE.Mesh(new THREE.BoxGeometry(16.6, 0.38, 16.6), sidewalkMat);
-            centerSidewalk.position.y = 0.15;
+            const centerSidewalk = new THREE.Mesh(new THREE.BoxGeometry(16.6, 0.16, 16.6), sidewalkMat);
+            centerSidewalk.position.y = 0.09;
             centerSidewalk.receiveShadow = true;
             this.worldGroup.add(centerSidewalk);
 
-            const centerAsphalt = new THREE.Mesh(new THREE.BoxGeometry(9.6, 0.24, 9.6), roadMat);
-            centerAsphalt.position.y = 0.1;
+            // Center Dark Asphalt Road (Y_top = 0.22 — sits cleanly ABOVE sidewalk base so road is dark!)
+            const centerAsphalt = new THREE.Mesh(new THREE.BoxGeometry(9.6, 0.22, 9.6), roadMat);
+            centerAsphalt.position.y = 0.11;
             centerAsphalt.receiveShadow = true;
             this.worldGroup.add(centerAsphalt);
 
             const branchConfigs = {
-                top:    { sx: 0, sz: -13.5, sw: 16.6, sd: 17.5, rw: 9.6, rd: 18.0, isVert: true },
-                bottom: { sx: 0, sz: 13.5,  sw: 16.6, sd: 17.5, rw: 9.6, rd: 18.0, isVert: true },
-                right:  { sx: 13.5, sz: 0,  sw: 17.5, sd: 16.6, rw: 18.0, rd: 9.6, isVert: false },
-                left:   { sx: -13.5, sz: 0, sw: 17.5, sd: 16.6, rw: 18.0, rd: 9.6, isVert: false }
+                top:    { sx: 0, sz: -13.5, sw: 16.6, sd: 17.5, rw: 9.6, rd: 18.2, isVert: true },
+                bottom: { sx: 0, sz: 13.5,  sw: 16.6, sd: 17.5, rw: 9.6, rd: 18.2, isVert: true },
+                right:  { sx: 13.5, sz: 0,  sw: 17.5, sd: 16.6, rw: 18.2, rd: 9.6, isVert: false },
+                left:   { sx: -13.5, sz: 0, sw: 17.5, sd: 16.6, rw: 18.2, rd: 9.6, isVert: false }
             };
 
             activeBranches.forEach(bName => {
                 const cfg = branchConfigs[bName];
 
-                // Outer curbstone rim for this branch's sidewalk
+                // Outer curbstone rim for this branch's sidewalk (Y_top = 0.14)
                 const curbRim = new THREE.Mesh(
-                    new THREE.BoxGeometry(cfg.isVert ? cfg.sw + 0.6 : cfg.sw, 0.34, cfg.isVert ? cfg.sd : cfg.sd + 0.6),
+                    new THREE.BoxGeometry(cfg.isVert ? cfg.sw + 0.6 : cfg.sw, 0.14, cfg.isVert ? cfg.sd : cfg.sd + 0.6),
                     curbBorderMat
                 );
-                curbRim.position.set(cfg.sx, 0.12, cfg.sz);
+                curbRim.position.set(cfg.sx, 0.07, cfg.sz);
                 curbRim.receiveShadow = true;
                 this.worldGroup.add(curbRim);
 
-                // Raised light-concrete sidewalk (پیاده‌رو) on both sides of the street
-                const sw = new THREE.Mesh(new THREE.BoxGeometry(cfg.sw, 0.38, cfg.sd), sidewalkMat);
-                sw.position.set(cfg.sx, 0.15, cfg.sz);
+                // Concrete sidewalk (پیاده‌رو: Y_top = 0.17)
+                const sw = new THREE.Mesh(new THREE.BoxGeometry(cfg.sw, 0.16, cfg.sd), sidewalkMat);
+                sw.position.set(cfg.sx, 0.09, cfg.sz);
                 sw.receiveShadow = true;
                 this.worldGroup.add(sw);
 
-                // Sidewalk paving tile lines so the sidewalk surface is unmistakably a pedestrian walkway
+                // Sidewalk paving tile lines on the outer walkways (Y_top = 0.18)
                 for (let step = 6.5; step <= 20.5; step += 2.4) {
                     const dirSign = (bName === 'top' || bName === 'left') ? -1 : 1;
                     [-6.6, 6.6].forEach(sideOffset => {
                         const seam = new THREE.Mesh(
-                            new THREE.BoxGeometry(cfg.isVert ? 3.2 : 0.08, 0.4, cfg.isVert ? 0.08 : 3.2),
+                            new THREE.BoxGeometry(cfg.isVert ? 3.2 : 0.08, 0.16, cfg.isVert ? 0.08 : 3.2),
                             curbBorderMat
                         );
                         if (cfg.isVert) {
-                            seam.position.set(sideOffset, 0.16, dirSign * step);
+                            seam.position.set(sideOffset, 0.10, dirSign * step);
                         } else {
-                            seam.position.set(dirSign * step, 0.16, sideOffset);
+                            seam.position.set(dirSign * step, 0.10, sideOffset);
                         }
                         this.worldGroup.add(seam);
                     });
                 }
 
-                // Road Asphalt (carves through the center of the sidewalk)
-                const rd = new THREE.Mesh(new THREE.BoxGeometry(cfg.rw, 0.25, cfg.rd), roadMat);
+                // Dark Road Asphalt (Y_top = 0.22 — sits cleanly above sidewalk base!)
+                const rd = new THREE.Mesh(new THREE.BoxGeometry(cfg.rw, 0.22, cfg.rd), roadMat);
                 rd.position.set(cfg.sx, 0.11, cfg.sz);
                 rd.receiveShadow = true;
                 this.worldGroup.add(rd);
 
-                // Dashed center lane markings
+                // Dashed center lane markings (Y_top = 0.25 — crisp white on dark asphalt!)
                 for (let d = 8.8; d <= 20.2; d += 3.0) {
                     const sign = (bName === 'top' || bName === 'left') ? -1 : 1;
                     const dash = new THREE.Mesh(
-                        new THREE.BoxGeometry(cfg.isVert ? 0.24 : 1.65, 0.27, cfg.isVert ? 1.65 : 0.24),
+                        new THREE.BoxGeometry(cfg.isVert ? 0.24 : 1.65, 0.22, cfg.isVert ? 1.65 : 0.24),
                         lineMat
                     );
-                    dash.position.set(cfg.isVert ? 0 : sign * d, 0.12, cfg.isVert ? sign * d : 0);
+                    dash.position.set(cfg.isVert ? 0 : sign * d, 0.14, cfg.isVert ? sign * d : 0);
                     this.worldGroup.add(dash);
                 }
 
-                // Crosswalks (گذرگاه عابر پیاده) & Tactile Curb Ramps
+                // Crosswalks (گذرگاه عابر پیاده: Y_top = 0.25) & Tactile Curb Ramps (Y_top = 0.20)
                 const bData = scenarioState.branches ? scenarioState.branches[bName] : null;
                 const hasCrosswalkOrPed = bData && (bData.hasCrosswalk || (bData.pedestrian && bData.pedestrian.type));
 
                 if (hasCrosswalkOrPed) {
-                    // Zebra stripes across the asphalt road
                     for (let offset = -3.85; offset <= 3.85; offset += 1.1) {
                         const stripe = new THREE.Mesh(
-                            new THREE.BoxGeometry(cfg.isVert ? 0.62 : 2.35, 0.28, cfg.isVert ? 2.35 : 0.62),
+                            new THREE.BoxGeometry(cfg.isVert ? 0.62 : 2.35, 0.22, cfg.isVert ? 2.35 : 0.62),
                             lineMat
                         );
-                        if (bName === 'bottom') stripe.position.set(offset, 0.13, 6.8);
-                        if (bName === 'top')    stripe.position.set(offset, 0.13, -6.8);
-                        if (bName === 'right')  stripe.position.set(6.8, 0.13, offset);
-                        if (bName === 'left')   stripe.position.set(-6.8, 0.13, offset);
+                        if (bName === 'bottom') stripe.position.set(offset, 0.14, 6.8);
+                        if (bName === 'top')    stripe.position.set(offset, 0.14, -6.8);
+                        if (bName === 'right')  stripe.position.set(6.8, 0.14, offset);
+                        if (bName === 'left')   stripe.position.set(-6.8, 0.14, offset);
                         this.worldGroup.add(stripe);
                     }
 
-                    // Tactile yellow waiting strips on both sidewalk curbs flanking the crosswalk
                     [-5.35, 5.35].forEach(sidePos => {
                         const ramp = new THREE.Mesh(
-                            new THREE.BoxGeometry(cfg.isVert ? 0.75 : 2.4, 0.41, cfg.isVert ? 2.4 : 0.75),
+                            new THREE.BoxGeometry(cfg.isVert ? 0.75 : 2.4, 0.18, cfg.isVert ? 2.4 : 0.75),
                             tactileMat
                         );
-                        if (bName === 'bottom') ramp.position.set(sidePos, 0.16, 6.8);
-                        if (bName === 'top')    ramp.position.set(sidePos, 0.16, -6.8);
-                        if (bName === 'right')  ramp.position.set(6.8, 0.16, sidePos);
-                        if (bName === 'left')   ramp.position.set(-6.8, 0.16, sidePos);
+                        if (bName === 'bottom') ramp.position.set(sidePos, 0.11, 6.8);
+                        if (bName === 'top')    ramp.position.set(sidePos, 0.11, -6.8);
+                        if (bName === 'right')  ramp.position.set(6.8, 0.11, sidePos);
+                        if (bName === 'left')   ramp.position.set(-6.8, 0.11, sidePos);
                         this.worldGroup.add(ramp);
                     });
                 }
 
                 if (bData && (bData.primarySign === 's206_stop' || bData.primarySign === 's205_yield')) {
                     const stopLine = new THREE.Mesh(
-                        new THREE.BoxGeometry(cfg.isVert ? 4.4 : 0.48, 0.28, cfg.isVert ? 0.48 : 4.4),
+                        new THREE.BoxGeometry(cfg.isVert ? 4.4 : 0.48, 0.22, cfg.isVert ? 0.48 : 4.4),
                         lineMat
                     );
-                    if (bName === 'bottom') stopLine.position.set(2.4, 0.13, 8.5);
-                    if (bName === 'top')    stopLine.position.set(-2.4, 0.13, -8.5);
-                    if (bName === 'right')  stopLine.position.set(8.5, 0.13, -2.4);
-                    if (bName === 'left')   stopLine.position.set(-8.5, 0.13, 2.4);
+                    if (bName === 'bottom') stopLine.position.set(2.4, 0.14, 8.5);
+                    if (bName === 'top')    stopLine.position.set(-2.4, 0.14, -8.5);
+                    if (bName === 'right')  stopLine.position.set(8.5, 0.14, -2.4);
+                    if (bName === 'left')   stopLine.position.set(-8.5, 0.14, 2.4);
                     this.worldGroup.add(stopLine);
                 }
 
@@ -1199,7 +1203,7 @@
                 if (bData) {
                     const signGroup = create3DSignpostAndLightGroup(bData);
                     const sPos = BRANCH_3D[bName].signSlot;
-                    signGroup.position.set(sPos.x, 0.34, sPos.z);
+                    signGroup.position.set(sPos.x, 0.18, sPos.z);
                     this.worldGroup.add(signGroup);
 
                     signGroup.traverse(child => {
@@ -1296,7 +1300,7 @@
                 ? BRANCH_3D[actor.branch].pedStart
                 : BRANCH_3D[actor.branch].vehicleStart;
 
-            const baseY = isPed ? 0.34 : 0.2;
+            const baseY = 0.22;
 
             if (this.completedMoves && this.completedMoves.has(actor.key)) {
                 const pt = curve.getPointAt(0.88);
