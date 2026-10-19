@@ -21,7 +21,7 @@
         car_blue:   { name: 'خودرو آبی', color: 0x3b82f6, roof: 0x93c5fd, kind: 'car' },
         car_red:    { name: 'خودرو قرمز', color: 0xef4444, roof: 0xfca5a5, kind: 'car' },
         bus:        { name: 'اتوبوس', color: 0xf97316, roof: 0xfdba74, kind: 'bus' },
-        truck:      { name: 'کامیون', color: 0x64748b, roof: 0xe2e8f0, kind: 'truck' },
+        truck:      { name: 'کامیون آبی', color: 0x1d4ed8, roof: 0x93c5fd, kind: 'truck' },
         moto:       { name: 'موتورسیکلت', color: 0xec4899, roof: 0xfde047, kind: 'moto' },
         bike:       { name: 'دوچرخه', color: 0x06b6d4, roof: 0x67e8f9, kind: 'bike' },
         scooter:    { name: 'اسکوتر برقی', color: 0xa855f7, roof: 0xd8b4fe, kind: 'scooter' },
@@ -368,11 +368,15 @@
                 group.add(w);
             });
         } else if (spec.kind === 'truck') {
-            const cargoMat = new THREE.MeshStandardMaterial({ color: 0xf1f5f9, roughness: 0.45 });
+            const cargoMat = new THREE.MeshStandardMaterial({ color: 0x3b82f6, roughness: 0.4, metalness: 0.1 });
             const cargo = new THREE.Mesh(new THREE.BoxGeometry(2.35, 1.95, 3.4), cargoMat);
             cargo.position.set(0, 1.25, -0.75);
             cargo.castShadow = true;
             group.add(cargo);
+
+            const cargoRoof = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.12, 3.25), roofMat);
+            cargoRoof.position.set(0, 2.25, -0.75);
+            group.add(cargoRoof);
 
             const cab = new THREE.Mesh(new THREE.BoxGeometry(2.2, 1.5, 1.6), bodyMat);
             cab.position.set(0, 1.0, 1.85);
@@ -1108,6 +1112,9 @@
                 this.worldGroup.add(tree);
             });
 
+            const hasSidewalks = !scenarioState || scenarioState.hasSidewalks !== false;
+            const hasRoadMarkings = !scenarioState || scenarioState.hasRoadMarkings !== false;
+
             // 3. Properly Layered Sidewalks (پیاده‌رو: Y_top = 0.17) & Dark Asphalt Roads (خیابان: Y_top = 0.22)
             const sidewalkMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, roughness: 0.8 });
             const curbBorderMat = new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.7 });
@@ -1115,16 +1122,18 @@
             const lineMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
             const tactileMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.5 });
 
-            // Center sidewalk base (Y_top = 0.14 for border, 0.17 for concrete sidewalk)
-            const centerCurbBase = new THREE.Mesh(new THREE.BoxGeometry(17.2, 0.14, 17.2), curbBorderMat);
-            centerCurbBase.position.y = 0.07;
-            centerCurbBase.receiveShadow = true;
-            this.worldGroup.add(centerCurbBase);
+            if (hasSidewalks) {
+                // Center sidewalk base (Y_top = 0.14 for border, 0.17 for concrete sidewalk)
+                const centerCurbBase = new THREE.Mesh(new THREE.BoxGeometry(17.2, 0.14, 17.2), curbBorderMat);
+                centerCurbBase.position.y = 0.07;
+                centerCurbBase.receiveShadow = true;
+                this.worldGroup.add(centerCurbBase);
 
-            const centerSidewalk = new THREE.Mesh(new THREE.BoxGeometry(16.6, 0.16, 16.6), sidewalkMat);
-            centerSidewalk.position.y = 0.09;
-            centerSidewalk.receiveShadow = true;
-            this.worldGroup.add(centerSidewalk);
+                const centerSidewalk = new THREE.Mesh(new THREE.BoxGeometry(16.6, 0.16, 16.6), sidewalkMat);
+                centerSidewalk.position.y = 0.09;
+                centerSidewalk.receiveShadow = true;
+                this.worldGroup.add(centerSidewalk);
+            }
 
             // Center Dark Asphalt Road (Y_top = 0.22 — sits cleanly ABOVE sidewalk base so road is dark!)
             const centerAsphalt = new THREE.Mesh(new THREE.BoxGeometry(9.6, 0.22, 9.6), roadMat);
@@ -1142,36 +1151,38 @@
             activeBranches.forEach(bName => {
                 const cfg = branchConfigs[bName];
 
-                // Outer curbstone rim for this branch's sidewalk (Y_top = 0.14)
-                const curbRim = new THREE.Mesh(
-                    new THREE.BoxGeometry(cfg.isVert ? cfg.sw + 0.6 : cfg.sw, 0.14, cfg.isVert ? cfg.sd : cfg.sd + 0.6),
-                    curbBorderMat
-                );
-                curbRim.position.set(cfg.sx, 0.07, cfg.sz);
-                curbRim.receiveShadow = true;
-                this.worldGroup.add(curbRim);
+                if (hasSidewalks) {
+                    // Outer curbstone rim for this branch's sidewalk (Y_top = 0.14)
+                    const curbRim = new THREE.Mesh(
+                        new THREE.BoxGeometry(cfg.isVert ? cfg.sw + 0.6 : cfg.sw, 0.14, cfg.isVert ? cfg.sd : cfg.sd + 0.6),
+                        curbBorderMat
+                    );
+                    curbRim.position.set(cfg.sx, 0.07, cfg.sz);
+                    curbRim.receiveShadow = true;
+                    this.worldGroup.add(curbRim);
 
-                // Concrete sidewalk (پیاده‌رو: Y_top = 0.17)
-                const sw = new THREE.Mesh(new THREE.BoxGeometry(cfg.sw, 0.16, cfg.sd), sidewalkMat);
-                sw.position.set(cfg.sx, 0.09, cfg.sz);
-                sw.receiveShadow = true;
-                this.worldGroup.add(sw);
+                    // Concrete sidewalk (پیاده‌رو: Y_top = 0.17)
+                    const sw = new THREE.Mesh(new THREE.BoxGeometry(cfg.sw, 0.16, cfg.sd), sidewalkMat);
+                    sw.position.set(cfg.sx, 0.09, cfg.sz);
+                    sw.receiveShadow = true;
+                    this.worldGroup.add(sw);
 
-                // Sidewalk paving tile lines on the outer walkways (Y_top = 0.18)
-                for (let step = 6.5; step <= 20.5; step += 2.4) {
-                    const dirSign = (bName === 'top' || bName === 'left') ? -1 : 1;
-                    [-6.6, 6.6].forEach(sideOffset => {
-                        const seam = new THREE.Mesh(
-                            new THREE.BoxGeometry(cfg.isVert ? 3.2 : 0.08, 0.16, cfg.isVert ? 0.08 : 3.2),
-                            curbBorderMat
-                        );
-                        if (cfg.isVert) {
-                            seam.position.set(sideOffset, 0.10, dirSign * step);
-                        } else {
-                            seam.position.set(dirSign * step, 0.10, sideOffset);
-                        }
-                        this.worldGroup.add(seam);
-                    });
+                    // Sidewalk paving tile lines on the outer walkways (Y_top = 0.18)
+                    for (let step = 6.5; step <= 20.5; step += 2.4) {
+                        const dirSign = (bName === 'top' || bName === 'left') ? -1 : 1;
+                        [-6.6, 6.6].forEach(sideOffset => {
+                            const seam = new THREE.Mesh(
+                                new THREE.BoxGeometry(cfg.isVert ? 3.2 : 0.08, 0.16, cfg.isVert ? 0.08 : 3.2),
+                                curbBorderMat
+                            );
+                            if (cfg.isVert) {
+                                seam.position.set(sideOffset, 0.10, dirSign * step);
+                            } else {
+                                seam.position.set(dirSign * step, 0.10, sideOffset);
+                            }
+                            this.worldGroup.add(seam);
+                        });
+                    }
                 }
 
                 // Dark Road Asphalt (Y_top = 0.22 — sits cleanly above sidewalk base!)
@@ -1180,15 +1191,17 @@
                 rd.receiveShadow = true;
                 this.worldGroup.add(rd);
 
-                // Dashed center lane markings (Y_top = 0.25 — crisp white on dark asphalt!)
-                for (let d = 8.8; d <= 20.2; d += 3.0) {
-                    const sign = (bName === 'top' || bName === 'left') ? -1 : 1;
-                    const dash = new THREE.Mesh(
-                        new THREE.BoxGeometry(cfg.isVert ? 0.24 : 1.65, 0.22, cfg.isVert ? 1.65 : 0.24),
-                        lineMat
-                    );
-                    dash.position.set(cfg.isVert ? 0 : sign * d, 0.14, cfg.isVert ? sign * d : 0);
-                    this.worldGroup.add(dash);
+                if (hasRoadMarkings) {
+                    // Dashed center lane markings (Y_top = 0.25 — crisp white on dark asphalt!)
+                    for (let d = 8.8; d <= 20.2; d += 3.0) {
+                        const sign = (bName === 'top' || bName === 'left') ? -1 : 1;
+                        const dash = new THREE.Mesh(
+                            new THREE.BoxGeometry(cfg.isVert ? 0.24 : 1.65, 0.22, cfg.isVert ? 1.65 : 0.24),
+                            lineMat
+                        );
+                        dash.position.set(cfg.isVert ? 0 : sign * d, 0.14, cfg.isVert ? sign * d : 0);
+                        this.worldGroup.add(dash);
+                    }
                 }
 
                 // Crosswalks (گذرگاه عابر پیاده: Y_top = 0.25) & Tactile Curb Ramps (Y_top = 0.20)
@@ -1208,20 +1221,22 @@
                         this.worldGroup.add(stripe);
                     }
 
-                    [-5.35, 5.35].forEach(sidePos => {
-                        const ramp = new THREE.Mesh(
-                            new THREE.BoxGeometry(cfg.isVert ? 0.75 : 2.4, 0.18, cfg.isVert ? 2.4 : 0.75),
-                            tactileMat
-                        );
-                        if (bName === 'bottom') ramp.position.set(sidePos, 0.11, 6.8);
-                        if (bName === 'top')    ramp.position.set(sidePos, 0.11, -6.8);
-                        if (bName === 'right')  ramp.position.set(6.8, 0.11, sidePos);
-                        if (bName === 'left')   ramp.position.set(-6.8, 0.11, sidePos);
-                        this.worldGroup.add(ramp);
-                    });
+                    if (hasSidewalks) {
+                        [-5.35, 5.35].forEach(sidePos => {
+                            const ramp = new THREE.Mesh(
+                                new THREE.BoxGeometry(cfg.isVert ? 0.75 : 2.4, 0.18, cfg.isVert ? 2.4 : 0.75),
+                                tactileMat
+                            );
+                            if (bName === 'bottom') ramp.position.set(sidePos, 0.11, 6.8);
+                            if (bName === 'top')    ramp.position.set(sidePos, 0.11, -6.8);
+                            if (bName === 'right')  ramp.position.set(6.8, 0.11, sidePos);
+                            if (bName === 'left')   ramp.position.set(-6.8, 0.11, sidePos);
+                            this.worldGroup.add(ramp);
+                        });
+                    }
                 }
 
-                if (bData && (bData.primarySign === 's206_stop' || bData.primarySign === 's205_yield')) {
+                if (hasRoadMarkings && bData && (bData.primarySign === 's206_stop' || bData.primarySign === 's205_yield')) {
                     const stopLine = new THREE.Mesh(
                         new THREE.BoxGeometry(cfg.isVert ? 4.4 : 0.48, 0.22, cfg.isVert ? 0.48 : 4.4),
                         lineMat
@@ -1233,11 +1248,15 @@
                     this.worldGroup.add(stopLine);
                 }
 
-                // 4. Large 3D Traffic Signs & Traffic Lights on Branch Sidewalk Corner
+                // 4. Large 3D Traffic Signs & Traffic Lights on Branch Sidewalk Corner (or Roadside Grass)
                 if (bData) {
                     const signGroup = create3DSignpostAndLightGroup(bData);
                     const sPos = BRANCH_3D[bName].signSlot;
-                    signGroup.position.set(sPos.x, 0.18, sPos.z);
+                    if (hasSidewalks) {
+                        signGroup.position.set(sPos.x, 0.18, sPos.z);
+                    } else {
+                        signGroup.position.set(sPos.x * 0.78, 0.02, sPos.z * 0.94);
+                    }
                     this.worldGroup.add(signGroup);
 
                     signGroup.traverse(child => {
@@ -1474,6 +1493,10 @@
         }
 
         resetPositions() {
+            if (this.simTimers && this.simTimers.length) {
+                this.simTimers.forEach(t => clearTimeout(t));
+            }
+            this.simTimers = [];
             this.completedMoves = new Set();
             this.moveOrder = [];
             this.clickedKeys = [];
@@ -1489,6 +1512,51 @@
                     entry.badgeEl.style.borderColor = '#fde047';
                     entry.badgeEl.textContent = this.showDropZones ? entry.actor.priority : '؟';
                 }
+            });
+        }
+
+        /**
+         * Animate the correct priority order where vehicles sharing the same priority number
+         * (e.g. Priority 1: Blue Truck & Red Car) move SIMULTANEOUSLY at the exact same moment!
+         */
+        playSimultaneousSolution() {
+            if (this.simTimers && this.simTimers.length) {
+                this.simTimers.forEach(t => clearTimeout(t));
+            }
+            this.simTimers = [];
+            this.completedMoves = new Set();
+            this.moveOrder = [];
+
+            const entries = Object.values(this.actorsMap);
+            entries.forEach(entry => {
+                entry.isAnimating = false;
+                if (entry.mesh && entry.startSpec) {
+                    entry.mesh.position.set(entry.startSpec.x, entry.baseY || 0.2, entry.startSpec.z);
+                    entry.mesh.rotation.set(0, entry.startSpec.rotY, 0);
+                }
+            });
+
+            const uniquePriorities = [...new Set(entries.map(e => e.actor.priority))].sort((a, b) => a - b);
+
+            uniquePriorities.forEach((prio, tierIdx) => {
+                const timer = setTimeout(() => {
+                    const groupEntries = entries.filter(e => e.actor.priority === prio);
+                    groupEntries.forEach(entry => {
+                        const key = entry.actor.key;
+                        this.completedMoves.add(key);
+                        if (!this.moveOrder.includes(key)) {
+                            this.moveOrder.push(key);
+                        }
+                        if (entry.actor.slotType !== 'pedestrian') {
+                            const exitDist = this.getVehicleExitDist(entry.actor);
+                            entry.curve = buildActor3DCurve(entry.actor, exitDist);
+                            entry.uMax = 0.999;
+                        }
+                        entry.animStartTime = performance.now();
+                        entry.isAnimating = true;
+                    });
+                }, tierIdx * 1200);
+                this.simTimers.push(timer);
             });
         }
 

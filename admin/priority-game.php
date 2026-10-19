@@ -39,66 +39,20 @@ function ensureAndFetchPriorityScenarios(PDO $pdo): array
     if ($count === 0) {
         $defaults = [
             [
-                'title' => 'مرحله ۱: جاده اصلی پیچشی به چپ و عابر پیاده',
-                'question_text' => 'به چه ترتیبی کاربران جاده حق تقدم عبور دارند؟ به ترتیب روی آن‌ها کلیک کنید.',
-                'question_de' => 'In welcher Reihenfolge dürfen die Verkehrsteilnehmer hier fahren?',
-                'explanation' => 'خودرو زرد در جاده اصلی قرار دارد و قصد گردش به چپ را دارد، اما چون عابر پیاده در حال عبور از عرض خیابانِ مسیر گردش اوست، ابتدا عابر پیاده (اولویت ۱)، سپس خودرو زرد در جاده اصلی (اولویت ۲) و در نهایت اتوبوس که تابلوی رعایت حق تقدم دارد (اولویت ۳) عبور می‌کنند.',
+                'title' => 'سوال ۱: چهارراه با تابلو رعایت حق تقدم و عبور همزمان',
+                'question_text' => 'به چه ترتیبی وسایل نقلیه حق تقدم عبور دارند؟ (شما در ضلع پایین با تابلوی رعایت حق تقدم مستقیم می‌روید، ماشین قرمز در سمت راست به راست می‌پیچد و کامیون آبی در سمت چپ مستقیم می‌رود)',
+                'question_de' => 'In welcher Reihenfolge dürfen die Fahrzeuge diese Kreuzung überqueren?',
+                'explanation' => 'کامیون آبی و ماشین قرمز می‌توانند همزمان عبور کنند (اولویت ۱) و من باید به هر دوی آن‌ها حق تقدم بدهم (اولویت ۲)؛ چون تابلوی من (مثلث قرمز برعکس - رعایت حق تقدم) ایجاب می‌کند به سمت چپ و راست حق تقدم داده شود. دو وسیله دیگر چون تداخل مسیر ندارند می‌توانند همزمان عبور کنند.',
                 'intersection_type' => 'cross4',
                 'scenario_data' => [
                     'intersectionType' => 'cross4',
-                    'branches' => [
-                        'top'    => ['hasCrosswalk' => false, 'trafficLight' => 'none', 'primarySign' => 's205_yield', 'secondarySign' => 'none', 'vehicle' => ['type' => 'bus', 'direction' => 'straight', 'priority' => 3], 'pedestrian' => null],
-                        'right'  => ['hasCrosswalk' => false, 'trafficLight' => 'none', 'primarySign' => 'none', 'secondarySign' => 'none', 'vehicle' => null, 'pedestrian' => null],
-                        'bottom' => ['hasCrosswalk' => true,  'trafficLight' => 'none', 'primarySign' => 's306_priority_road', 'secondarySign' => 'abk_bottom_left', 'vehicle' => ['type' => 'car_yellow', 'direction' => 'left', 'priority' => 2], 'pedestrian' => ['type' => 'pedestrian', 'direction' => 'across', 'priority' => 1]],
-                        'left'   => ['hasCrosswalk' => true,  'trafficLight' => 'none', 'primarySign' => 's306_priority_road', 'secondarySign' => 'abk_bottom_left', 'vehicle' => null, 'pedestrian' => null]
-                    ]
-                ]
-            ],
-            [
-                'title' => 'مرحله ۲: سه‌راهی بدون تابلو (قانون راست قبل از چپ)',
-                'question_text' => 'در این سه‌راهی هم‌سطح، به چه ترتیبی وسایل نقلیه اجازه حرکت دارند؟',
-                'question_de' => 'Wer darf an dieser Kreuzung zuerst fahren (Rechts vor Links)?',
-                'explanation' => 'در تقاطع‌های بدون تابلو یا دارای تابلوی ۱۰۲، قانون «راست قبل از چپ» (Rechts vor Links) حاکم است: سمت راستِ دوچرخه خالی است پس اول دوچرخه (۱)، سپس سمت راستِ خودرو سبز خالی می‌شود (۲) و در پایان خودرو قرمز (۳) عبور می‌کند.',
-                'intersection_type' => 't_no_top',
-                'scenario_data' => [
-                    'intersectionType' => 't_no_top',
+                    'hasSidewalks' => false,
+                    'hasRoadMarkings' => false,
                     'branches' => [
                         'top'    => ['hasCrosswalk' => false, 'trafficLight' => 'none', 'primarySign' => 'none', 'secondarySign' => 'none', 'vehicle' => null, 'pedestrian' => null],
-                        'right'  => ['hasCrosswalk' => false, 'trafficLight' => 'none', 'primarySign' => 's102_rvl', 'secondarySign' => 'none', 'vehicle' => ['type' => 'bike', 'direction' => 'left', 'priority' => 1], 'pedestrian' => null],
-                        'bottom' => ['hasCrosswalk' => false, 'trafficLight' => 'none', 'primarySign' => 's102_rvl', 'secondarySign' => 'none', 'vehicle' => ['type' => 'car_green', 'direction' => 'right', 'priority' => 2], 'pedestrian' => null],
-                        'left'   => ['hasCrosswalk' => false, 'trafficLight' => 'none', 'primarySign' => 's102_rvl', 'secondarySign' => 'none', 'vehicle' => ['type' => 'car_red', 'direction' => 'straight', 'priority' => 3], 'pedestrian' => null]
-                    ]
-                ]
-            ],
-            [
-                'title' => 'مرحله ۳: چراغ راهنمایی سبز و گردش به چپ',
-                'question_text' => 'چراغ راهنمایی برای ضلع بالا و پایین سبز است. ترتیب صحیح عبور را مشخص کنید.',
-                'question_de' => 'Die Ampel zeigt Grün. In welcher Reihenfolge dürfen die Fahrzeuge fahren?',
-                'explanation' => 'فرمان چراغ راهنمایی بر تابلوهای حق تقدم مقدم است. خودرو آبی و زرد هر دو چراغ سبز دارند، اما چون خودرو زرد به چپ می‌پیچد باید به خودرو آبی که مستقیم می‌آید راه بدهد: ۱. خودرو آبی، ۲. خودرو زرد، ۳. موتورسیکلت (پشت چراغ قرمز).',
-                'intersection_type' => 'cross4',
-                'scenario_data' => [
-                    'intersectionType' => 'cross4',
-                    'branches' => [
-                        'top'    => ['hasCrosswalk' => false, 'trafficLight' => 'green', 'primarySign' => 's205_yield', 'secondarySign' => 'none', 'vehicle' => ['type' => 'car_blue', 'direction' => 'straight', 'priority' => 1], 'pedestrian' => null],
-                        'right'  => ['hasCrosswalk' => false, 'trafficLight' => 'red',   'primarySign' => 's306_priority_road', 'secondarySign' => 'none', 'vehicle' => ['type' => 'moto', 'direction' => 'right', 'priority' => 3], 'pedestrian' => null],
-                        'bottom' => ['hasCrosswalk' => false, 'trafficLight' => 'green', 'primarySign' => 's206_stop', 'secondarySign' => 'none', 'vehicle' => ['type' => 'car_yellow', 'direction' => 'left', 'priority' => 2], 'pedestrian' => null],
-                        'left'   => ['hasCrosswalk' => false, 'trafficLight' => 'red',   'primarySign' => 'none', 'secondarySign' => 'none', 'vehicle' => null, 'pedestrian' => null]
-                    ]
-                ]
-            ],
-            [
-                'title' => 'مرحله ۴: چهارراه با تابلو جاده اصلی و تابلو ایست (STOP)',
-                'question_text' => 'روی کاربران جاده به ترتیبی که حق تقدم عبور دارند کلیک کنید.',
-                'question_de' => 'In welcher Reihenfolge fahren die Fahrzeuge bei Vorfahrtstraße und STOP-Schild?',
-                'explanation' => 'خودرو سبز در جاده اصلی (تابلو ۳۰۶) قرار دارد و اول عبور می‌کند (۱). کامیون در ضلع چپ تابلوی رعایت حق تقدم (۲۰۵) دارد اما به راست می‌پیچد (۲) و خودرو قرمز که تابلوی ایست STOP دارد و به چپ می‌پیچد باید به روبرو راه بدهد (۳).',
-                'intersection_type' => 'cross4',
-                'scenario_data' => [
-                    'intersectionType' => 'cross4',
-                    'branches' => [
-                        'top'    => ['hasCrosswalk' => false, 'trafficLight' => 'none', 'primarySign' => 's306_priority_road', 'secondarySign' => 'none', 'vehicle' => null, 'pedestrian' => null],
-                        'right'  => ['hasCrosswalk' => false, 'trafficLight' => 'none', 'primarySign' => 's206_stop', 'secondarySign' => 'none', 'vehicle' => ['type' => 'car_red', 'direction' => 'left', 'priority' => 3], 'pedestrian' => null],
-                        'bottom' => ['hasCrosswalk' => false, 'trafficLight' => 'none', 'primarySign' => 's306_priority_road', 'secondarySign' => 'none', 'vehicle' => ['type' => 'car_green', 'direction' => 'straight', 'priority' => 1], 'pedestrian' => null],
-                        'left'   => ['hasCrosswalk' => false, 'trafficLight' => 'none', 'primarySign' => 's205_yield', 'secondarySign' => 'none', 'vehicle' => ['type' => 'truck', 'direction' => 'right', 'priority' => 2], 'pedestrian' => null]
+                        'right'  => ['hasCrosswalk' => false, 'trafficLight' => 'none', 'primarySign' => 'none', 'secondarySign' => 'none', 'vehicle' => ['type' => 'car_red', 'direction' => 'right', 'priority' => 1], 'pedestrian' => null],
+                        'bottom' => ['hasCrosswalk' => false, 'trafficLight' => 'none', 'primarySign' => 's205_yield', 'secondarySign' => 'none', 'vehicle' => ['type' => 'car_green', 'direction' => 'straight', 'priority' => 2], 'pedestrian' => null],
+                        'left'   => ['hasCrosswalk' => false, 'trafficLight' => 'none', 'primarySign' => 'none', 'secondarySign' => 'none', 'vehicle' => ['type' => 'truck', 'direction' => 'straight', 'priority' => 1], 'pedestrian' => null]
                     ]
                 ]
             ]
@@ -624,6 +578,10 @@ $scenarios = ensureAndFetchPriorityScenarios($pdo);
                     </div>
 
                     <div class="d-flex justify-content-center gap-3 flex-wrap mt-3 mb-4">
+                        <button type="button" class="btn-2d btn-2d-cyan px-3 py-2" onclick="if(scene3D) scene3D.playSimultaneousSolution()">
+                            <i class="fas fa-play"></i>
+                            <span>پخش حرکت صحیح و همزمان</span>
+                        </button>
                         <button type="button" class="btn-repeat-q" onclick="repeatCurrentStage()">
                             <i class="fas fa-redo"></i>
                             <span>تکرار این تقاطع</span>
@@ -668,7 +626,7 @@ $scenarios = ensureAndFetchPriorityScenarios($pdo);
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="assets/js/priority-3d-engine.js?v=1.5"></script>
+    <script src="assets/js/priority-3d-engine.js?v=1.6"></script>
 
     <?php if (!empty($scenarios)): ?>
     <script>
@@ -677,7 +635,7 @@ $scenarios = ensureAndFetchPriorityScenarios($pdo);
         const BRANCH_LABELS = {
             top: 'ضلع بالا',
             right: 'ضلع راست',
-            bottom: 'ضلع پایین',
+            bottom: 'ضلع پایین - من',
             left: 'ضلع چپ'
         };
 
@@ -695,7 +653,7 @@ $scenarios = ensureAndFetchPriorityScenarios($pdo);
             car_blue:   { name: 'خودرو آبی' },
             car_red:    { name: 'خودرو قرمز' },
             bus:        { name: 'اتوبوس' },
-            truck:      { name: 'کامیون' },
+            truck:      { name: 'کامیون آبی' },
             moto:       { name: 'موتورسیکلت' },
             bike:       { name: 'دوچرخه' },
             scooter:    { name: 'اسکوتر برقی' },
@@ -855,19 +813,24 @@ $scenarios = ensureAndFetchPriorityScenarios($pdo);
                 detailsByKey[actor.key] = isOk;
                 if (!isOk) allCorrect = false;
 
+                const samePrioCount = actors.filter(x => x.priority === actor.priority).length;
+                const prioDesc = samePrioCount > 1
+                    ? `اولویت ${actor.priority} (عبور همزمان)`
+                    : `اولویت ${actor.priority}`;
+
                 const userNum = userClickIdx + 1;
                 if (isOk) {
                     breakdownHTML.push(`
                         <div class="actor-eval-row eval-ok">
                             <span class="fw-bold"><i class="fas fa-check-circle text-success me-1"></i> ${actor.name}</span>
-                            <span class="badge bg-success">عالی! اولویت ${actor.priority} صحیح است</span>
+                            <span class="badge bg-success">عالی! ${prioDesc} صحیح است</span>
                         </div>
                     `);
                 } else {
                     breakdownHTML.push(`
                         <div class="actor-eval-row eval-err">
                             <span class="fw-bold"><i class="fas fa-times-circle text-danger me-1"></i> ${actor.name}</span>
-                            <span class="badge bg-danger">انتخاب شما: اولویت ${userNum} | اولویت صحیح: ${actor.priority}</span>
+                            <span class="badge bg-danger">انتخاب شما: ${userNum} | صحیح: ${prioDesc}</span>
                         </div>
                     `);
                 }
@@ -883,9 +846,13 @@ $scenarios = ensureAndFetchPriorityScenarios($pdo);
                 loseStagesCount++;
             }
 
-            // Re-render 3D scene so trajectory lines turn Green or Red!
+            // Re-render 3D scene so trajectory lines turn Green or Red, then play simultaneous movement!
             if (scene3D) {
                 scene3D.renderScenario(currentScenarioState, userClickedKeys, stageEvaluated, false);
+                const hasSimultaneous = actors.some(a => actors.filter(x => x.priority === a.priority).length > 1);
+                if (hasSimultaneous) {
+                    scene3D.playSimultaneousSolution();
+                }
             }
 
             const banner = document.getElementById('priorityResultBanner');

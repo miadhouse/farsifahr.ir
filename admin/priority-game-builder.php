@@ -510,18 +510,24 @@ $csrf_token = $_SESSION['csrf_token'] ?? generate_csrf_token();
                             </button>
                         </div>
 
+                        <!-- Sidewalk & Road Markings Toggles -->
+                        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 py-2 border-top">
+                            <div class="form-check form-switch mb-0">
+                                <input class="form-check-input" type="checkbox" id="toggleHasSidewalks" onchange="toggleIntersectionOption('hasSidewalks', this.checked)">
+                                <label class="form-check-label small fw-bold" for="toggleHasSidewalks">دارای پیاده‌رو</label>
+                            </div>
+                            <div class="form-check form-switch mb-0">
+                                <input class="form-check-input" type="checkbox" id="toggleHasRoadMarkings" onchange="toggleIntersectionOption('hasRoadMarkings', this.checked)">
+                                <label class="form-check-label small fw-bold" for="toggleHasRoadMarkings">دارای خط‌کشی خیابان</label>
+                            </div>
+                        </div>
+
                         <!-- Quick Sample Presets -->
                         <div class="d-flex align-items-center justify-content-between flex-wrap gap-1 pt-2 border-top">
-                            <span class="small fw-bold text-muted">نمونه‌های آماده تست:</span>
+                            <span class="small fw-bold text-muted">سوال طراحی‌شده:</span>
                             <div class="d-flex gap-1 flex-wrap">
                                 <button type="button" class="btn btn-sm btn-outline-primary fw-bold" style="font-size: 0.74rem;" onclick="loadPresetScenario('preset1')">
-                                    نمونه ۱: جاده اصلی + عابر
-                                </button>
-                                <button type="button" class="btn btn-sm btn-outline-warning fw-bold" style="font-size: 0.74rem;" onclick="loadPresetScenario('preset2')">
-                                    نمونه ۲: سه‌راهی (راست به چپ)
-                                </button>
-                                <button type="button" class="btn btn-sm btn-outline-success fw-bold" style="font-size: 0.74rem;" onclick="loadPresetScenario('preset3')">
-                                    نمونه ۳: چراغ راهنما + تابلو ترکیبی
+                                    سوال ۱: چهارراه بدون خط‌کشی (کامیون آبی و ماشین قرمز)
                                 </button>
                             </div>
                         </div>
@@ -708,7 +714,7 @@ $csrf_token = $_SESSION['csrf_token'] ?? generate_csrf_token();
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="assets/js/priority-3d-engine.js?v=1.5"></script>
+    <script src="assets/js/priority-3d-engine.js?v=1.6"></script>
 
     <script>
         const CSRF_TOKEN = <?= json_encode($csrf_token) ?>;
@@ -719,7 +725,7 @@ $csrf_token = $_SESSION['csrf_token'] ?? generate_csrf_token();
         const BRANCH_LABELS = {
             top: 'ضلع بالا (شمال)',
             right: 'ضلع راست (شرق)',
-            bottom: 'ضلع پایین (جنوب)',
+            bottom: 'ضلع پایین - من (جنوب)',
             left: 'ضلع چپ (غرب)'
         };
 
@@ -737,7 +743,7 @@ $csrf_token = $_SESSION['csrf_token'] ?? generate_csrf_token();
             car_blue:   { id: 'car_blue',   category: 'vehicle', name: 'خودرو آبی', color: '#3b82f6', stroke: '#1e3a8a', roof: '#93c5fd' },
             car_red:    { id: 'car_red',    category: 'vehicle', name: 'خودرو قرمز', color: '#ef4444', stroke: '#7f1d1d', roof: '#fca5a5' },
             bus:        { id: 'bus',        category: 'vehicle', name: 'اتوبوس', color: '#f97316', stroke: '#7c2d12', roof: '#fdba74' },
-            truck:      { id: 'truck',      category: 'vehicle', name: 'کامیون', color: '#64748b', stroke: '#0f172a', roof: '#cbd5e1' },
+            truck:      { id: 'truck',      category: 'vehicle', name: 'کامیون آبی', color: '#2563eb', stroke: '#1e3a8a', roof: '#93c5fd' },
             moto:       { id: 'moto',       category: 'vehicle', name: 'موتورسیکلت', color: '#ec4899', stroke: '#831843', roof: '#f9a8d4' },
             bike:       { id: 'bike',       category: 'vehicle', name: 'دوچرخه', color: '#06b6d4', stroke: '#164e63', roof: '#67e8f9' },
             scooter:    { id: 'scooter',    category: 'vehicle', name: 'اسکوتر برقی', color: '#a855f7', stroke: '#4c1d95', roof: '#d8b4fe' },
@@ -1490,11 +1496,22 @@ $csrf_token = $_SESSION['csrf_token'] ?? generate_csrf_token();
                 btn.classList.toggle('active', btn.getAttribute('data-inter') === type);
             });
 
+            const swEl = document.getElementById('toggleHasSidewalks');
+            if (swEl) swEl.checked = (scenarioState.hasSidewalks !== false);
+            const rmEl = document.getElementById('toggleHasRoadMarkings');
+            if (rmEl) rmEl.checked = (scenarioState.hasRoadMarkings !== false);
+
             const activeBranches = INTERSECTION_BRANCHES[type] || INTERSECTION_BRANCHES.cross4;
             if (!activeBranches.includes(activeInspectorBranch)) {
                 activeInspectorBranch = activeBranches[0];
             }
 
+            resetVehiclesAnimation();
+            renderAll();
+        }
+
+        function toggleIntersectionOption(optionKey, isChecked) {
+            scenarioState[optionKey] = !!isChecked;
             resetVehiclesAnimation();
             renderAll();
         }
@@ -1780,51 +1797,23 @@ $csrf_token = $_SESSION['csrf_token'] ?? generate_csrf_token();
         // =========================================================================
         function loadPresetScenario(presetName) {
             currentScenarioId = 0;
-            document.getElementById('editingScenarioBadge').textContent = 'قالب نمونه';
+            document.getElementById('editingScenarioBadge').textContent = 'سوال ۱';
 
             if (presetName === 'preset1') {
-                document.getElementById('scenarioTitleInput').value = 'تقاطع ۱: جاده اصلی پیچشی به چپ و عابر پیاده';
-                document.getElementById('scenarioQuestionInput').value = 'به چه ترتیبی کاربران جاده حق تقدم عبور دارند؟ به ترتیب روی آن‌ها کلیک کنید.';
-                document.getElementById('scenarioQuestionDeInput').value = 'In welcher Reihenfolge dürfen die Verkehrsteilnehmer hier fahren?';
-                document.getElementById('scenarioExplanationInput').value = 'خودرو زرد در جاده اصلی است ولی چون به چپ می‌پیچد و عابر پیاده در گذرگاه است، ابتدا عابر پیاده (۱)، سپس خودرو زرد در جاده اصلی (۲) و در نهایت اتوبوس در جاده فرعی (۳) عبور می‌کنند.';
+                document.getElementById('scenarioTitleInput').value = 'سوال ۱: چهارراه با تابلو رعایت حق تقدم و عبور همزمان';
+                document.getElementById('scenarioQuestionInput').value = 'به چه ترتیبی وسایل نقلیه حق تقدم عبور دارند؟ (شما در ضلع پایین با تابلوی رعایت حق تقدم مستقیم می‌روید، ماشین قرمز در سمت راست به راست می‌پیچد و کامیون آبی در سمت چپ مستقیم می‌رود)';
+                document.getElementById('scenarioQuestionDeInput').value = 'In welcher Reihenfolge dürfen die Fahrzeuge diese Kreuzung überqueren?';
+                document.getElementById('scenarioExplanationInput').value = 'کامیون آبی و ماشین قرمز می‌توانند همزمان عبور کنند (اولویت ۱) و من باید به هر دوی آن‌ها حق تقدم بدهم (اولویت ۲)؛ چون تابلوی من (مثلث قرمز برعکس - رعایت حق تقدم) ایجاب می‌کند به سمت چپ و راست حق تقدم داده شود. دو وسیله دیگر چون تداخل مسیر ندارند می‌توانند همزمان عبور کنند.';
 
                 scenarioState = {
                     intersectionType: 'cross4',
-                    branches: {
-                        top:    { hasCrosswalk: false, trafficLight: 'none', primarySign: 's205_yield', secondarySign: 'none', vehicle: { type: 'bus', direction: 'straight', priority: 3 }, pedestrian: null },
-                        right:  { hasCrosswalk: false, trafficLight: 'none', primarySign: 'none', secondarySign: 'none', vehicle: null, pedestrian: null },
-                        bottom: { hasCrosswalk: true,  trafficLight: 'none', primarySign: 's306_priority_road', secondarySign: 'abk_bottom_left', vehicle: { type: 'car_yellow', direction: 'left', priority: 2 }, pedestrian: { type: 'pedestrian', direction: 'across', priority: 1 } },
-                        left:   { hasCrosswalk: true,  trafficLight: 'none', primarySign: 's306_priority_road', secondarySign: 'abk_bottom_left', vehicle: null, pedestrian: null }
-                    }
-                };
-            } else if (presetName === 'preset2') {
-                document.getElementById('scenarioTitleInput').value = 'تقاطع ۲: سه‌راهی بدون تابلو (قانون راست به چپ)';
-                document.getElementById('scenarioQuestionInput').value = 'در این سه‌راهی بدون تابلو، ترتیب صحیح عبور وسایل نقلیه چگونه است؟';
-                document.getElementById('scenarioQuestionDeInput').value = 'Wer darf hier zuerst fahren (Rechts vor Links)?';
-                document.getElementById('scenarioExplanationInput').value = 'در تقاطع هم‌سطح بدون تابلو قانون «راست قبل از چپ» برقرار است: ابتدا دوچرخه در ضلع راست (۱)، سپس خودرو سبز در ضلع پایین (۲) و در پایان خودرو قرمز در ضلع چپ (۳) حرکت می‌کنند.';
-
-                scenarioState = {
-                    intersectionType: 't_no_top',
+                    hasSidewalks: false,
+                    hasRoadMarkings: false,
                     branches: {
                         top:    { hasCrosswalk: false, trafficLight: 'none', primarySign: 'none', secondarySign: 'none', vehicle: null, pedestrian: null },
-                        right:  { hasCrosswalk: false, trafficLight: 'none', primarySign: 's102_rvl', secondarySign: 'none', vehicle: { type: 'bike', direction: 'left', priority: 1 }, pedestrian: null },
-                        bottom: { hasCrosswalk: false, trafficLight: 'none', primarySign: 's102_rvl', secondarySign: 'none', vehicle: { type: 'car_green', direction: 'right', priority: 2 }, pedestrian: null },
-                        left:   { hasCrosswalk: false, trafficLight: 'none', primarySign: 's102_rvl', secondarySign: 'none', vehicle: { type: 'car_red', direction: 'straight', priority: 3 }, pedestrian: null }
-                    }
-                };
-            } else if (presetName === 'preset3') {
-                document.getElementById('scenarioTitleInput').value = 'تقاطع ۳: چراغ راهنمایی سبز و گردش به چپ';
-                document.getElementById('scenarioQuestionInput').value = 'چراغ برای ضلع بالا و پایین سبز است. ترتیب صحیح عبور را با کلیک مشخص کنید.';
-                document.getElementById('scenarioQuestionDeInput').value = 'Die Ampel zeigt Grün. In welcher Reihenfolge wird gefahren?';
-                document.getElementById('scenarioExplanationInput').value = 'چراغ راهنما بر تابلوها مقدم است. خودرو آبی مستقیم می‌رود (۱)، خودرو زرد که قصد گردش به چپ دارد باید به روبرو راه بدهد (۲)، و موتورسیکلت پشت چراغ قرمز منتظر می‌ماند (۳).';
-
-                scenarioState = {
-                    intersectionType: 'cross4',
-                    branches: {
-                        top:    { hasCrosswalk: false, trafficLight: 'green', primarySign: 's205_yield', secondarySign: 'none', vehicle: { type: 'car_blue', direction: 'straight', priority: 1 }, pedestrian: null },
-                        right:  { hasCrosswalk: false, trafficLight: 'red',   primarySign: 's306_priority_road', secondarySign: 'none', vehicle: { type: 'moto', direction: 'right', priority: 3 }, pedestrian: null },
-                        bottom: { hasCrosswalk: false, trafficLight: 'green', primarySign: 's206_stop', secondarySign: 'none', vehicle: { type: 'car_yellow', direction: 'left', priority: 2 }, pedestrian: null },
-                        left:   { hasCrosswalk: false, trafficLight: 'red',   primarySign: 'none', secondarySign: 'none', vehicle: null, pedestrian: null }
+                        right:  { hasCrosswalk: false, trafficLight: 'none', primarySign: 'none', secondarySign: 'none', vehicle: { type: 'car_red', direction: 'right', priority: 1 }, pedestrian: null },
+                        bottom: { hasCrosswalk: false, trafficLight: 'none', primarySign: 's205_yield', secondarySign: 'none', vehicle: { type: 'car_green', direction: 'straight', priority: 2 }, pedestrian: null },
+                        left:   { hasCrosswalk: false, trafficLight: 'none', primarySign: 'none', secondarySign: 'none', vehicle: { type: 'truck', direction: 'straight', priority: 1 }, pedestrian: null }
                     }
                 };
             }
@@ -1842,6 +1831,8 @@ $csrf_token = $_SESSION['csrf_token'] ?? generate_csrf_token();
 
             scenarioState = {
                 intersectionType: 'cross4',
+                hasSidewalks: false,
+                hasRoadMarkings: false,
                 branches: {
                     top:    { hasCrosswalk: false, trafficLight: 'none', primarySign: 'none', secondarySign: 'none', vehicle: null, pedestrian: null },
                     right:  { hasCrosswalk: false, trafficLight: 'none', primarySign: 'none', secondarySign: 'none', vehicle: null, pedestrian: null },
