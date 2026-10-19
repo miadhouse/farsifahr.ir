@@ -755,9 +755,25 @@
     }
 
     /**
-     * Build 3D Curve (THREE.CurvePath / QuadraticBezierCurve3 / LineCurve3) for an Actor's Trajectory
+     * Determine which branch a vehicle exits into based on its starting branch and turn direction
      */
-    function buildActor3DCurve(actor) {
+    function getVehicleTargetBranch(branch, direction) {
+        const dir = direction || 'straight';
+        const map = {
+            bottom: { straight: 'top',    right: 'right',  left: 'left' },
+            top:    { straight: 'bottom', right: 'left',   left: 'right' },
+            right:  { straight: 'left',   right: 'top',    left: 'bottom' },
+            left:   { straight: 'right',  right: 'bottom', left: 'top' }
+        };
+        return (map[branch] && map[branch][dir]) ? map[branch][dir] : 'top';
+    }
+
+    /**
+     * Build 3D Curve (THREE.CurvePath / LineCurve3) for an Actor's Trajectory.
+     * Turning vehicles follow a 3-part path (approach -> smooth intersection turn -> straight outgoing lane)
+     * so all vehicles entering the same target branch align collinearly in the lane and queue behind one another!
+     */
+    function buildActor3DCurve(actor, exitDist = 14.5) {
         const b = actor.branch;
         if (actor.slotType === 'pedestrian') {
             const g = BRANCH_3D[b];
@@ -769,29 +785,46 @@
 
         const start = BRANCH_3D[b].vehicleStart;
         const dir = actor.direction || 'straight';
-        const p0 = new THREE.Vector3(start.x, 0.28, start.z);
+        const y = 0.28;
+        const p0 = new THREE.Vector3(start.x, y, start.z);
+        const targetBranch = getVehicleTargetBranch(b, dir);
 
-        if (b === 'bottom') {
-            if (dir === 'straight') return new THREE.LineCurve3(p0, new THREE.Vector3(2.4, 0.28, -14.5));
-            if (dir === 'right')    return new THREE.QuadraticBezierCurve3(p0, new THREE.Vector3(2.4, 0.28, 2.4), new THREE.Vector3(14.5, 0.28, 2.4));
-            if (dir === 'left')     return new THREE.QuadraticBezierCurve3(p0, new THREE.Vector3(2.4, 0.28, -2.4), new THREE.Vector3(-14.5, 0.28, -2.4));
+        const exitEndMap = {
+            top:    new THREE.Vector3(2.4, y, -exitDist),
+            bottom: new THREE.Vector3(-2.4, y, exitDist),
+            right:  new THREE.Vector3(exitDist, y, 2.4),
+            left:   new THREE.Vector3(-exitDist, y, -2.4)
+        };
+        const exitEndPt = exitEndMap[targetBranch] || new THREE.Vector3(0, y, 0);
+
+        if (dir === 'straight') {
+            return new THREE.LineCurve3(p0, exitEndPt);
         }
-        if (b === 'top') {
-            if (dir === 'straight') return new THREE.LineCurve3(p0, new THREE.Vector3(-2.4, 0.28, 14.5));
-            if (dir === 'right')    return new THREE.QuadraticBezierCurve3(p0, new THREE.Vector3(-2.4, 0.28, -2.4), new THREE.Vector3(-14.5, 0.28, -2.4));
-            if (dir === 'left')     return new THREE.QuadraticBezierCurve3(p0, new THREE.Vector3(-2.4, 0.28, 2.4), new THREE.Vector3(14.5, 0.28, 2.4));
-        }
-        if (b === 'right') {
-            if (dir === 'straight') return new THREE.LineCurve3(p0, new THREE.Vector3(-14.5, 0.28, -2.4));
-            if (dir === 'right')    return new THREE.QuadraticBezierCurve3(p0, new THREE.Vector3(2.4, 0.28, -2.4), new THREE.Vector3(2.4, 0.28, -14.5));
-            if (dir === 'left')     return new THREE.QuadraticBezierCurve3(p0, new THREE.Vector3(-2.4, 0.28, -2.4), new THREE.Vector3(-2.4, 0.28, 14.5));
-        }
-        if (b === 'left') {
-            if (dir === 'straight') return new THREE.LineCurve3(p0, new THREE.Vector3(14.5, 0.28, 2.4));
-            if (dir === 'right')    return new THREE.QuadraticBezierCurve3(p0, new THREE.Vector3(-2.4, 0.28, 2.4), new THREE.Vector3(-2.4, 0.28, 14.5));
-            if (dir === 'left')     return new THREE.QuadraticBezierCurve3(p0, new THREE.Vector3(2.4, 0.28, 2.4), new THREE.Vector3(2.4, 0.28, -14.5));
-        }
-        return new THREE.LineCurve3(p0, new THREE.Vector3(0, 0.28, 0));
+
+        const entryMap = {
+            bottom: new THREE.Vector3(2.4, y, 4.8),
+            top:    new THREE.Vector3(-2.4, y, -4.8),
+            right:  new THREE.Vector3(4.8, y, -2.4),
+            left:   new THREE.Vector3(-4.8, y, 2.4)
+        };
+        const exitStartMap = {
+            top:    new THREE.Vector3(2.4, y, -4.8),
+            bottom: new THREE.Vector3(-2.4, y, 4.8),
+            right:  new THREE.Vector3(4.8, y, 2.4),
+            left:   new THREE.Vector3(-4.8, y, -2.4)
+        };
+
+        const entryPt = entryMap[b];
+        const exitStartPt = exitStartMap[targetBranch];
+        const ctrlPt = (b === 'bottom' || b === 'top')
+            ? new THREE.Vector3(entryPt.x, y, exitStartPt.z)
+            : new THREE.Vector3(exitStartPt.x, y, entryPt.z);
+
+        const path = new THREE.CurvePath();
+        path.add(new THREE.LineCurve3(p0, entryPt));
+        path.add(new THREE.QuadraticBezierCurve3(entryPt, ctrlPt, exitStartPt));
+        path.add(new THREE.LineCurve3(exitStartPt, exitEndPt));
+        return path;
     }
 
     /**
@@ -844,6 +877,7 @@
             this.actorsMap = {};
             this.billboardSignHeads = [];
             this.clickedKeys = [];
+            this.moveOrder = [];
             this.evaluationResult = null;
             this.activeDropZoneEls = [];
             this.badgeOverlayEls = {};
@@ -1279,8 +1313,42 @@
             }
         }
 
+        /**
+         * Calculate stopping distance in the outgoing lane so multiple vehicles entering
+         * the same target branch park cleanly one behind another instead of overlapping!
+         */
+        getVehicleExitDist(actor) {
+            if (!actor || actor.slotType === 'pedestrian') return 14.5;
+            const targetBranch = getVehicleTargetBranch(actor.branch, actor.direction);
+            const sequence = (this.moveOrder && this.moveOrder.length > 0)
+                ? this.moveOrder
+                : (this.clickedKeys || []);
+
+            let queueIndex = 0;
+            for (let i = 0; i < sequence.length; i++) {
+                const k = sequence[i];
+                if (k === actor.key) break;
+                if (k.indexOf('vehicle_') === 0) {
+                    const otherBranch = k.replace('vehicle_', '');
+                    const bData = (this.scenarioState && this.scenarioState.branches)
+                        ? this.scenarioState.branches[otherBranch]
+                        : null;
+                    if (bData && bData.vehicle && bData.vehicle.type) {
+                        const otherTarget = getVehicleTargetBranch(otherBranch, bData.vehicle.direction || 'straight');
+                        if (otherTarget === targetBranch) {
+                            queueIndex++;
+                        }
+                    }
+                }
+            }
+
+            // 1st vehicle pulls forward to 17.4, 2nd stops behind it at 11.4, 3rd stops behind 2nd at 5.6
+            const exitSlots = [17.4, 11.4, 5.6];
+            return exitSlots[Math.min(queueIndex, exitSlots.length - 1)];
+        }
+
         spawnActor3D(actor) {
-            const curve = buildActor3DCurve(actor);
+            const arrowCurve = buildActor3DCurve(actor, 14.5);
 
             let trajHex = 0xfacc15;
             if (this.evaluationResult && this.evaluationResult.detailsByKey) {
@@ -1288,7 +1356,7 @@
                 trajHex = ok ? 0x22c55e : 0xef4444;
             }
 
-            const trajMesh = create3DTrajectoryArrowMesh(curve, trajHex);
+            const trajMesh = create3DTrajectoryArrowMesh(arrowCurve, trajHex);
             this.worldGroup.add(trajMesh);
 
             const isPed = actor.slotType === 'pedestrian';
@@ -1301,10 +1369,13 @@
                 : BRANCH_3D[actor.branch].vehicleStart;
 
             const baseY = 0.22;
+            const exitDist = isPed ? 14.5 : this.getVehicleExitDist(actor);
+            const moveCurve = isPed ? arrowCurve : buildActor3DCurve(actor, exitDist);
+            const uMax = isPed ? 0.88 : 0.999;
 
             if (this.completedMoves && this.completedMoves.has(actor.key)) {
-                const pt = curve.getPointAt(0.88);
-                const tangent = curve.getTangentAt(0.88).normalize();
+                const pt = moveCurve.getPointAt(uMax);
+                const tangent = moveCurve.getTangentAt(uMax).normalize();
                 mesh.position.set(pt.x, baseY, pt.z);
                 mesh.lookAt(new THREE.Vector3(pt.x + tangent.x, baseY, pt.z + tangent.z));
             } else {
@@ -1354,7 +1425,8 @@
             this.actorsMap[actor.key] = {
                 actor: actor,
                 mesh: mesh,
-                curve: curve,
+                curve: moveCurve,
+                uMax: uMax,
                 badgeEl: badgeEl,
                 startSpec: startSpec,
                 baseY: baseY,
@@ -1369,6 +1441,11 @@
         animateActorMovement(actorKey, updatedClickedKeys = null) {
             if (!this.completedMoves) this.completedMoves = new Set();
             this.completedMoves.add(actorKey);
+
+            if (!this.moveOrder) this.moveOrder = [];
+            if (!this.moveOrder.includes(actorKey)) {
+                this.moveOrder.push(actorKey);
+            }
 
             if (updatedClickedKeys) {
                 this.clickedKeys = updatedClickedKeys;
@@ -1385,12 +1462,20 @@
 
             const entry = this.actorsMap[actorKey];
             if (!entry) return;
+
+            if (entry.actor.slotType !== 'pedestrian') {
+                const exitDist = this.getVehicleExitDist(entry.actor);
+                entry.curve = buildActor3DCurve(entry.actor, exitDist);
+                entry.uMax = 0.999;
+            }
+
             entry.animStartTime = performance.now();
             entry.isAnimating = true;
         }
 
         resetPositions() {
             this.completedMoves = new Set();
+            this.moveOrder = [];
             this.clickedKeys = [];
             this.evaluationResult = null;
             Object.values(this.actorsMap).forEach(entry => {
@@ -1470,7 +1555,8 @@
                     const t = Math.min((now - entry.animStartTime) / duration, 1);
                     const eased = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
 
-                    const u = eased * 0.88;
+                    const uMax = entry.uMax || 0.88;
+                    const u = eased * uMax;
                     const pt = entry.curve.getPointAt(u);
                     const tangent = entry.curve.getTangentAt(u).normalize();
                     const yLevel = entry.baseY || 0.2;
