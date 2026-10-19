@@ -68,7 +68,7 @@
             vehicleStart: { x: 12.6, z: -2.4, rotY: -Math.PI / 2 }, // Facing -X (West)
             pedStart:     { x: 6.8,  z: -6.3, rotY: 0 },            // Standing on North sidewalk, walking South (+Z)
             pedEnd:       { x: 6.8,  z: 6.3 },
-            signSlot:     { x: 10.2, z: -8.2, rotY: Math.PI / 2 },  // Outer sidewalk corner
+            signSlot:     { x: 10.2, z: -8.2, rotY: Math.PI * 0.66 }, // Facing right branch incoming lane (+X), back toward driver
             dropZones: {
                 vehicle:    { x: 12.6, y: 0.9, z: -2.4 },
                 pedestrian: { x: 6.8,  y: 1.2, z: -6.3 },
@@ -79,7 +79,7 @@
             vehicleStart: { x: -12.6, z: 2.4, rotY: Math.PI / 2 },  // Facing +X (East)
             pedStart:     { x: -6.8,  z: 6.3, rotY: Math.PI },      // Standing on South sidewalk, walking North (-Z)
             pedEnd:       { x: -6.8,  z: -6.3 },
-            signSlot:     { x: -10.2, z: 8.2, rotY: -Math.PI / 2 }, // Outer sidewalk corner
+            signSlot:     { x: -10.2, z: 8.2, rotY: -Math.PI * 0.66 }, // Facing left branch incoming lane (-X), back toward driver
             dropZones: {
                 vehicle:    { x: -12.6, y: 0.9, z: 2.4 },
                 pedestrian: { x: -6.8,  y: 1.2, z: 6.3 },
@@ -330,6 +330,152 @@
         tex.magFilter = THREE.LinearFilter;
         tex.needsUpdate = true;
         signTextureCache[signId] = tex;
+        return tex;
+    }
+
+    /**
+     * Draw high-resolution (512x512) Metallic Grey Backplate of a German StVO Traffic Sign
+     * in the exact silhouette of the sign (Diamond, Inverted Triangle, Octagon, Upright Triangle, Square, Rectangle)
+     * with horizontal galvanized mounting rails and pole clamps, so signs on other branches
+     * show their backs to the driver while facing their own branch!
+     */
+    const signBackTextureCache = {};
+    function getSignBackCanvasTexture(signId) {
+        if (signBackTextureCache[signId]) return signBackTextureCache[signId];
+
+        const canvas = document.createElement('canvas');
+        canvas.width = 512;
+        canvas.height = 512;
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, 512, 512);
+
+        ctx.save();
+        ctx.translate(256, 256);
+
+        ctx.shadowColor = 'rgba(2, 6, 23, 0.55)';
+        ctx.shadowBlur = 16;
+        ctx.shadowOffsetY = 6;
+
+        const metalGrad = ctx.createLinearGradient(-200, -200, 200, 200);
+        metalGrad.addColorStop(0, '#94a3b8');
+        metalGrad.addColorStop(0.5, '#cbd5e1');
+        metalGrad.addColorStop(1, '#64748b');
+
+        function drawMountingBrackets(width, yPositions) {
+            ctx.shadowColor = 'transparent';
+            yPositions.forEach(by => {
+                // Horizontal galvanized mounting rail
+                ctx.fillStyle = '#475569';
+                ctx.strokeStyle = '#1e293b';
+                ctx.lineWidth = 6;
+                ctx.fillRect(-width / 2, by - 16, width, 32);
+                ctx.strokeRect(-width / 2, by - 16, width, 32);
+
+                // Central U-bracket clamp around the pole
+                ctx.fillStyle = '#334155';
+                ctx.fillRect(-36, by - 24, 72, 48);
+                ctx.strokeRect(-36, by - 24, 72, 48);
+
+                // Hex bolts
+                ctx.fillStyle = '#e2e8f0';
+                [-22, 22].forEach(bx => {
+                    ctx.beginPath();
+                    ctx.arc(bx, by, 7, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.stroke();
+                });
+            });
+        }
+
+        if (signId === 's306_priority_road' || signId === 's307_end_priority') {
+            ctx.save();
+            ctx.rotate(Math.PI / 4);
+            ctx.fillStyle = metalGrad;
+            ctx.strokeStyle = '#1e293b';
+            ctx.lineWidth = 18;
+            ctx.fillRect(-162, -162, 324, 324);
+            ctx.strokeRect(-162, -162, 324, 324);
+            ctx.shadowColor = 'transparent';
+            ctx.strokeStyle = '#475569';
+            ctx.lineWidth = 8;
+            ctx.strokeRect(-142, -142, 284, 284);
+            ctx.restore();
+            drawMountingBrackets(220, [-72, 72]);
+        } else if (signId === 's205_yield') {
+            ctx.beginPath();
+            ctx.moveTo(-215, -175);
+            ctx.lineTo(215, -175);
+            ctx.lineTo(0, 205);
+            ctx.closePath();
+            ctx.lineJoin = 'round';
+            ctx.fillStyle = metalGrad;
+            ctx.fill();
+            ctx.lineWidth = 58;
+            ctx.strokeStyle = '#1e293b';
+            ctx.stroke();
+            ctx.shadowColor = 'transparent';
+            ctx.lineWidth = 44;
+            ctx.strokeStyle = metalGrad;
+            ctx.stroke();
+            drawMountingBrackets(230, [-105, 35]);
+        } else if (signId === 's206_stop') {
+            const r = 222;
+            ctx.beginPath();
+            for (let i = 0; i < 8; i++) {
+                const a = (i * Math.PI / 4) + (Math.PI / 8);
+                const x = Math.cos(a) * r;
+                const y = Math.sin(a) * r;
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.closePath();
+            ctx.fillStyle = metalGrad;
+            ctx.fill();
+            ctx.shadowColor = 'transparent';
+            ctx.lineWidth = 20;
+            ctx.strokeStyle = '#1e293b';
+            ctx.stroke();
+            drawMountingBrackets(270, [-85, 85]);
+        } else if (signId === 's301_priority_next' || signId === 's102_rvl') {
+            ctx.beginPath();
+            ctx.moveTo(0, -205);
+            ctx.lineTo(215, 178);
+            ctx.lineTo(-215, 178);
+            ctx.closePath();
+            ctx.lineJoin = 'round';
+            ctx.fillStyle = metalGrad;
+            ctx.fill();
+            ctx.lineWidth = 56;
+            ctx.strokeStyle = '#1e293b';
+            ctx.stroke();
+            ctx.shadowColor = 'transparent';
+            ctx.lineWidth = 42;
+            ctx.strokeStyle = metalGrad;
+            ctx.stroke();
+            drawMountingBrackets(230, [-25, 110]);
+        } else if (signId === 's350_crosswalk') {
+            ctx.fillStyle = metalGrad;
+            ctx.strokeStyle = '#1e293b';
+            ctx.lineWidth = 20;
+            ctx.fillRect(-195, -195, 390, 390);
+            ctx.strokeRect(-195, -195, 390, 390);
+            drawMountingBrackets(280, [-90, 90]);
+        } else if (signId.startsWith('abk_') || signId === 'rad_cross') {
+            ctx.fillStyle = metalGrad;
+            ctx.strokeStyle = '#1e293b';
+            ctx.lineWidth = 20;
+            ctx.fillRect(-205, -162, 410, 324);
+            ctx.strokeRect(-205, -162, 410, 324);
+            drawMountingBrackets(290, [-65, 65]);
+        }
+
+        ctx.restore();
+
+        const tex = new THREE.CanvasTexture(canvas);
+        tex.minFilter = THREE.LinearFilter;
+        tex.magFilter = THREE.LinearFilter;
+        tex.needsUpdate = true;
+        signBackTextureCache[signId] = tex;
         return tex;
     }
 
@@ -734,10 +880,12 @@
 
     /**
      * Build Large, High-Visibility 3D Signpost (Single or Stacked Dual Signs) & 3D Traffic Light.
-     * The displayHead is automatically billboarded toward the camera in animateLoop() so
-     * signs and lights are ALWAYS 100% readable, large, and never viewed edge-on or backwards!
+     * - For the player's own branch ('bottom'), displayHead is billboarded toward the camera so the
+     *   driver can clearly read their own sign.
+     * - For the other branches ('top', 'right', 'left'), the sign faces its own incoming branch
+     *   ("رو به خودشان") and shows its realistic metallic grey backplate & pole brackets to the driver!
      */
-    function create3DSignpostAndLightGroup(branchData) {
+    function create3DSignpostAndLightGroup(branchData, bName = 'bottom') {
         const group = new THREE.Group();
         const hasPrimary = branchData.primarySign && branchData.primarySign !== 'none';
         const hasSecondary = branchData.secondarySign && branchData.secondarySign !== 'none';
@@ -745,10 +893,11 @@
 
         if (!hasPrimary && !hasSecondary && !hasLight) return group;
 
+        const isPlayerBranch = (bName === 'bottom');
         const isStacked = hasPrimary && hasSecondary;
-        const poleHeight = 3.8;
+        const poleHeight = isPlayerBranch ? 3.8 : (isStacked ? 6.1 : 5.4);
 
-        // Thicker 3D metallic pole supporting the sign head from below
+        // Thicker 3D metallic pole supporting the sign head
         const poleMat = new THREE.MeshStandardMaterial({ color: 0xcbd5e1, metalness: 0.55, roughness: 0.3 });
         const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.24, poleHeight, 14), poleMat);
         pole.position.y = poleHeight / 2;
@@ -762,43 +911,67 @@
         base.position.y = 0.17;
         group.add(base);
 
-        // Billboarded Display Head (faces camera screen plane directly so signs are huge & unmistakable!)
         const displayHead = new THREE.Group();
         displayHead.position.y = isStacked ? 4.9 : 4.2;
-        displayHead.userData.isBillboardSignHead = true;
+        displayHead.userData.isBillboardSignHead = isPlayerBranch;
+        if (!isPlayerBranch) {
+            // Slight tilt so the metallic back of the sign is clearly visible from the elevated driver view
+            displayHead.rotation.x = 0.24;
+        }
         group.add(displayHead);
+
+        const frontZ = isPlayerBranch ? 1.05 : 0.28;
+        const backZ = isPlayerBranch ? 1.01 : 0.24;
 
         // Primary Sign (Large & Crisp: 3.5 x 3.5 units)
         if (hasPrimary) {
             const tex1 = getSignCanvasTexture(branchData.primarySign);
+            const backTex1 = getSignBackCanvasTexture(branchData.primarySign);
             const signY = hasSecondary ? 1.3 : 0.2;
 
             const signPlane1 = new THREE.Mesh(
                 new THREE.PlaneGeometry(3.5, 3.5),
-                new THREE.MeshBasicMaterial({ map: tex1, transparent: true, side: THREE.DoubleSide })
+                new THREE.MeshBasicMaterial({ map: tex1, transparent: true, side: THREE.FrontSide })
             );
-            signPlane1.position.set(0, signY, 1.05);
+            signPlane1.position.set(0, signY, frontZ);
             displayHead.add(signPlane1);
+
+            const signBack1 = new THREE.Mesh(
+                new THREE.PlaneGeometry(3.5, 3.5),
+                new THREE.MeshBasicMaterial({ map: backTex1, transparent: true, side: THREE.FrontSide })
+            );
+            signBack1.position.set(0, signY, backZ);
+            signBack1.rotation.y = Math.PI;
+            displayHead.add(signBack1);
         }
 
         // Secondary Stacked Sign Below Primary Sign (3.0 x 2.35 units)
         if (hasSecondary) {
             const tex2 = getSignCanvasTexture(branchData.secondarySign);
+            const backTex2 = getSignBackCanvasTexture(branchData.secondarySign);
             const signY2 = hasPrimary ? -1.55 : 0.2;
 
             const signPlane2 = new THREE.Mesh(
                 new THREE.PlaneGeometry(3.0, 2.35),
-                new THREE.MeshBasicMaterial({ map: tex2, transparent: true, side: THREE.DoubleSide })
+                new THREE.MeshBasicMaterial({ map: tex2, transparent: true, side: THREE.FrontSide })
             );
-            signPlane2.position.set(0, signY2, 1.05);
+            signPlane2.position.set(0, signY2, frontZ);
             displayHead.add(signPlane2);
+
+            const signBack2 = new THREE.Mesh(
+                new THREE.PlaneGeometry(3.0, 2.35),
+                new THREE.MeshBasicMaterial({ map: backTex2, transparent: true, side: THREE.FrontSide })
+            );
+            signBack2.position.set(0, signY2, backZ);
+            signBack2.rotation.y = Math.PI;
+            displayHead.add(signBack2);
         }
 
         // Large 3D Traffic Light next to or on the post
         if (hasLight) {
             const lightOffsetX = (hasPrimary || hasSecondary) ? -2.45 : 0;
             const boxGroup = new THREE.Group();
-            boxGroup.position.set(lightOffsetX, 0.2, 1.05);
+            boxGroup.position.set(lightOffsetX, 0.2, frontZ);
 
             // Outer yellow/dark casing for high contrast
             const borderBox = new THREE.Mesh(
@@ -1335,12 +1508,15 @@
 
                 // 4. Large 3D Traffic Signs & Traffic Lights on Branch Sidewalk Corner (or Roadside Grass)
                 if (bData) {
-                    const signGroup = create3DSignpostAndLightGroup(bData);
+                    const signGroup = create3DSignpostAndLightGroup(bData, bName);
                     const sPos = BRANCH_3D[bName].signSlot;
                     if (hasSidewalks) {
                         signGroup.position.set(sPos.x, 0.18, sPos.z);
                     } else {
                         signGroup.position.set(sPos.x * 0.78, 0.02, sPos.z * 0.94);
+                    }
+                    if (bName !== 'bottom') {
+                        signGroup.rotation.y = sPos.rotY || 0;
                     }
                     this.worldGroup.add(signGroup);
 

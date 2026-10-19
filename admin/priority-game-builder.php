@@ -717,7 +717,7 @@ $csrf_token = $_SESSION['csrf_token'] ?? generate_csrf_token();
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="assets/js/priority-3d-engine.js?v=1.8"></script>
+    <script src="assets/js/priority-3d-engine.js?v=1.9"></script>
 
     <script>
         const CSRF_TOKEN = <?= json_encode($csrf_token) ?>;
