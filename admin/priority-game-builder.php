@@ -717,7 +717,7 @@ $csrf_token = $_SESSION['csrf_token'] ?? generate_csrf_token();
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="assets/js/priority-3d-engine.js?v=1.9"></script>
+    <script src="assets/js/priority-3d-engine.js?v=2.0"></script>
 
     <script>
         const CSRF_TOKEN = <?= json_encode($csrf_token) ?>;
@@ -778,6 +778,8 @@ $csrf_token = $_SESSION['csrf_token'] ?? generate_csrf_token();
             abk_bottom_right:     { id: 'abk_bottom_right', name: 'مسیر جاده اصلی: به راست (پایین به راست)' },
             abk_top_left:         { id: 'abk_top_left', name: 'مسیر جاده اصلی: بالا به چپ' },
             abk_top_right:        { id: 'abk_top_right', name: 'مسیر جاده اصلی: بالا به راست' },
+            abk_y_left:           { id: 'abk_y_left', name: 'سه‌راهی دوشاخه: پایین و شاخه بالا-چپ اصلی (بالا-راست فرعی)' },
+            abk_y_right:          { id: 'abk_y_right', name: 'سه‌راهی دوشاخه: پایین و شاخه بالا-راست اصلی (بالا-چپ فرعی)' },
             rad_cross:            { id: 'rad_cross', name: 'عبور دوچرخه از دو جهت' },
             s205_yield:           { id: 's205_yield', name: 'تابلو رعایت حق تقدم در زیر' }
         };
@@ -1019,6 +1021,22 @@ $csrf_token = $_SESSION['csrf_token'] ?? generate_csrf_token();
                             <path d="M0,-9 L0,0 L10,0" stroke="#0f172a" stroke-width="4.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
                             <line x1="0" y1="2" x2="0" y2="9" stroke="#64748b" stroke-width="2"/>
                             <line x1="-10" y1="0" x2="-2" y2="0" stroke="#64748b" stroke-width="2"/>
+                        </g>
+                    `;
+                case 'abk_y_left':
+                    return `
+                        <g>
+                            <rect x="-14" y="-11" width="28" height="22" rx="3" fill="#ffffff" stroke="#0f172a" stroke-width="2"/>
+                            <line x1="0" y1="1" x2="9" y2="-7.5" stroke="#64748b" stroke-width="2.2" stroke-linecap="round"/>
+                            <path d="M0,9 L0,1 L-9,-7.5" stroke="#0f172a" stroke-width="4.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                        </g>
+                    `;
+                case 'abk_y_right':
+                    return `
+                        <g>
+                            <rect x="-14" y="-11" width="28" height="22" rx="3" fill="#ffffff" stroke="#0f172a" stroke-width="2"/>
+                            <line x1="0" y1="1" x2="-9" y2="-7.5" stroke="#64748b" stroke-width="2.2" stroke-linecap="round"/>
+                            <path d="M0,9 L0,1 L9,-7.5" stroke="#0f172a" stroke-width="4.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
                         </g>
                     `;
                 case 'rad_cross':

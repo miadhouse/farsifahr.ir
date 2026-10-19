@@ -294,8 +294,41 @@
                 ctx.moveTo(-85, -120); ctx.lineTo(-122, -95); ctx.lineTo(-85, -70);
                 ctx.moveTo(85, -120);  ctx.lineTo(122, -95);  ctx.lineTo(85, -70);
                 ctx.stroke();
+            } else if (signId === 'abk_y_left' || signId === 'abk_y_right') {
+                // 3-branch Y-split supplemental sign: bottom stem splits into two upper branches (upper-left & upper-right)
+                ctx.strokeStyle = '#94a3b8';
+                ctx.lineWidth = 28;
+                ctx.lineCap = 'round';
+                ctx.beginPath();
+                if (signId === 'abk_y_left') {
+                    // Upper-right branch is minor road (thin)
+                    ctx.moveTo(0, 14);
+                    ctx.lineTo(122, -104);
+                } else {
+                    // Upper-left branch is minor road (thin)
+                    ctx.moveTo(0, 14);
+                    ctx.lineTo(-122, -104);
+                }
+                ctx.stroke();
+
+                // Bottom stem + main upper branch (thick priority road)
+                ctx.strokeStyle = '#0f172a';
+                ctx.lineWidth = 58;
+                ctx.lineJoin = 'round';
+                ctx.lineCap = 'round';
+                ctx.beginPath();
+                if (signId === 'abk_y_left') {
+                    ctx.moveTo(0, 122);
+                    ctx.lineTo(0, 14);
+                    ctx.lineTo(-122, -104);
+                } else {
+                    ctx.moveTo(0, 122);
+                    ctx.lineTo(0, 14);
+                    ctx.lineTo(122, -104);
+                }
+                ctx.stroke();
             } else {
-                // Thin side roads
+                // Thin side roads (4-way)
                 ctx.strokeStyle = '#94a3b8';
                 ctx.lineWidth = 26;
                 ctx.lineCap = 'round';
