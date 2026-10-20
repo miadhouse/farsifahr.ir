@@ -89,6 +89,118 @@
     };
 
     /**
+     * Roundabout (میدان) geometry. Traffic circulates COUNTER-CLOCKWISE seen from above
+     * (right-hand traffic). Angle φ → world (x = R·cosφ, z = R·sinφ); movement = decreasing φ.
+     * Order along the ring: entry(bottom) → exit(right) → entry(right) → exit(top) → ...
+     */
+    const ROUNDABOUT = { R: 5.4, outerR: 7.0, islandR: 3.8, slotGap: 0.55, step: 0.14 };
+
+    function rbLaneHalf(c, R) {
+        return Math.sqrt(Math.max(R * R - c * c, 1));
+    }
+
+    function rbEntryAngle(branch, R) {
+        const h = rbLaneHalf(2.4, R);
+        const m = { bottom: [2.4, h], right: [h, -2.4], top: [-2.4, -h], left: [-h, 2.4] }[branch];
+        return Math.atan2(m[1], m[0]);
+    }
+
+    function rbExitAngle(branch, c, R) {
+        const h = rbLaneHalf(c, R);
+        const m = { bottom: [-c, h], right: [h, c], top: [c, -h], left: [-h, -c] }[branch];
+        return Math.atan2(m[1], m[0]);
+    }
+
+    function rbArcDelta(from, to) {
+        const T = Math.PI * 2;
+        let d = (((from - to) % T) + T) % T;
+        if (d < 0.02) d += T;
+        return d;
+    }
+
+    // Point on the incoming lane of a branch, s units away from the center
+    function rbInLanePoint(branch, s, y) {
+        if (branch === 'bottom') return new THREE.Vector3(2.4, y, s);
+        if (branch === 'top')    return new THREE.Vector3(-2.4, y, -s);
+        if (branch === 'right')  return new THREE.Vector3(s, y, -2.4);
+        return new THREE.Vector3(-s, y, 2.4);
+    }
+
+    // Point on the outgoing lane of a branch (lateral coord c), s units away from the center
+    function rbOutLanePoint(branch, c, s, y) {
+        if (branch === 'top')    return new THREE.Vector3(c, y, -s);
+        if (branch === 'bottom') return new THREE.Vector3(-c, y, s);
+        if (branch === 'right')  return new THREE.Vector3(s, y, c);
+        return new THREE.Vector3(-s, y, -c);
+    }
+
+    // Parking spot on the ring just BEFORE the exit toward the given branch
+    function rbRingSlotSpec(branch) {
+        const phi = rbExitAngle(branch, 2.4, ROUNDABOUT.R) + ROUNDABOUT.slotGap;
+        return {
+            x: ROUNDABOUT.R * Math.cos(phi),
+            z: ROUNDABOUT.R * Math.sin(phi),
+            rotY: Math.atan2(Math.sin(phi), -Math.cos(phi)),
+            phi: phi
+        };
+    }
+
+    /**
+     * Smooth trajectory through a roundabout.
+     * - Entering vehicles: approach lane → ring arc (counter-clockwise) → exit lane.
+     * - Ring vehicles (slotType 'ring'): 'exit' leaves at the next exit, 'continue' keeps circulating.
+     */
+    function buildRoundaboutCurve(actor, exitDist, lateralOffset) {
+        const y = 0.28;
+        const R = ROUNDABOUT.R + lateralOffset;
+        const c = 2.4 + lateralOffset;
+        const pts = [];
+
+        const pushArc = (from, sweep, includeFirst) => {
+            const n = Math.max(2, Math.ceil(sweep / ROUNDABOUT.step));
+            for (let i = includeFirst ? 0 : 1; i <= n; i++) {
+                const phi = from - sweep * (i / n);
+                pts.push(new THREE.Vector3(R * Math.cos(phi), y, R * Math.sin(phi)));
+            }
+        };
+
+        const pushExitLane = (target) => {
+            const sExit = rbLaneHalf(c, R);
+            for (let s = sExit + 1.8; s < exitDist - 0.9; s += 1.8) {
+                pts.push(rbOutLanePoint(target, c, s, y));
+            }
+            pts.push(rbOutLanePoint(target, c, exitDist, y));
+        };
+
+        if (actor.slotType === 'ring') {
+            const slot = rbRingSlotSpec(actor.branch);
+            if (actor.direction === 'continue') {
+                pushArc(slot.phi, ROUNDABOUT.slotGap + 0.9, true);
+            } else {
+                const sweep = rbArcDelta(slot.phi, rbExitAngle(actor.branch, c, R));
+                pushArc(slot.phi, sweep, true);
+                pushExitLane(actor.branch);
+            }
+        } else {
+            const b = actor.branch;
+            const target = getVehicleTargetBranch(b, actor.direction || 'straight');
+            const startPos = BRANCH_3D[b].vehicleStart;
+            const sEntry = rbLaneHalf(2.4, R);
+            const entryPhi = rbEntryAngle(b, R);
+
+            pts.push(new THREE.Vector3(startPos.x, y, startPos.z));
+            const startS = Math.abs(b === 'bottom' || b === 'top' ? startPos.z : startPos.x);
+            for (let s = startS - 1.8; s > sEntry + 1.0; s -= 1.8) {
+                pts.push(rbInLanePoint(b, s, y));
+            }
+            pushArc(entryPhi, rbArcDelta(entryPhi, rbExitAngle(target, c, R)), true);
+            pushExitLane(target);
+        }
+
+        return new THREE.CatmullRomCurve3(pts, false, 'centripetal');
+    }
+
+    /**
      * Draw high-resolution (512x512) German StVO traffic sign on an HTML5 Canvas
      * with bold strokes and high contrast so it is crystal clear from any distance.
      */
@@ -1057,6 +1169,16 @@
     }
 
     /**
+     * Branch an actor finally drives out through (null = keeps circulating inside the roundabout)
+     */
+    function getActorTargetBranch(actor) {
+        if (actor.slotType === 'ring') {
+            return actor.direction === 'continue' ? null : actor.branch;
+        }
+        return getVehicleTargetBranch(actor.branch, actor.direction);
+    }
+
+    /**
      * Build 3D Curve (THREE.CurvePath / LineCurve3) for an Actor's Trajectory.
      * Turning vehicles follow a 3-part path (approach -> smooth intersection turn -> straight outgoing lane)
      * so all vehicles entering the same target branch align collinearly in the lane and queue behind one another.
@@ -1065,6 +1187,9 @@
      */
     function buildActor3DCurve(actor, exitDist = 14.5, lateralOffset = 0) {
         const b = actor.branch;
+        if (actor.slotType !== 'pedestrian' && (actor.slotType === 'ring' || actor.roundabout)) {
+            return buildRoundaboutCurve(actor, exitDist, lateralOffset);
+        }
         if (actor.slotType === 'pedestrian') {
             const g = BRANCH_3D[b];
             return new THREE.LineCurve3(
@@ -1432,6 +1557,52 @@
             centerAsphalt.receiveShadow = true;
             this.worldGroup.add(centerAsphalt);
 
+            // Roundabout (میدان): circular ring asphalt + raised green central island
+            if (scenarioState && scenarioState.hasRoundabout) {
+                const ringDisc = new THREE.Mesh(
+                    new THREE.CylinderGeometry(ROUNDABOUT.outerR, ROUNDABOUT.outerR, 0.23, 64),
+                    roadMat
+                );
+                ringDisc.position.y = 0.115;
+                ringDisc.receiveShadow = true;
+                this.worldGroup.add(ringDisc);
+
+                // Thin white outer edge line of the ring
+                const edgeLine = new THREE.Mesh(
+                    new THREE.RingGeometry(ROUNDABOUT.outerR - 0.42, ROUNDABOUT.outerR - 0.22, 64),
+                    new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide })
+                );
+                edgeLine.rotation.x = -Math.PI / 2;
+                edgeLine.position.y = 0.236;
+                this.worldGroup.add(edgeLine);
+
+                const islandCurb = new THREE.Mesh(
+                    new THREE.CylinderGeometry(ROUNDABOUT.islandR, ROUNDABOUT.islandR, 0.5, 48),
+                    new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.6 })
+                );
+                islandCurb.position.y = 0.25;
+                islandCurb.castShadow = true;
+                islandCurb.receiveShadow = true;
+                this.worldGroup.add(islandCurb);
+
+                const islandGrass = new THREE.Mesh(
+                    new THREE.CylinderGeometry(ROUNDABOUT.islandR - 0.4, ROUNDABOUT.islandR - 0.4, 0.54, 48),
+                    new THREE.MeshStandardMaterial({ color: 0x16a34a, roughness: 0.9 })
+                );
+                islandGrass.position.y = 0.27;
+                this.worldGroup.add(islandGrass);
+
+                const rbTree = new THREE.Group();
+                const rbTrunk = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.36, 1.4, 8), new THREE.MeshStandardMaterial({ color: 0x78350f }));
+                rbTrunk.position.y = 0.7;
+                const rbCrown = new THREE.Mesh(new THREE.ConeGeometry(1.35, 2.3, 10), new THREE.MeshStandardMaterial({ color: 0x15803d, roughness: 0.75 }));
+                rbCrown.position.y = 2.2;
+                rbCrown.castShadow = true;
+                rbTree.add(rbTrunk, rbCrown);
+                rbTree.position.set(0, 0.54, 0);
+                this.worldGroup.add(rbTree);
+            }
+
             const branchConfigs = {
                 top:    { sx: 0, sz: -13.5, sw: 16.6, sd: 17.5, rw: 9.6, rd: 18.2, isVert: true },
                 bottom: { sx: 0, sz: 13.5,  sw: 16.6, sd: 17.5, rw: 9.6, rd: 18.2, isVert: true },
@@ -1573,7 +1744,20 @@
                         slotType: 'vehicle',
                         type: bData.vehicle.type,
                         direction: bData.vehicle.direction || 'straight',
-                        priority: parseInt(bData.vehicle.priority || 1, 10)
+                        priority: parseInt(bData.vehicle.priority || 1, 10),
+                        roundabout: !!scenarioState.hasRoundabout
+                    });
+                }
+
+                if (scenarioState.hasRoundabout && bData.ringVehicle && bData.ringVehicle.type) {
+                    this.spawnActor3D({
+                        key: `ring_${bName}`,
+                        branch: bName,
+                        slotType: 'ring',
+                        type: bData.ringVehicle.type,
+                        direction: bData.ringVehicle.direction === 'continue' ? 'continue' : 'exit',
+                        priority: parseInt(bData.ringVehicle.priority || 1, 10),
+                        roundabout: true
                     });
                 }
 
@@ -1594,11 +1778,21 @@
                 const shortBranch = { bottom: 'پایین', top: 'بالا', right: 'راست', left: 'چپ' };
                 activeBranches.forEach(bName => {
                     const dz = BRANCH_3D[bName].dropZones;
-                    [
+                    const ringSpec = rbRingSlotSpec(bName);
+                    const zoneList = [
                         { slotType: 'vehicle',    pos: dz.vehicle,    label: `خودرو (${shortBranch[bName]})`, icon: 'fa-car' },
                         { slotType: 'pedestrian', pos: dz.pedestrian, label: `پیاده‌رو (${shortBranch[bName]})`, icon: 'fa-walking' },
                         { slotType: 'sign',       pos: dz.sign,       label: `تابلو/چراغ (${shortBranch[bName]})`, icon: 'fa-traffic-light' }
-                    ].forEach(slot => {
+                    ];
+                    if (scenarioState && scenarioState.hasRoundabout) {
+                        zoneList.push({
+                            slotType: 'ring',
+                            pos: { x: ringSpec.x, y: 1.1, z: ringSpec.z },
+                            label: `در میدان (قبل از خروج ${shortBranch[bName]})`,
+                            icon: 'fa-sync-alt'
+                        });
+                    }
+                    zoneList.forEach(slot => {
                         const el = document.createElement('div');
                         el.className = 'drop-slot-group';
                         el.setAttribute('data-branch', bName);
@@ -1630,9 +1824,28 @@
          * Calculate stopping distance in the outgoing lane so multiple vehicles entering
          * the same target branch park cleanly one behind another instead of overlapping!
          */
+        getKeyTargetBranch(key) {
+            const branchesObj = (this.scenarioState && this.scenarioState.branches) ? this.scenarioState.branches : {};
+            if (key.indexOf('vehicle_') === 0) {
+                const bn = key.replace('vehicle_', '');
+                const bd = branchesObj[bn];
+                if (bd && bd.vehicle && bd.vehicle.type) {
+                    return getVehicleTargetBranch(bn, bd.vehicle.direction || 'straight');
+                }
+            } else if (key.indexOf('ring_') === 0) {
+                const bn = key.replace('ring_', '');
+                const bd = branchesObj[bn];
+                if (bd && bd.ringVehicle && bd.ringVehicle.type) {
+                    return bd.ringVehicle.direction === 'continue' ? null : bn;
+                }
+            }
+            return null;
+        }
+
         getVehicleExitDist(actor) {
             if (!actor || actor.slotType === 'pedestrian') return 14.5;
-            const targetBranch = getVehicleTargetBranch(actor.branch, actor.direction);
+            const targetBranch = getActorTargetBranch(actor);
+            if (!targetBranch) return 14.5;
             const sequence = (this.moveOrder && this.moveOrder.length > 0)
                 ? this.moveOrder
                 : (this.clickedKeys || []);
@@ -1641,17 +1854,8 @@
             for (let i = 0; i < sequence.length; i++) {
                 const k = sequence[i];
                 if (k === actor.key) break;
-                if (k.indexOf('vehicle_') === 0) {
-                    const otherBranch = k.replace('vehicle_', '');
-                    const bData = (this.scenarioState && this.scenarioState.branches)
-                        ? this.scenarioState.branches[otherBranch]
-                        : null;
-                    if (bData && bData.vehicle && bData.vehicle.type) {
-                        const otherTarget = getVehicleTargetBranch(otherBranch, bData.vehicle.direction || 'straight');
-                        if (otherTarget === targetBranch) {
-                            queueIndex++;
-                        }
-                    }
+                if (this.getKeyTargetBranch(k) === targetBranch) {
+                    queueIndex++;
                 }
             }
 
@@ -1669,7 +1873,8 @@
          */
         getVehicleArrowLateralOffset(actor) {
             if (!actor || actor.slotType === 'pedestrian') return 0;
-            const targetBranch = getVehicleTargetBranch(actor.branch, actor.direction || 'straight');
+            const targetBranch = getActorTargetBranch(actor);
+            if (!targetBranch) return 0;
             const branchesObj = (this.scenarioState && this.scenarioState.branches)
                 ? this.scenarioState.branches
                 : {};
@@ -1678,7 +1883,8 @@
             const sharing = [];
             ['bottom', 'right', 'top', 'left'].forEach(bName => {
                 const bData = branchesObj[bName];
-                if (bData && bData.vehicle && bData.vehicle.type) {
+                if (!bData) return;
+                if (bData.vehicle && bData.vehicle.type) {
                     const dir = bData.vehicle.direction || 'straight';
                     if (getVehicleTargetBranch(bName, dir) === targetBranch) {
                         sharing.push({
@@ -1686,6 +1892,11 @@
                             rank: rankMap[dir] !== undefined ? rankMap[dir] : 1
                         });
                     }
+                }
+                if (this.scenarioState && this.scenarioState.hasRoundabout &&
+                    bData.ringVehicle && bData.ringVehicle.type &&
+                    bData.ringVehicle.direction !== 'continue' && bName === targetBranch) {
+                    sharing.push({ key: 'ring_' + bName, rank: 3 });
                 }
             });
 
@@ -1697,7 +1908,10 @@
             if (sharing.length === 2) {
                 return idx === 0 ? -0.68 : 0.68;
             }
-            return (idx - 1) * 0.85;
+            if (sharing.length === 3) {
+                return (idx - 1) * 0.85;
+            }
+            return (idx - (sharing.length - 1) / 2) * 0.75;
         }
 
         spawnActor3D(actor) {
@@ -1716,11 +1930,15 @@
 
             const mesh = isPed
                 ? create3DPedestrianMesh(actor.type)
-                : create3DVehicleMesh(actor.type, actor.direction);
+                : create3DVehicleMesh(actor.type, actor.slotType === 'ring'
+                    ? (actor.direction === 'continue' ? 'straight' : 'right')
+                    : actor.direction);
 
             const startSpec = isPed
                 ? BRANCH_3D[actor.branch].pedStart
-                : BRANCH_3D[actor.branch].vehicleStart;
+                : (actor.slotType === 'ring'
+                    ? rbRingSlotSpec(actor.branch)
+                    : BRANCH_3D[actor.branch].vehicleStart);
 
             const baseY = 0.22;
             const exitDist = isPed ? 14.5 : this.getVehicleExitDist(actor);

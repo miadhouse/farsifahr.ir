@@ -644,7 +644,7 @@ $scenarios = ensureAndFetchPriorityScenarios($pdo);
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="assets/js/priority-3d-engine.js?v=2.0"></script>
+    <script src="assets/js/priority-3d-engine.js?v=2.1"></script>
 
     <?php if (!empty($scenarios)): ?>
     <script>
@@ -713,6 +713,19 @@ $scenarios = ensureAndFetchPriorityScenarios($pdo);
                         name: `${meta.name} (${BRANCH_LABELS[branch]})`,
                         direction: b.vehicle.direction || 'straight',
                         priority: parseInt(b.vehicle.priority || 1, 10)
+                    });
+                }
+                if (currentScenarioState.hasRoundabout && b.ringVehicle && b.ringVehicle.type) {
+                    const meta = VEHICLE_CATALOG[b.ringVehicle.type] || VEHICLE_CATALOG.car_yellow;
+                    const ringLabels = { top: 'بالا', right: 'راست', bottom: 'پایین', left: 'چپ' };
+                    list.push({
+                        key: `ring_${branch}`,
+                        branch: branch,
+                        slotType: 'ring',
+                        type: b.ringVehicle.type,
+                        name: `${meta.name} (در میدان، قبل از خروج ${ringLabels[branch]})`,
+                        direction: b.ringVehicle.direction === 'continue' ? 'continue' : 'exit',
+                        priority: parseInt(b.ringVehicle.priority || 1, 10)
                     });
                 }
                 if (b.pedestrian && b.pedestrian.type) {

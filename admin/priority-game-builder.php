@@ -520,6 +520,10 @@ $csrf_token = $_SESSION['csrf_token'] ?? generate_csrf_token();
                                 <input class="form-check-input" type="checkbox" id="toggleHasRoadMarkings" onchange="toggleIntersectionOption('hasRoadMarkings', this.checked)">
                                 <label class="form-check-label small fw-bold" for="toggleHasRoadMarkings">دارای خط‌کشی خیابان</label>
                             </div>
+                            <div class="form-check form-switch mb-0">
+                                <input class="form-check-input" type="checkbox" id="toggleHasRoundabout" onchange="toggleIntersectionOption('hasRoundabout', this.checked)">
+                                <label class="form-check-label small fw-bold" for="toggleHasRoundabout">میدان (دوربرگردان) در مرکز تقاطع</label>
+                            </div>
                         </div>
 
                         <!-- Quick Sample Presets -->
@@ -717,7 +721,7 @@ $csrf_token = $_SESSION['csrf_token'] ?? generate_csrf_token();
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="assets/js/priority-3d-engine.js?v=2.0"></script>
+    <script src="assets/js/priority-3d-engine.js?v=2.1"></script>
 
     <script>
         const CSRF_TOKEN = <?= json_encode($csrf_token) ?>;
@@ -1204,7 +1208,13 @@ $csrf_token = $_SESSION['csrf_token'] ?? generate_csrf_token();
 
             selectActiveBranch(hit.branch);
 
-            if (payload.kind === 'vehicle') {
+            if (payload.kind === 'vehicle' && hit.slotType === 'ring' && scenarioState.hasRoundabout) {
+                b.ringVehicle = {
+                    type: payload.id,
+                    direction: b.ringVehicle ? b.ringVehicle.direction : 'exit',
+                    priority: b.ringVehicle ? b.ringVehicle.priority : getNextDefaultPriority()
+                };
+            } else if (payload.kind === 'vehicle') {
                 const nextPriority = getNextDefaultPriority();
                 b.vehicle = {
                     type: payload.id,
@@ -1319,6 +1329,8 @@ $csrf_token = $_SESSION['csrf_token'] ?? generate_csrf_token();
             return `M ${start.x} ${start.y} L 300 300`;
         }
 
+        const RING_SHORT_LABELS = { top: 'بالا', right: 'راست', bottom: 'پایین', left: 'چپ' };
+
         function getAllPlacedActors() {
             const activeBranches = INTERSECTION_BRANCHES[scenarioState.intersectionType] || INTERSECTION_BRANCHES.cross4;
             const list = [];
@@ -1338,6 +1350,21 @@ $csrf_token = $_SESSION['csrf_token'] ?? generate_csrf_token();
                         shortName: meta.name,
                         direction: bData.vehicle.direction || 'straight',
                         priority: parseInt(bData.vehicle.priority || 1, 10),
+                        color: meta.color
+                    });
+                }
+
+                if (scenarioState.hasRoundabout && bData.ringVehicle && bData.ringVehicle.type) {
+                    const meta = VEHICLE_CATALOG[bData.ringVehicle.type] || VEHICLE_CATALOG.car_yellow;
+                    list.push({
+                        key: `ring_${branch}`,
+                        branch: branch,
+                        slotType: 'ring',
+                        type: bData.ringVehicle.type,
+                        name: `${meta.name} (در میدان، قبل از خروج ${RING_SHORT_LABELS[branch]})`,
+                        shortName: meta.name,
+                        direction: bData.ringVehicle.direction === 'continue' ? 'continue' : 'exit',
+                        priority: parseInt(bData.ringVehicle.priority || 1, 10),
                         color: meta.color
                     });
                 }
@@ -1537,6 +1564,8 @@ $csrf_token = $_SESSION['csrf_token'] ?? generate_csrf_token();
             if (swEl) swEl.checked = (scenarioState.hasSidewalks !== false);
             const rmEl = document.getElementById('toggleHasRoadMarkings');
             if (rmEl) rmEl.checked = (scenarioState.hasRoadMarkings !== false);
+            const rbEl = document.getElementById('toggleHasRoundabout');
+            if (rbEl) rbEl.checked = !!scenarioState.hasRoundabout;
 
             const activeBranches = INTERSECTION_BRANCHES[type] || INTERSECTION_BRANCHES.cross4;
             if (!activeBranches.includes(activeInspectorBranch)) {
@@ -1549,6 +1578,9 @@ $csrf_token = $_SESSION['csrf_token'] ?? generate_csrf_token();
 
         function toggleIntersectionOption(optionKey, isChecked) {
             scenarioState[optionKey] = !!isChecked;
+            if (optionKey === 'hasRoundabout' && !isChecked) {
+                Object.values(scenarioState.branches).forEach(br => { if (br) br.ringVehicle = null; });
+            }
             resetVehiclesAnimation();
             renderAll();
         }
@@ -1580,6 +1612,18 @@ $csrf_token = $_SESSION['csrf_token'] ?? generate_csrf_token();
                     `<option value="${v.id}" ${bData.vehicle && bData.vehicle.type === v.id ? 'selected' : ''}>${v.name}</option>`
                 ).join('');
 
+            const rbVehicleOptions = `<option value="">-- بدون خودرو در میدان --</option>` +
+                Object.values(VEHICLE_CATALOG).map(v =>
+                    `<option value="${v.id}" ${bData.ringVehicle && bData.ringVehicle.type === v.id ? 'selected' : ''}>${v.name}</option>`
+                ).join('');
+            const ringVehicleHTML = scenarioState.hasRoundabout ? `
+                    <div class="mb-2">
+                        <label class="form-label small fw-bold mb-1"><i class="fas fa-sync-alt text-success me-1"></i> خودرو داخل میدان (قبل از خروج این ضلع):</label>
+                        <select class="form-select form-select-sm fw-bold" onchange="onBranchRingVehicleChange('${activeInspectorBranch}', this.value)">
+                            ${rbVehicleOptions}
+                        </select>
+                    </div>` : '';
+
             const pOptions = `<option value="">-- بدون عابر در پیاده‌رو --</option>` +
                 Object.values(PEDESTRIAN_CATALOG).map(p =>
                     `<option value="${p.id}" ${bData.pedestrian && bData.pedestrian.type === p.id ? 'selected' : ''}>${p.name}</option>`
@@ -1610,6 +1654,8 @@ $csrf_token = $_SESSION['csrf_token'] ?? generate_csrf_token();
                             ${vOptions}
                         </select>
                     </div>
+
+                    ${ringVehicleHTML}
 
                     <!-- Sidewalk / Crosswalk toggle & Pedestrian -->
                     <div class="form-check form-switch mb-2">
@@ -1673,6 +1719,21 @@ $csrf_token = $_SESSION['csrf_token'] ?? generate_csrf_token();
             renderAll();
         }
 
+        function onBranchRingVehicleChange(branch, typeId) {
+            const b = scenarioState.branches[branch];
+            if (!typeId) {
+                b.ringVehicle = null;
+            } else {
+                b.ringVehicle = {
+                    type: typeId,
+                    direction: b.ringVehicle ? b.ringVehicle.direction : 'exit',
+                    priority: b.ringVehicle ? b.ringVehicle.priority : getNextDefaultPriority()
+                };
+            }
+            resetVehiclesAnimation();
+            renderAll();
+        }
+
         function onBranchCrosswalkToggle(branch, checked) {
             scenarioState.branches[branch].hasCrosswalk = checked;
             renderAll();
@@ -1719,7 +1780,15 @@ $csrf_token = $_SESSION['csrf_token'] ?? generate_csrf_token();
             container.innerHTML = actors.map(actor => {
                 const isPed = actor.slotType === 'pedestrian';
                 let dirSelectHTML = '';
-                if (!isPed) {
+                if (actor.slotType === 'ring') {
+                    dirSelectHTML = `
+                        <select class="form-select form-select-sm fw-bold" style="width: 135px;"
+                                onchange="updateActorDirection('${actor.branch}', '${actor.slotType}', this.value)">
+                            <option value="exit" ${actor.direction === 'exit' ? 'selected' : ''}>↱ خروج از میدان</option>
+                            <option value="continue" ${actor.direction === 'continue' ? 'selected' : ''}>⟳ ادامه در میدان</option>
+                        </select>
+                    `;
+                } else if (!isPed) {
                     dirSelectHTML = `
                         <select class="form-select form-select-sm fw-bold" style="width: 115px;"
                                 onchange="updateActorDirection('${actor.branch}', '${actor.slotType}', this.value)">
@@ -1770,6 +1839,8 @@ $csrf_token = $_SESSION['csrf_token'] ?? generate_csrf_token();
             const b = scenarioState.branches[branch];
             if (slotType === 'vehicle' && b.vehicle) {
                 b.vehicle.direction = newDir;
+            } else if (slotType === 'ring' && b.ringVehicle) {
+                b.ringVehicle.direction = newDir;
             }
             resetVehiclesAnimation();
             renderAll();
@@ -1779,6 +1850,8 @@ $csrf_token = $_SESSION['csrf_token'] ?? generate_csrf_token();
             const b = scenarioState.branches[branch];
             if (slotType === 'vehicle' && b.vehicle) {
                 b.vehicle.priority = parseInt(newPriority, 10);
+            } else if (slotType === 'ring' && b.ringVehicle) {
+                b.ringVehicle.priority = parseInt(newPriority, 10);
             } else if (slotType === 'pedestrian' && b.pedestrian) {
                 b.pedestrian.priority = parseInt(newPriority, 10);
             }
@@ -1789,6 +1862,7 @@ $csrf_token = $_SESSION['csrf_token'] ?? generate_csrf_token();
         function removePlacedActor(branch, slotType) {
             const b = scenarioState.branches[branch];
             if (slotType === 'vehicle') b.vehicle = null;
+            if (slotType === 'ring') b.ringVehicle = null;
             if (slotType === 'pedestrian') b.pedestrian = null;
             resetVehiclesAnimation();
             renderAll();
