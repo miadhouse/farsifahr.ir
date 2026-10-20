@@ -31,6 +31,12 @@
         <div class="text-warning"><?= __('admin_panel', 'پنل مدیریت اصلی') ?></div>
       </a>
     </li>
+    <li class="menu-item">
+      <a href="priority-game-builder.php" class="menu-link">
+        <i class="menu-icon tf-icons bx bx-traffic-cone text-info"></i>
+        <div class="text-info fw-bold">ساخت بازی اولویت‌ها (ادمین)</div>
+      </a>
+    </li>
     <?php endif; ?>
     <li class="menu-item">
       <a href="javascript:void(0);" class="menu-link menu-toggle">
