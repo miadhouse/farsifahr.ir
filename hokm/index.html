@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+    <meta name="theme-color" content="#0b0706">
+    <title>حکم رویال | Hokm Royale</title>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css">
+    <link rel="stylesheet" href="assets/css/hokm.css?v=1.0">
+</head>
+<body>
+    <!-- Room ambience: hanging lamp, light cone, floating dust -->
+    <div class="room" aria-hidden="true">
+        <div class="room-wall"></div>
+        <div class="lamp">
+            <div class="lamp-cord"></div>
+            <div class="lamp-shade"></div>
+            <div class="lamp-bulb"></div>
+        </div>
+        <div class="light-cone"></div>
+        <div class="dust" id="dust"></div>
+    </div>
+
+    <!-- Poker-style felt table -->
+    <div class="table-zone" id="tableZone">
+        <div class="table" id="table">
+            <div class="table-rim"></div>
+            <div class="table-gold"></div>
+            <div class="table-felt">
+                <div class="felt-noise"></div>
+                <div class="felt-weave"></div>
+                <div class="felt-shine"></div>
+                <div class="felt-emblem">
+                    <span class="emblem-suits">♠︎ ♥︎ ♣︎ ♦︎</span>
+                    <span class="emblem-title">حکم رویال</span>
+                    <span class="emblem-sub">ROYAL HOKM CLUB</span>
+                </div>
+                <div class="felt-line"></div>
+            </div>
+        </div>
+
+        <!-- Player seats (0 = you/bottom, 1 = right, 2 = partner/top, 3 = left) -->
+        <div class="seat seat-0" id="seat0" data-seat="0">
+            <div class="avatar-wrap">
+                <div class="turn-ring"></div>
+                <img class="avatar" src="assets/img/avatars/p0.png" alt="" onerror="this.classList.add('no-img')">
+                <span class="hakem-crown" title="حاکم">👑</span>
+                <span class="dealer-chip">حاکم</span>
+            </div>
+            <div class="nameplate">
+                <span class="pname">شما</span>
+                <span class="tricks"><b class="tcount">0</b><i>دست</i></span>
+            </div>
+            <div class="bubble"></div>
+        </div>
+        <div class="seat seat-1" id="seat1" data-seat="1">
+            <div class="avatar-wrap">
+                <div class="turn-ring"></div>
+                <img class="avatar" src="assets/img/avatars/p1.png" alt="" onerror="this.classList.add('no-img')">
+                <span class="hakem-crown" title="حاکم">👑</span>
+                <span class="dealer-chip">حاکم</span>
+            </div>
+            <div class="nameplate">
+                <span class="pname">استاد بهرام</span>
+                <span class="tricks"><b class="tcount">0</b><i>دست</i></span>
+            </div>
+            <div class="bubble"></div>
+        </div>
+        <div class="seat seat-2" id="seat2" data-seat="2">
+            <div class="avatar-wrap">
+                <div class="turn-ring"></div>
+                <img class="avatar" src="assets/img/avatars/p2.png" alt="" onerror="this.classList.add('no-img')">
+                <span class="hakem-crown" title="حاکم">👑</span>
+                <span class="dealer-chip">حاکم</span>
+            </div>
+            <div class="nameplate">
+                <span class="pname">سارا (یار شما)</span>
+                <span class="tricks"><b class="tcount">0</b><i>دست</i></span>
+            </div>
+            <div class="bubble"></div>
+        </div>
+        <div class="seat seat-3" id="seat3" data-seat="3">
+            <div class="avatar-wrap">
+                <div class="turn-ring"></div>
+                <img class="avatar" src="assets/img/avatars/p3.png" alt="" onerror="this.classList.add('no-img')">
+                <span class="hakem-crown" title="حاکم">👑</span>
+                <span class="dealer-chip">حاکم</span>
+            </div>
+            <div class="nameplate">
+                <span class="pname">نیلوفر</span>
+                <span class="tricks"><b class="tcount">0</b><i>دست</i></span>
+            </div>
+            <div class="bubble"></div>
+        </div>
+    </div>
+
+    <!-- All playing cards live here (absolutely positioned & animated) -->
+    <div class="card-stage" id="stage"></div>
+
+    <!-- Top HUD: scores, trump, controls -->
+    <header class="hud">
+        <div class="score-box">
+            <div class="team team-us">
+                <span class="team-label">ما</span>
+                <span class="team-score" id="scoreUs">0</span>
+                <span class="team-tricks" id="tricksUs">۰ دست</span>
+            </div>
+            <div class="score-sep">
+                <span>از</span><b>۷</b>
+            </div>
+            <div class="team team-them">
+                <span class="team-label">حریف</span>
+                <span class="team-score" id="scoreThem">0</span>
+                <span class="team-tricks" id="tricksThem">۰ دست</span>
+            </div>
+        </div>
+        <div class="trump-box" id="trumpBox">
+            <span class="trump-label">حکم</span>
+            <span class="trump-suit" id="trumpSuit">—</span>
+        </div>
+        <div class="hud-actions">
+            <button class="icon-btn" id="btnSound" title="صدا">🔊</button>
+            <button class="icon-btn" id="btnRules" title="قوانین">📜</button>
+            <button class="icon-btn" id="btnRestart" title="بازی جدید">↻</button>
+        </div>
+    </header>
+
+    <!-- Center announcements -->
+    <div class="announce" id="announce"></div>
+    <div class="toast" id="toast"></div>
+
+    <!-- Start screen -->
+    <div class="modal show" id="startModal">
+        <div class="modal-card lux">
+            <div class="lux-suits">♠︎ ♥︎ ♣︎ ♦︎</div>
+            <h1 class="lux-title">حکم رویال</h1>
+            <p class="lux-sub">اتاق خصوصی ۴ نفره · میز VIP</p>
+            <div class="lineup">
+                <div class="lineup-team">
+                    <img src="assets/img/avatars/p0.png" alt="" onerror="this.classList.add('no-img')">
+                    <img src="assets/img/avatars/p2.png" alt="" onerror="this.classList.add('no-img')">
+                    <span>شما و سارا</span>
+                </div>
+                <div class="vs">VS</div>
+                <div class="lineup-team">
+                    <img src="assets/img/avatars/p1.png" alt="" onerror="this.classList.add('no-img')">
+                    <img src="assets/img/avatars/p3.png" alt="" onerror="this.classList.add('no-img')">
+                    <span>بهرام و نیلوفر</span>
+                </div>
+            </div>
+            <label class="name-field">
+                <span>نام شما</span>
+                <input type="text" id="playerName" maxlength="14" placeholder="شما">
+            </label>
+            <button class="gold-btn" id="btnStart">ورود به میز و شروع بازی</button>
+            <p class="lux-note">اولین تیمی که به ۷ امتیاز برسد برنده است · کُت = ۲ امتیاز · کُت حاکم = ۳ امتیاز</p>
+        </div>
+    </div>
+
+    <!-- Trump selection -->
+    <div class="modal" id="trumpModal">
+        <div class="modal-card lux compact">
+            <h2 class="lux-title sm">شما حاکم هستید 👑</h2>
+            <p class="lux-sub">با توجه به ۵ کارت دستتان، حکم را انتخاب کنید</p>
+            <div class="trump-choices">
+                <button class="suit-btn black" data-suit="S"><span>♠︎</span><i>پیک</i></button>
+                <button class="suit-btn red" data-suit="H"><span>♥︎</span><i>دل</i></button>
+                <button class="suit-btn black" data-suit="C"><span>♣︎</span><i>گشنیز</i></button>
+                <button class="suit-btn red" data-suit="D"><span>♦︎</span><i>خشت</i></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hand / match result -->
+    <div class="modal" id="resultModal">
+        <div class="modal-card lux compact">
+            <div class="result-icon" id="resultIcon">🏆</div>
+            <h2 class="lux-title sm" id="resultTitle"></h2>
+            <p class="lux-sub" id="resultText"></p>
+            <div class="result-score">
+                <div><span>ما</span><b id="rsUs">0</b></div>
+                <div><span>حریف</span><b id="rsThem">0</b></div>
+            </div>
+            <button class="gold-btn" id="btnNext">دست بعد</button>
+        </div>
+    </div>
+
+    <!-- Rules -->
+    <div class="modal" id="rulesModal">
+        <div class="modal-card lux compact rules">
+            <h2 class="lux-title sm">قوانین حکم</h2>
+            <ul>
+                <li>بازی ۴ نفره و دو تیمی است؛ شما و یار روبه‌رو (سارا) در برابر دو حریف.</li>
+                <li>در ابتدای بازی کارت‌ها یکی‌یکی رو پخش می‌شوند و اولین کسی که <b>آس</b> بیاید حاکم می‌شود.</li>
+                <li>حاکم با دیدن ۵ کارت اول، خال <b>حکم</b> را انتخاب می‌کند؛ سپس بقیه کارت‌ها پخش می‌شود (هر نفر ۱۳ کارت).</li>
+                <li>حاکم دست اول را شروع می‌کند. پیروی از خال زمین الزامی است؛ اگر آن خال را نداشتید، می‌توانید حکم بزنید یا هر کارتی بیندازید.</li>
+                <li>بالاترین حکم، و در نبود حکم بالاترین کارت خال زمین، برنده دست است. برنده، دست بعد را شروع می‌کند.</li>
+                <li>تیمی که زودتر ۷ دست بگیرد برنده آن دور است: ۱ امتیاز؛ <b>کُت</b> (۷ بر ۰) = ۲ امتیاز؛ کُت شدن تیم حاکم = ۳ امتیاز.</li>
+                <li>اگر تیم حاکم ببازد، حاکمیت به نفر بعدی (سمت راست حاکم) می‌رسد. اولین تیمی که به ۷ امتیاز برسد برنده بازی است.</li>
+            </ul>
+            <button class="gold-btn" data-close="rulesModal">متوجه شدم</button>
+        </div>
+    </div>
+
+    <canvas id="confetti"></canvas>
+
+    <script src="assets/js/hokm.js?v=1.0"></script>
+</body>
+</html>

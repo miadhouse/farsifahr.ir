@@ -1,0 +1,1140 @@
+/* ==========================================================================
+   HOKM ROYALE — Luxury Persian 4-Player Card Game Styling
+   Codepen Card Architecture + High-End Velvet Felt Table & Atmospheric Light
+   ========================================================================== */
+
+:root {
+    --gold: #dfb15b;
+    --gold-bright: #f5d485;
+    --gold-dark: #8c6721;
+    --felt-green: #0a422a;
+    --felt-shadow: #041f13;
+    --wood-rim: #1f110b;
+    --wood-highlight: #452618;
+    --bg-dark: #07090b;
+    --card-w: 72px;
+    --card-h: 101px;
+    --card-font-size: 4.5px;
+}
+
+@media (min-width: 600px) {
+    :root {
+        --card-w: 80px;
+        --card-h: 112px;
+        --card-font-size: 5px;
+    }
+}
+
+@media (min-width: 900px) {
+    :root {
+        --card-w: 96px;
+        --card-h: 134.4px;
+        --card-font-size: 6px;
+    }
+}
+
+@media (min-width: 1200px) {
+    :root {
+        --card-w: 112px;
+        --card-h: 156.8px;
+        --card-font-size: 7px;
+    }
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    font-family: 'Vazirmatn', system-ui, -apple-system, sans-serif;
+    background-color: var(--bg-dark);
+    color: #fff;
+    direction: rtl;
+}
+
+/* --------------------------------------------------------------------------
+   Room Ambience & Overhead Casino Lighting
+   -------------------------------------------------------------------------- */
+.room {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 1;
+    overflow: hidden;
+}
+
+.room-wall {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 50% 25%, #18221b 0%, #0d1210 50%, #040605 100%);
+    opacity: 0.95;
+}
+
+/* Overhead Lamp */
+.lamp {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    z-index: 10;
+}
+
+.lamp-cord {
+    width: 3px;
+    height: 40px;
+    background: linear-gradient(to bottom, #111, #555, #222);
+    box-shadow: 0 0 5px rgba(0,0,0,0.8);
+}
+
+.lamp-shade {
+    width: 140px;
+    height: 38px;
+    background: linear-gradient(180deg, #1f1a14 0%, #3d2f1f 40%, #15110c 100%);
+    border-radius: 80px 80px 8px 8px;
+    border-bottom: 3px solid var(--gold);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.9), inset 0 2px 4px rgba(255,215,0,0.3);
+}
+
+.lamp-bulb {
+    width: 28px;
+    height: 16px;
+    background: #fff;
+    border-radius: 0 0 14px 14px;
+    margin-top: -2px;
+    box-shadow: 0 0 35px 15px rgba(255, 230, 160, 0.9), 0 0 80px 40px rgba(230, 180, 80, 0.5);
+}
+
+/* Volumetric Golden Light Cone radiating onto felt table */
+.light-cone {
+    position: absolute;
+    top: 60px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 90vw;
+    height: 100vh;
+    max-width: 1200px;
+    background: radial-gradient(ellipse at 50% 10%, rgba(255, 225, 140, 0.16) 0%, rgba(210, 160, 60, 0.08) 35%, rgba(10, 50, 30, 0) 70%);
+    filter: blur(18px);
+    pointer-events: none;
+}
+
+/* --------------------------------------------------------------------------
+   Poker Table & Velvet Felt
+   -------------------------------------------------------------------------- */
+.table-zone {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+}
+
+.table {
+    position: relative;
+    width: min(94vw, 1150px);
+    height: min(78vh, 680px);
+    border-radius: 260px;
+    box-shadow: 0 25px 80px rgba(0, 0, 0, 0.95), 0 0 120px rgba(0,0,0,0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Luxurious Hand-Polished Mahogany Table Rim */
+.table-rim {
+    position: absolute;
+    inset: -22px;
+    border-radius: 280px;
+    background: radial-gradient(ellipse at 50% 30%, #4a2717 0%, #2b140b 50%, #140804 100%);
+    box-shadow: inset 0 3px 6px rgba(255, 220, 170, 0.3), inset 0 -6px 12px rgba(0, 0, 0, 0.9), 0 20px 40px rgba(0,0,0,0.8);
+    border: 2px solid #5d311d;
+}
+
+/* Fine Brass Gold Inlay Accent */
+.table-gold {
+    position: absolute;
+    inset: -6px;
+    border-radius: 266px;
+    border: 2.5px solid var(--gold);
+    box-shadow: 0 0 10px rgba(223, 177, 91, 0.4), inset 0 0 8px rgba(0,0,0,0.8);
+    pointer-events: none;
+}
+
+/* Green Casino Felt Cloth */
+.table-felt {
+    position: absolute;
+    inset: 0;
+    border-radius: 260px;
+    background: radial-gradient(ellipse at 50% 45%, #186843 0%, #0d462c 45%, #062b1a 80%, #031c11 100%);
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: inset 0 0 60px rgba(0, 0, 0, 0.85);
+}
+
+.felt-shine {
+    position: absolute;
+    top: 5%;
+    left: 20%;
+    right: 20%;
+    height: 50%;
+    border-radius: 50%;
+    background: radial-gradient(ellipse at 50% 40%, rgba(255, 245, 200, 0.12) 0%, rgba(255, 255, 255, 0) 70%);
+    pointer-events: none;
+}
+
+/* Elegant Center Gold Line on Felt */
+.felt-line {
+    position: absolute;
+    inset: 38px;
+    border-radius: 222px;
+    border: 1.5px dashed rgba(223, 177, 91, 0.28);
+    pointer-events: none;
+}
+
+/* Table Center Emblem */
+.felt-emblem {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.38;
+    pointer-events: none;
+    text-align: center;
+}
+
+.emblem-suits {
+    font-size: 1.6rem;
+    letter-spacing: 10px;
+    color: var(--gold);
+    text-shadow: 0 1px 2px #000;
+}
+
+.emblem-title {
+    font-size: 1.9rem;
+    font-weight: 900;
+    color: var(--gold);
+    letter-spacing: 2px;
+    margin-top: 2px;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+}
+
+.emblem-sub {
+    font-size: 0.65rem;
+    letter-spacing: 5px;
+    color: rgba(255,255,255,0.7);
+    margin-top: 2px;
+    font-family: sans-serif;
+    font-weight: 700;
+}
+
+/* --------------------------------------------------------------------------
+   Seat Layout (4 Players around the Oval Table)
+   -------------------------------------------------------------------------- */
+.seat {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    z-index: 5;
+    transition: transform 0.3s ease;
+}
+
+/* Seat Positions */
+.seat-0 { /* You / Bottom */
+    bottom: 14px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.seat-1 { /* Right Opponent */
+    right: 18px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.seat-2 { /* Partner / Top */
+    top: 14px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.seat-3 { /* Left Opponent */
+    left: 18px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+/* Player Avatar Wrapper & Metallic Gold Frame */
+.avatar-wrap {
+    position: relative;
+    width: 62px;
+    height: 62px;
+    border-radius: 50%;
+    padding: 3px;
+    background: linear-gradient(135deg, var(--gold-bright), #5e4114, var(--gold));
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.7);
+}
+
+@media (min-width: 900px) {
+    .avatar-wrap {
+        width: 74px;
+        height: 74px;
+    }
+}
+
+.avatar {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+    display: block;
+    background: #111;
+}
+
+.avatar.no-img {
+    background: radial-gradient(circle, #2d3e33, #111);
+}
+
+/* Turn Glow Indicator Ring */
+.turn-ring {
+    position: absolute;
+    inset: -7px;
+    border-radius: 50%;
+    border: 3px solid #22c55e;
+    box-shadow: 0 0 16px #22c55e, inset 0 0 10px #22c55e;
+    opacity: 0;
+    transform: scale(0.92);
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    pointer-events: none;
+}
+
+.seat.active-turn .turn-ring {
+    opacity: 1;
+    transform: scale(1);
+    animation: turnPulse 1.6s infinite alternate;
+}
+
+@keyframes turnPulse {
+    0% { box-shadow: 0 0 10px #22c55e; border-color: #22c55e; }
+    100% { box-shadow: 0 0 25px #4ade80, 0 0 8px #fff; border-color: #4ade80; }
+}
+
+/* Hakem Crown & Badge */
+.hakem-crown {
+    position: absolute;
+    top: -14px;
+    right: -6px;
+    font-size: 1.4rem;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.8));
+    display: none;
+    animation: crownFloat 2s ease-in-out infinite;
+}
+
+.dealer-chip {
+    position: absolute;
+    bottom: -6px;
+    left: -6px;
+    background: linear-gradient(135deg, #f59e0b, #b45309);
+    color: #fff;
+    font-size: 0.65rem;
+    font-weight: 900;
+    padding: 1px 6px;
+    border-radius: 999px;
+    border: 1.5px solid #fef08a;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.6);
+    display: none;
+}
+
+.seat.is-hakem .hakem-crown,
+.seat.is-hakem .dealer-chip {
+    display: block;
+}
+
+@keyframes crownFloat {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-3px); }
+}
+
+/* Player Nameplate */
+.nameplate {
+    margin-top: 5px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: rgba(12, 18, 14, 0.88);
+    border: 1px solid rgba(223, 177, 91, 0.45);
+    border-radius: 12px;
+    padding: 2px 10px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.6);
+    backdrop-filter: blur(4px);
+}
+
+.nameplate .pname {
+    font-size: 0.78rem;
+    font-weight: 800;
+    color: #f1f5f9;
+    white-space: nowrap;
+}
+
+.nameplate .tricks {
+    font-size: 0.68rem;
+    color: var(--gold-bright);
+    display: flex;
+    align-items: center;
+    gap: 2px;
+}
+
+.nameplate .tricks b {
+    font-size: 0.82rem;
+    font-weight: 900;
+}
+
+/* Speech Bubble */
+.bubble {
+    position: absolute;
+    bottom: 100%;
+    margin-bottom: 8px;
+    background: rgba(255, 255, 255, 0.95);
+    color: #111;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 10px;
+    white-space: nowrap;
+    opacity: 0;
+    transform: translateY(6px);
+    transition: all 0.25s ease;
+    pointer-events: none;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+}
+
+.bubble.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* --------------------------------------------------------------------------
+   Top HUD Header (Score, Trump, Controls)
+   -------------------------------------------------------------------------- */
+.hud {
+    position: absolute;
+    top: 12px;
+    left: 14px;
+    right: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    z-index: 20;
+    pointer-events: none;
+}
+
+.hud > * {
+    pointer-events: auto;
+}
+
+/* Team Scoreboard */
+.score-box {
+    display: flex;
+    align-items: center;
+    background: rgba(10, 15, 12, 0.88);
+    border: 1.5px solid var(--gold);
+    border-radius: 18px;
+    padding: 4px 14px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.7);
+    backdrop-filter: blur(8px);
+}
+
+.team {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 52px;
+}
+
+.team-label {
+    font-size: 0.65rem;
+    color: #94a3b8;
+    font-weight: 700;
+}
+
+.team-score {
+    font-size: 1.5rem;
+    font-weight: 900;
+    line-height: 1.1;
+    color: #fff;
+}
+
+.team-us .team-score {
+    color: #4ade80;
+}
+
+.team-them .team-score {
+    color: #f87171;
+}
+
+.team-tricks {
+    font-size: 0.65rem;
+    color: var(--gold);
+}
+
+.score-sep {
+    margin: 0 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    color: var(--gold-dark);
+    font-size: 0.65rem;
+}
+
+.score-sep b {
+    font-size: 1.1rem;
+    color: var(--gold);
+}
+
+/* Current Trump Display Badge */
+.trump-box {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(10, 15, 12, 0.88);
+    border: 1.5px solid var(--gold);
+    border-radius: 18px;
+    padding: 5px 14px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.7);
+    backdrop-filter: blur(8px);
+}
+
+.trump-label {
+    font-size: 0.75rem;
+    font-weight: 800;
+    color: #cbd5e1;
+}
+
+.trump-suit {
+    font-size: 1.4rem;
+    line-height: 1;
+    font-weight: 900;
+}
+
+.trump-suit.red { color: #ef4444; }
+.trump-suit.black { color: #f8fafc; }
+
+/* Control Buttons */
+.hud-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.icon-btn {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: rgba(15, 23, 18, 0.85);
+    border: 1.5px solid var(--gold);
+    color: var(--gold-bright);
+    font-size: 1rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.6);
+}
+
+.icon-btn:hover {
+    background: var(--gold);
+    color: #111;
+    transform: scale(1.08);
+}
+
+/* --------------------------------------------------------------------------
+   CODEPEN PLAYING CARDS IMPLEMENTATION & STYLING
+   Source design inspired by Abhijit Darji (Scalable CSS Playing Cards)
+   -------------------------------------------------------------------------- */
+.card-stage {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 8;
+}
+
+.card {
+    position: absolute;
+    width: 16em;
+    height: 22.4em;
+    font-size: var(--card-font-size);
+    border-radius: 1em;
+    background: #fff;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45), 0 1px 3px rgba(0,0,0,0.3);
+    cursor: default;
+    transform-origin: center center;
+    transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.3, 1), box-shadow 0.25s ease;
+    backface-visibility: hidden;
+    pointer-events: auto;
+}
+
+.card-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    border-radius: 1em;
+    overflow: hidden;
+    background: #fff;
+}
+
+/* Card Suit Colors */
+.card.heart, .card.diamond {
+    color: #df0000;
+}
+
+.card.spade, .card.club {
+    color: #1a1a1a;
+}
+
+/* Corner Number & Suit */
+.card .corner {
+    line-height: 1;
+    position: absolute;
+    text-align: center;
+    width: 2.2em;
+}
+
+.card .corner span {
+    display: block;
+    font-size: 1.4em;
+    font-weight: bold;
+    line-height: 1;
+}
+
+.card .corner .number {
+    font-size: 2.05em;
+    font-weight: 900;
+    line-height: 1;
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+}
+
+.card .corner.top {
+    left: 0.64em;
+    top: 0.72em;
+}
+
+.card .corner.bottom {
+    bottom: 0.72em;
+    right: 0.64em;
+    transform: rotate(180deg);
+}
+
+/* Pip Suits Positioning (exact Codepen formula) */
+.card .suit {
+    font-size: 4.8em;
+    font-weight: normal;
+    width: 0.689655172413793em;
+    height: 0.786206896551724em;
+    line-height: 0.786206896551724em;
+    position: absolute;
+    text-align: center;
+}
+
+.card .suit.top_center {
+    left: 1.048275862068966em;
+    top: 0.331034482758621em;
+}
+.card .suit.top_left {
+    left: 0.413793103448276em;
+    top: 0.331034482758621em;
+}
+.card .suit.top_right {
+    right: 0.413793103448276em;
+    top: 0.331034482758621em;
+}
+.card .suit.middle_center {
+    left: 1.048275862068966em;
+    top: 1.517241379310345em;
+}
+.card .suit.middle_top {
+    left: 1.048275862068966em;
+    top: 0.96551724137931em;
+}
+.card .suit.middle_bottom {
+    bottom: 0.96551724137931em;
+    left: 1.048275862068966em;
+    transform: rotate(180deg);
+}
+.card .suit.middle_left {
+    left: 0.413793103448276em;
+    top: 1.517241379310345em;
+}
+.card .suit.middle_right {
+    right: 0.413793103448276em;
+    top: 1.517241379310345em;
+}
+.card .suit.middle_top_center {
+    left: 1.048275862068966em;
+    top: 0.827586206896552em;
+}
+.card .suit.middle_top_left {
+    left: 0.413793103448276em;
+    top: 1.103448275862069em;
+}
+.card .suit.middle_top_right {
+    right: 0.413793103448276em;
+    top: 1.103448275862069em;
+}
+.card .suit.middle_bottom_left {
+    bottom: 1.103448275862069em;
+    left: 0.413793103448276em;
+    transform: rotate(180deg);
+}
+.card .suit.middle_bottom_right {
+    bottom: 1.103448275862069em;
+    right: 0.413793103448276em;
+    transform: rotate(180deg);
+}
+.card .suit.middle_bottom_center {
+    bottom: 0.827586206896552em;
+    left: 1.048275862068966em;
+    transform: rotate(180deg);
+}
+.card .suit.bottom_center {
+    bottom: 0.331034482758621em;
+    left: 1.048275862068966em;
+    transform: rotate(180deg);
+}
+.card .suit.bottom_left {
+    bottom: 0.331034482758621em;
+    left: 0.413793103448276em;
+    transform: rotate(180deg);
+}
+.card .suit.bottom_right {
+    bottom: 0.331034482758621em;
+    right: 0.413793103448276em;
+    transform: rotate(180deg);
+}
+
+/* Ace Mega Pip */
+.card.card-ace span.suit.middle_center {
+    font-size: 8.8em;
+    left: 0.48em;
+    top: 0.65em;
+}
+
+/* Face Cards (Jack, Queen, King Artwork) */
+.card .face img {
+    position: absolute;
+    left: 2.56em;
+    top: 2.08em;
+    width: 10.8em;
+    height: 18.24em;
+    pointer-events: none;
+}
+
+/* Card Back Design */
+.card.back {
+    background: #0f172a;
+    border: 0.55em solid #ffffff;
+}
+
+.card.back .card-back-pattern {
+    width: 100%;
+    height: 100%;
+    background-image: url('../img/back.png');
+    background-size: cover;
+    background-position: center;
+    border-radius: 0.4em;
+}
+
+/* Interactive Player Hand States */
+.card.in-hand {
+    cursor: pointer;
+}
+
+.card.in-hand:hover {
+    transform: translateY(-24px) scale(1.08) !important;
+    box-shadow: 0 18px 35px rgba(0, 0, 0, 0.7), 0 0 15px rgba(223, 177, 91, 0.6);
+    z-index: 50 !important;
+}
+
+.card.in-hand.playable {
+    filter: drop-shadow(0 0 6px rgba(74, 222, 128, 0.7));
+}
+
+.card.in-hand.unplayable {
+    filter: brightness(0.65) grayscale(0.4);
+    cursor: not-allowed;
+}
+
+.card.in-hand.unplayable:hover {
+    transform: none !important;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+}
+
+/* Throw Card Throw Effect Keyframe Animation */
+@keyframes throwCardAnim {
+    0% {
+        transform: translate(var(--start-x), var(--start-y)) scale(0.9) rotate(var(--start-rot));
+        opacity: 0.8;
+    }
+    40% {
+        transform: translate(calc(var(--end-x) * 0.5 + var(--start-x) * 0.5), calc(var(--end-y) * 0.5 + var(--start-y) * 0.5 - 60px)) scale(1.15) rotate(calc(var(--end-rot) * 0.5));
+        box-shadow: 0 30px 60px rgba(0,0,0,0.85);
+    }
+    100% {
+        transform: translate(var(--end-x), var(--end-y)) scale(1) rotate(var(--end-rot));
+        opacity: 1;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.6);
+    }
+}
+
+.card.throwing {
+    animation: throwCardAnim 0.45s cubic-bezier(0.2, 0.9, 0.3, 1) forwards;
+}
+
+/* Collect Trick Animation to Winning Player */
+@keyframes collectTrickAnim {
+    0% {
+        transform: translate(var(--cur-x), var(--cur-y)) scale(1);
+        opacity: 1;
+    }
+    100% {
+        transform: translate(var(--target-x), var(--target-y)) scale(0.35);
+        opacity: 0;
+    }
+}
+
+.card.collecting {
+    animation: collectTrickAnim 0.55s cubic-bezier(0.5, 0, 0.2, 1) forwards;
+}
+
+/* --------------------------------------------------------------------------
+   Center Table Announcements & Notifications
+   -------------------------------------------------------------------------- */
+.announce {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.8);
+    background: radial-gradient(circle, rgba(15, 23, 18, 0.95), rgba(4, 8, 6, 0.98));
+    border: 2px solid var(--gold);
+    color: var(--gold-bright);
+    padding: 12px 28px;
+    border-radius: 999px;
+    font-size: 1.25rem;
+    font-weight: 900;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.9), 0 0 25px rgba(223, 177, 91, 0.4);
+    opacity: 0;
+    pointer-events: none;
+    z-index: 100;
+    transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+    white-space: nowrap;
+}
+
+.announce.show {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+}
+
+.toast {
+    position: absolute;
+    bottom: 120px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(220, 38, 38, 0.92);
+    color: #fff;
+    padding: 6px 18px;
+    border-radius: 999px;
+    font-size: 0.85rem;
+    font-weight: 800;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.6);
+    opacity: 0;
+    pointer-events: none;
+    z-index: 90;
+    transition: opacity 0.2s;
+}
+
+.toast.show {
+    opacity: 1;
+}
+
+/* --------------------------------------------------------------------------
+   Modals (Start Game, Trump Select, Hand End, Rules)
+   -------------------------------------------------------------------------- */
+.modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.82);
+    backdrop-filter: blur(10px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+
+.modal.show {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.modal-card.lux {
+    background: radial-gradient(circle at 50% 20%, #1e2e25 0%, #0d1712 60%, #060a08 100%);
+    border: 2px solid var(--gold);
+    border-radius: 28px;
+    padding: 32px 36px;
+    max-width: 460px;
+    width: 90%;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.9), 0 0 40px rgba(223, 177, 91, 0.3);
+    color: #fff;
+}
+
+.modal-card.compact {
+    padding: 24px 28px;
+    max-width: 400px;
+}
+
+.modal-card.rules {
+    max-width: 520px;
+    text-align: right;
+}
+
+.modal-card.rules ul {
+    list-style: none;
+    margin: 16px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    font-size: 0.84rem;
+    line-height: 1.6;
+    color: #cbd5e1;
+}
+
+.modal-card.rules li::before {
+    content: "♦ ";
+    color: var(--gold);
+    font-weight: bold;
+}
+
+.lux-suits {
+    font-size: 1.8rem;
+    letter-spacing: 12px;
+    color: var(--gold);
+    margin-bottom: 6px;
+}
+
+.lux-title {
+    font-size: 2rem;
+    font-weight: 900;
+    color: var(--gold-bright);
+    margin-bottom: 4px;
+}
+
+.lux-title.sm {
+    font-size: 1.4rem;
+}
+
+.lux-sub {
+    font-size: 0.85rem;
+    color: #94a3b8;
+    margin-bottom: 20px;
+}
+
+/* Lineup Teams */
+.lineup {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    margin-bottom: 22px;
+    background: rgba(0,0,0,0.4);
+    padding: 12px;
+    border-radius: 18px;
+    border: 1px solid rgba(223, 177, 91, 0.2);
+}
+
+.lineup-team {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+.lineup-team img {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: 2px solid var(--gold);
+    object-fit: cover;
+}
+
+.lineup-team span {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #e2e8f0;
+}
+
+.lineup .vs {
+    font-size: 1rem;
+    font-weight: 900;
+    color: var(--gold);
+}
+
+.name-field {
+    display: flex;
+    flex-direction: column;
+    text-align: right;
+    margin-bottom: 20px;
+    font-size: 0.8rem;
+    color: #cbd5e1;
+    font-weight: 700;
+    gap: 6px;
+}
+
+.name-field input {
+    background: #060b08;
+    border: 1.5px solid var(--gold);
+    border-radius: 12px;
+    padding: 10px 14px;
+    color: #fff;
+    font-family: inherit;
+    font-size: 0.95rem;
+    text-align: center;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.name-field input:focus {
+    border-color: #fef08a;
+    box-shadow: 0 0 12px rgba(223, 177, 91, 0.5);
+}
+
+.gold-btn {
+    width: 100%;
+    padding: 12px 20px;
+    border-radius: 14px;
+    border: none;
+    background: linear-gradient(135deg, #f5d485 0%, #dfb15b 50%, #8c6721 100%);
+    color: #1a1205;
+    font-family: inherit;
+    font-size: 1rem;
+    font-weight: 900;
+    cursor: pointer;
+    box-shadow: 0 6px 20px rgba(223, 177, 91, 0.4);
+    transition: all 0.2s ease;
+}
+
+.gold-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(223, 177, 91, 0.6);
+    filter: brightness(1.08);
+}
+
+.lux-note {
+    font-size: 0.68rem;
+    color: #94a3b8;
+    margin-top: 14px;
+    line-height: 1.4;
+}
+
+/* Trump Selection Grid */
+.trump-choices {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-top: 14px;
+}
+
+.suit-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: #060b08;
+    border: 2px solid var(--gold);
+    border-radius: 14px;
+    padding: 12px 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.suit-btn span {
+    font-size: 2.2rem;
+    line-height: 1;
+}
+
+.suit-btn i {
+    font-style: normal;
+    font-size: 0.72rem;
+    font-weight: 800;
+    margin-top: 4px;
+    color: #e2e8f0;
+}
+
+.suit-btn.red span { color: #ef4444; }
+.suit-btn.black span { color: #f8fafc; }
+
+.suit-btn:hover {
+    background: var(--gold);
+    transform: translateY(-4px) scale(1.05);
+    box-shadow: 0 8px 20px rgba(223, 177, 91, 0.6);
+}
+
+.suit-btn:hover i {
+    color: #111;
+}
+
+/* Match / Hand Result Modal Elements */
+.result-icon {
+    font-size: 3rem;
+    margin-bottom: 8px;
+}
+
+.result-score {
+    display: flex;
+    justify-content: space-around;
+    background: rgba(0,0,0,0.4);
+    border: 1px solid rgba(223, 177, 91, 0.3);
+    border-radius: 14px;
+    padding: 12px;
+    margin: 16px 0 20px;
+}
+
+.result-score div {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.result-score span {
+    font-size: 0.75rem;
+    color: #94a3b8;
+}
+
+.result-score b {
+    font-size: 1.8rem;
+    color: var(--gold-bright);
+}
+
+/* Confetti Canvas */
+#confetti {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 300;
+}
