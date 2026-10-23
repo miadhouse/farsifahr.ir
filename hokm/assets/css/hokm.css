@@ -571,6 +571,7 @@ html, body {
     inset: 0;
     pointer-events: none;
     z-index: 8;
+    direction: ltr;
 }
 
 .card {
@@ -586,6 +587,7 @@ html, body {
     transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.3, 1), box-shadow 0.25s ease;
     backface-visibility: hidden;
     pointer-events: auto;
+    direction: ltr;
 }
 
 .card-inner {
@@ -783,41 +785,21 @@ html, body {
     box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
 }
 
-/* Throw Card Throw Effect Keyframe Animation */
-@keyframes throwCardAnim {
-    0% {
-        transform: translate(var(--start-x), var(--start-y)) scale(0.9) rotate(var(--start-rot));
-        opacity: 0.8;
-    }
-    40% {
-        transform: translate(calc(var(--end-x) * 0.5 + var(--start-x) * 0.5), calc(var(--end-y) * 0.5 + var(--start-y) * 0.5 - 60px)) scale(1.15) rotate(calc(var(--end-rot) * 0.5));
-        box-shadow: 0 30px 60px rgba(0,0,0,0.85);
-    }
-    100% {
-        transform: translate(var(--end-x), var(--end-y)) scale(1) rotate(var(--end-rot));
-        opacity: 1;
-        box-shadow: 0 10px 25px rgba(0,0,0,0.6);
-    }
+/* Center Trick Cards & Winning Highlight */
+.card.trick-card {
+    pointer-events: none;
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.7);
 }
 
-.card.throwing {
-    animation: throwCardAnim 0.45s cubic-bezier(0.2, 0.9, 0.3, 1) forwards;
+.card.winning-trick {
+    box-shadow: 0 0 28px 8px #4ade80, 0 16px 36px rgba(0, 0, 0, 0.85) !important;
+    z-index: 70 !important;
 }
 
-/* Collect Trick Animation to Winning Player */
-@keyframes collectTrickAnim {
-    0% {
-        transform: translate(var(--cur-x), var(--cur-y)) scale(1);
-        opacity: 1;
-    }
-    100% {
-        transform: translate(var(--target-x), var(--target-y)) scale(0.35);
-        opacity: 0;
-    }
-}
-
-.card.collecting {
-    animation: collectTrickAnim 0.55s cubic-bezier(0.5, 0, 0.2, 1) forwards;
+@keyframes dustFloat {
+    0% { transform: translate(0, 0); }
+    50% { transform: translate(15px, 20px); }
+    100% { transform: translate(-10px, 35px); }
 }
 
 /* --------------------------------------------------------------------------

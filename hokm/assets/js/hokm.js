@@ -461,6 +461,7 @@
             this.leadSuit = null;
             this.turnIndex = 0; // Current player turn
             this.state = 'INITIAL'; // INITIAL, DETERMINING_HAKEM, SELECTING_TRUMP, PLAYING, ROUND_OVER, MATCH_OVER
+            this.isAnimatingPlay = false;
 
             // Floating dialogue pool for AI players
             this.dialogues = {
@@ -552,6 +553,7 @@
                 if (this.state === 'PLAYING' || this.state === 'SELECTING_TRUMP') {
                     this.renderPlayerHand();
                     this.renderOpponentHands();
+                    this.repositionCurrentTrick();
                 }
             });
         }
@@ -920,7 +922,7 @@
                 }
 
                 cardEl.addEventListener('click', () => {
-                    if (this.state !== 'PLAYING' || this.turnIndex !== 0) return;
+                    if (this.state !== 'PLAYING' || this.turnIndex !== 0 || this.isAnimatingPlay) return;
                     if (!this.isValidMove(0, card)) {
                         this.showToast('پیروی از خال زمین الزامی است!');
                         return;
@@ -1147,6 +1149,9 @@
         // Step 4: Play Card Animation & Throw Snap
         // --------------------------------------------------------------------
         async playCard(playerIndex, card, existingEl = null) {
+            if (this.isAnimatingPlay) return;
+            this.isAnimatingPlay = true;
+
             const player = this.players[playerIndex];
             const handIndex = player.hand.findIndex(c => c.id === card.id);
             if (handIndex !== -1) {
@@ -1166,42 +1171,82 @@
                 cardEl.classList.remove('in-hand', 'player-hand', 'playable', 'unplayable');
             }
 
+            cardEl.classList.add('trick-card');
             cardEl.style.pointerEvents = 'none';
 
-            // Calculate Start position (from seat) and End position (table center)
+            // Coordinates calculation relative to stage
             const stageRect = this.stage.getBoundingClientRect();
-            const seat = document.getElementById(`seat${playerIndex}`);
-            const sRect = seat.getBoundingClientRect();
+            const tableEl = document.getElementById('table') || this.tableZone;
+            const tRect = tableEl.getBoundingClientRect();
 
-            const startX = sRect.left + sRect.width / 2 - stageRect.left - cardEl.offsetWidth / 2;
-            const startY = sRect.top + sRect.height / 2 - stageRect.top - cardEl.offsetHeight / 2;
+            // Dimensions of card
+            const cardW = cardEl.offsetWidth || 80;
+            const cardH = cardEl.offsetHeight || 112;
 
-            // Target in center with slight offset based on seat
-            const centerX = stageRect.width / 2 - cardEl.offsetWidth / 2;
-            const centerY = stageRect.height / 2 - cardEl.offsetHeight / 2;
+            // Start position (from seat or clicked hand card)
+            let startX, startY, startRot = 0;
+            if (existingEl) {
+                const curRect = existingEl.getBoundingClientRect();
+                startX = curRect.left - stageRect.left;
+                startY = curRect.top - stageRect.top;
+                startRot = 0;
+            } else {
+                const seat = document.getElementById(`seat${playerIndex}`);
+                const sRect = seat ? seat.getBoundingClientRect() : tRect;
+                startX = sRect.left + sRect.width / 2 - stageRect.left - cardW / 2;
+                startY = sRect.top + sRect.height / 2 - stageRect.top - cardH / 2;
+                if (playerIndex === 1) startRot = 90;
+                else if (playerIndex === 2) startRot = 180;
+                else if (playerIndex === 3) startRot = -90;
+            }
+
+            // Target in center of felt table
+            const tableCenterX = tRect.left + tRect.width / 2 - stageRect.left;
+            const tableCenterY = tRect.top + tRect.height / 2 - stageRect.top;
+            const centerX = tableCenterX - cardW / 2;
+            const centerY = tableCenterY - cardH / 2;
 
             let endX = centerX;
             let endY = centerY;
-            let endRot = (Math.random() - 0.5) * 14;
+            let endRot = 0;
 
-            if (playerIndex === 0) { endY += 40; endRot = (Math.random() - 0.5) * 8; }
-            if (playerIndex === 1) { endX += 50; endRot = 85 + (Math.random() - 0.5) * 10; }
-            if (playerIndex === 2) { endY -= 40; endRot = 180 + (Math.random() - 0.5) * 8; }
-            if (playerIndex === 3) { endX -= 50; endRot = -85 + (Math.random() - 0.5) * 10; }
+            if (playerIndex === 0) {
+                endY += 36;
+                endRot = (Math.random() - 0.5) * 6;
+            } else if (playerIndex === 1) {
+                endX += 44;
+                endRot = 86 + (Math.random() - 0.5) * 8;
+            } else if (playerIndex === 2) {
+                endY -= 36;
+                endRot = 180 + (Math.random() - 0.5) * 6;
+            } else if (playerIndex === 3) {
+                endX -= 44;
+                endRot = -86 + (Math.random() - 0.5) * 8;
+            }
 
-            // Throw animation with CSS custom properties
-            cardEl.style.setProperty('--start-x', `${startX}px`);
-            cardEl.style.setProperty('--start-y', `${startY}px`);
-            cardEl.style.setProperty('--start-rot', `${(Math.random() - 0.5) * 30}deg`);
-            cardEl.style.setProperty('--end-x', `${endX}px`);
-            cardEl.style.setProperty('--end-y', `${endY}px`);
-            cardEl.style.setProperty('--end-rot', `${endRot}deg`);
+            // 1. Position card at start position immediately
+            cardEl.style.position = 'absolute';
+            cardEl.style.left = `${startX}px`;
+            cardEl.style.top = `${startY}px`;
+            cardEl.style.right = 'auto';
+            cardEl.style.bottom = 'auto';
+            cardEl.style.transform = `scale(0.9) rotate(${startRot}deg)`;
+            cardEl.style.opacity = '1';
+            cardEl.style.transition = 'none';
+            cardEl.style.zIndex = `${30 + this.currentTrick.length}`;
 
-            cardEl.classList.add('throwing');
-            cardEl.style.zIndex = 30 + this.currentTrick.length;
+            // Force reflow
+            cardEl.offsetHeight;
 
+            // 2. Animate to center of table
             this.sound.cardSlide();
-            setTimeout(() => this.sound.cardSnap(), 200);
+            cardEl.style.transition = 'left 0.38s cubic-bezier(0.2, 0.9, 0.3, 1), top 0.38s cubic-bezier(0.2, 0.9, 0.3, 1), transform 0.38s cubic-bezier(0.2, 0.9, 0.3, 1), box-shadow 0.38s ease';
+            cardEl.style.left = `${endX}px`;
+            cardEl.style.top = `${endY}px`;
+            cardEl.style.transform = `scale(1) rotate(${endRot}deg)`;
+            cardEl.style.boxShadow = '0 10px 25px rgba(0,0,0,0.6)';
+
+            setTimeout(() => this.sound.cardSnap(), 180);
 
             // Register played card in current trick
             this.currentTrick.push({
@@ -1209,7 +1254,8 @@
                 card,
                 element: cardEl,
                 endX,
-                endY
+                endY,
+                endRot
             });
 
             // Re-render hands
@@ -1219,7 +1265,7 @@
                 this.renderOpponentHands();
             }
 
-            // Fun dialogue bubble on cuts or high plays
+            // Fun dialogue bubble on cuts
             if (card.suitKey === this.trumpSuit && this.leadSuit !== this.trumpSuit) {
                 const phrases = player.team === 0 ? this.dialogues.partnerCut : this.dialogues.oppCut;
                 const txt = phrases[Math.floor(Math.random() * phrases.length)];
@@ -1227,6 +1273,7 @@
             }
 
             await this.sleep(450);
+            this.isAnimatingPlay = false;
 
             // Advance turn or resolve trick
             if (this.currentTrick.length < 4) {
@@ -1234,9 +1281,34 @@
                 this.startTurn();
             } else {
                 this.clearActiveTurn();
-                await this.sleep(500);
+                await this.sleep(600);
                 this.resolveTrick();
             }
+        }
+
+        repositionCurrentTrick() {
+            if (this.currentTrick.length === 0) return;
+            const stageRect = this.stage.getBoundingClientRect();
+            const tableEl = document.getElementById('table') || this.tableZone;
+            const tRect = tableEl.getBoundingClientRect();
+            const tableCenterX = tRect.left + tRect.width / 2 - stageRect.left;
+            const tableCenterY = tRect.top + tRect.height / 2 - stageRect.top;
+
+            this.currentTrick.forEach(item => {
+                const cardW = item.element.offsetWidth || 80;
+                const cardH = item.element.offsetHeight || 112;
+                let endX = tableCenterX - cardW / 2;
+                let endY = tableCenterY - cardH / 2;
+                if (item.playerIndex === 0) endY += 36;
+                else if (item.playerIndex === 1) endX += 44;
+                else if (item.playerIndex === 2) endY -= 36;
+                else if (item.playerIndex === 3) endX -= 44;
+                item.endX = endX;
+                item.endY = endY;
+                item.element.style.transition = 'none';
+                item.element.style.left = `${endX}px`;
+                item.element.style.top = `${endY}px`;
+            });
         }
 
         // --------------------------------------------------------------------
@@ -1247,9 +1319,8 @@
             const winnerItem = this.evaluateCurrentWinner();
             const winnerPlayer = this.players[winnerItem.playerIndex];
 
-            // Highlight winning card
-            winnerItem.element.style.boxShadow = '0 0 25px 6px #4ade80';
-            winnerItem.element.style.zIndex = '60';
+            // Highlight winning card in the center table!
+            winnerItem.element.classList.add('winning-trick');
 
             // Increment tricks count
             winnerPlayer.tricks += 1;
@@ -1269,7 +1340,8 @@
                 this.showBubble(1, phrase, 1800);
             }
 
-            await this.sleep(800);
+            // Keep cards in center visible for 1.1s so players clearly see who won
+            await this.sleep(1100);
 
             // Collect trick animation toward winner's seat
             const winnerSeat = document.getElementById(`seat${winnerItem.playerIndex}`);
@@ -1282,15 +1354,15 @@
             this.sound.trickCollect();
 
             this.currentTrick.forEach(item => {
-                item.element.style.setProperty('--cur-x', `${item.endX}px`);
-                item.element.style.setProperty('--cur-y', `${item.endY}px`);
-                item.element.style.setProperty('--target-x', `${targetX}px`);
-                item.element.style.setProperty('--target-y', `${targetY}px`);
-                item.element.classList.remove('throwing');
-                item.element.classList.add('collecting');
+                item.element.classList.remove('winning-trick');
+                item.element.style.transition = 'left 0.48s cubic-bezier(0.5, 0, 0.2, 1), top 0.48s cubic-bezier(0.5, 0, 0.2, 1), transform 0.48s cubic-bezier(0.5, 0, 0.2, 1), opacity 0.48s ease';
+                item.element.style.left = `${targetX}px`;
+                item.element.style.top = `${targetY}px`;
+                item.element.style.transform = 'scale(0.3) rotate(0deg)';
+                item.element.style.opacity = '0';
             });
 
-            await this.sleep(550);
+            await this.sleep(520);
 
             // Clean up trick elements
             this.currentTrick.forEach(item => item.element.remove());
