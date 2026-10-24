@@ -443,12 +443,12 @@
             this.confetti = new Confetti('confetti');
             this.deck = new Deck();
 
-            // Players: 0 = You (bottom), 1 = Bahram (right), 2 = Sara (partner/top), 3 = Niloofar (left)
+            // Players: 0 = You (bottom-right), 1 = Bahram (right), 2 = Sara (partner/top), 3 = Niloofar (left)
             this.players = [
-                { id: 0, name: 'شما', isAI: false, team: 0, seat: 0, hand: [], tricks: 0 },
-                { id: 1, name: 'استاد بهرام', isAI: true, team: 1, seat: 1, hand: [], tricks: 0 },
-                { id: 2, name: 'سارا (یار شما)', isAI: true, team: 0, seat: 2, hand: [], tricks: 0 },
-                { id: 3, name: 'نیلوفر', isAI: true, team: 1, seat: 3, hand: [], tricks: 0 }
+                { id: 0, name: 'شما', isAI: false, team: 0, seat: 0, hand: [], tricks: 0, consecutiveTimeouts: 0, totalTimeouts: 0, hasRedFlag: false },
+                { id: 1, name: 'استاد بهرام', isAI: true, team: 1, seat: 1, hand: [], tricks: 0, consecutiveTimeouts: 0, totalTimeouts: 0, hasRedFlag: false },
+                { id: 2, name: 'سارا (یار شما)', isAI: true, team: 0, seat: 2, hand: [], tricks: 0, consecutiveTimeouts: 0, totalTimeouts: 0, hasRedFlag: false },
+                { id: 3, name: 'نیلوفر', isAI: true, team: 1, seat: 3, hand: [], tricks: 0, consecutiveTimeouts: 0, totalTimeouts: 0, hasRedFlag: false }
             ];
 
             // Match score (sets of hands won, first team to 7)
@@ -460,8 +460,12 @@
             this.currentTrick = []; // Array of { playerIndex, card, element }
             this.leadSuit = null;
             this.turnIndex = 0; // Current player turn
-            this.state = 'INITIAL'; // INITIAL, DETERMINING_HAKEM, SELECTING_TRUMP, PLAYING, ROUND_OVER, MATCH_OVER
+            this.state = 'INITIAL'; // INITIAL, DETERMINING_HAKEM, SELECTING_TRUMP, PLAYING, ROUND_OVER, MATCH_OVER, ABORTED
             this.isAnimatingPlay = false;
+
+            // Timer tracking
+            this.turnTimerInterval = null;
+            this.aiTurnTimeout = null;
 
             // Floating dialogue pool for AI players
             this.dialogues = {
@@ -529,10 +533,18 @@
                 }
             });
 
+            // Red Flag (Vote to abort without result)
+            const btnRedFlag = document.getElementById('btnRedFlag');
+            if (btnRedFlag) {
+                btnRedFlag.addEventListener('click', () => {
+                    this.onUserRedFlagClick();
+                });
+            }
+
             document.getElementById('btnNext').addEventListener('click', () => {
                 this.sound.chipClick();
                 this.resultModal.classList.remove('show');
-                if (this.state === 'MATCH_OVER') {
+                if (this.state === 'MATCH_OVER' || this.state === 'ABORTED') {
                     this.startNewMatch();
                 } else {
                     this.startHand();
@@ -614,19 +626,27 @@
             this.tricksUsEl.textContent = `${this.tricks.us} دست`;
             this.tricksThemEl.textContent = `${this.tricks.them} دست`;
 
-            // Player tricks under avatar
+            // Team tricks shown on each player's seat (pooled per team)
             this.players.forEach(p => {
                 const seat = document.getElementById(`seat${p.seat}`);
                 if (seat) {
                     const tc = seat.querySelector('.tcount');
-                    if (tc) tc.textContent = p.tricks;
+                    const teamTricks = p.team === 0 ? this.tricks.us : this.tricks.them;
+                    if (tc) tc.textContent = teamTricks;
                     if (this.hakem === p.id) {
                         seat.classList.add('is-hakem');
                     } else {
                         seat.classList.remove('is-hakem');
                     }
+                    if (p.hasRedFlag) {
+                        seat.classList.add('has-flag');
+                    } else {
+                        seat.classList.remove('has-flag');
+                    }
                 }
             });
+
+            this.updateFlagTally();
 
             // Trump display
             if (this.trumpSuit) {
@@ -650,17 +670,240 @@
         }
 
         clearActiveTurn() {
+            this.stopTurnTimer();
             document.querySelectorAll('.seat').forEach(seat => seat.classList.remove('active-turn'));
+        }
+
+        // --------------------------------------------------------------------
+        // Red Flag Voting System (پایان بازی بدون نتیجه با ۳ رأی پرچم قرمز)
+        // --------------------------------------------------------------------
+        onUserRedFlagClick() {
+            if (this.state !== 'PLAYING') {
+                this.showToast('پرچم قرمز فقط در حین دور بازی قابل اعلام است.');
+                return;
+            }
+
+            const me = this.players[0];
+            if (me.hasRedFlag) {
+                const total = this.players.filter(p => p.hasRedFlag).length;
+                this.showToast(`شما قبلاً پرچم قرمز داده‌اید (${total} از ۳ رأی ثبت شده).`);
+                return;
+            }
+
+            this.activateRedFlag(0, false);
+        }
+
+        activateRedFlag(playerIndex, isAuto = false, reason = '') {
+            const player = this.players[playerIndex];
+            if (player.hasRedFlag) return;
+
+            player.hasRedFlag = true;
+            const seat = document.getElementById(`seat${player.seat}`);
+            if (seat) {
+                seat.classList.add('has-flag');
+            }
+
+            if (playerIndex === 0) {
+                const btnFlag = document.getElementById('btnRedFlag');
+                if (btnFlag) btnFlag.classList.add('voted');
+            }
+
+            this.sound.cardSnap();
+            this.updateHUD();
+
+            const msg = isAuto
+                ? `🚩 پرچم قرمز برای ${player.name} فعال شد (${reason}).`
+                : `🚩 ${player.name} پرچم قرمز داد (درخواست لغو بازی بدون نتیجه).`;
+            this.showToast(msg, 2600);
+
+            // Check if 3 players gave red flag:
+            const totalFlags = this.players.filter(p => p.hasRedFlag).length;
+            if (totalFlags >= 3) {
+                setTimeout(() => this.abortGameByRedFlag(), 800);
+                return;
+            }
+
+            // If human player voted, partner and opponent can join vote
+            if (playerIndex === 0 && !isAuto) {
+                this.simulateAIRedFlagVotes();
+            }
+        }
+
+        simulateAIRedFlagVotes() {
+            // Partner agrees after 1.5s
+            setTimeout(() => {
+                if (this.state !== 'PLAYING') return;
+                if (!this.players[2].hasRedFlag) {
+                    this.activateRedFlag(2, false);
+                    this.showBubble(2, 'من هم موافقم، پرچم قرمز دادم 🚩', 2200);
+                }
+            }, 1400);
+
+            // Opponent also agrees after 2.8s
+            setTimeout(() => {
+                if (this.state !== 'PLAYING') return;
+                const total = this.players.filter(p => p.hasRedFlag).length;
+                if (total < 3 && !this.players[1].hasRedFlag) {
+                    this.activateRedFlag(1, false);
+                    this.showBubble(1, 'من هم موافقم، بازی پایان یابد 🚩', 2200);
+                }
+            }, 2800);
+        }
+
+        updateFlagTally() {
+            const count = this.players.filter(p => p.hasRedFlag).length;
+            const el = document.getElementById('flagTally');
+            if (el) {
+                const faDigits = ['۰', '۱', '۲', '۳', '۴'];
+                el.textContent = `${faDigits[count] || count}/۳`;
+            }
+        }
+
+        abortGameByRedFlag() {
+            this.state = 'ABORTED';
+            this.stopTurnTimer();
+
+            const rIcon = document.getElementById('resultIcon');
+            const rTitle = document.getElementById('resultTitle');
+            const rText = document.getElementById('resultText');
+            const rsUs = document.getElementById('rsUs');
+            const rsThem = document.getElementById('rsThem');
+            const btnNext = document.getElementById('btnNext');
+
+            if (rIcon) rIcon.textContent = '🚩';
+            if (rTitle) rTitle.textContent = 'پایان بازی بدون نتیجه';
+            if (rText) rText.textContent = '۳ نفر از اعضای اتاق پرچم قرمز دادند و این مسابقه بدون برنده یا بازنده خاتمه یافت.';
+            if (rsUs) rsUs.textContent = this.score.us;
+            if (rsThem) rsThem.textContent = this.score.them;
+            if (btnNext) btnNext.textContent = 'شروع مسابقه جدید';
+
+            this.resultModal.classList.add('show');
+            this.showAnnounce('🚩 بازی بدون نتیجه پایان یافت', 3200);
+            this.sound.winFanfare();
+        }
+
+        // --------------------------------------------------------------------
+        // Circular Turn Timer Engine (نوار باریک گرد سبز به زرد و تایمر نوبت)
+        // --------------------------------------------------------------------
+        startTurnTimer(playerIndex, durationSeconds) {
+            this.stopTurnTimer();
+            const seat = document.getElementById(`seat${playerIndex}`);
+            if (!seat) return;
+
+            const timerProg = seat.querySelector('.timer-prog');
+            const timerBadge = seat.querySelector('.timer-badge');
+
+            const totalMs = durationSeconds * 1000;
+            const startTime = performance.now();
+            const CIRCUMFERENCE = 251.33; // 2 * PI * 40
+
+            if (timerBadge) {
+                timerBadge.textContent = durationSeconds;
+            }
+            if (timerProg) {
+                timerProg.style.strokeDashoffset = '0';
+                timerProg.style.stroke = '#22c55e';
+            }
+
+            seat.classList.remove('timer-hurry');
+            if (durationSeconds <= 3) {
+                seat.classList.add('timer-hurry');
+                if (timerProg) timerProg.style.stroke = '#ef4444';
+            }
+
+            this.turnTimerInterval = setInterval(() => {
+                if (this.state !== 'PLAYING' || this.turnIndex !== playerIndex) {
+                    this.stopTurnTimer();
+                    return;
+                }
+
+                const elapsed = performance.now() - startTime;
+                const remainingMs = Math.max(0, totalMs - elapsed);
+                const progress = remainingMs / totalMs; // 1 down to 0
+                const secondsLeft = Math.ceil(remainingMs / 1000);
+
+                if (timerBadge) {
+                    timerBadge.textContent = secondsLeft;
+                }
+
+                if (timerProg) {
+                    const offset = CIRCUMFERENCE * (1 - progress);
+                    timerProg.style.strokeDashoffset = `${offset}`;
+
+                    if (progress > 0.45) {
+                        timerProg.style.stroke = '#22c55e';
+                        seat.classList.remove('timer-hurry');
+                    } else if (progress > 0.22) {
+                        timerProg.style.stroke = '#eab308';
+                        seat.classList.remove('timer-hurry');
+                    } else {
+                        timerProg.style.stroke = '#ef4444';
+                        seat.classList.add('timer-hurry');
+                    }
+                }
+
+                if (remainingMs <= 0) {
+                    this.stopTurnTimer();
+                    this.onTurnTimeout(playerIndex);
+                }
+            }, 50);
+        }
+
+        stopTurnTimer() {
+            if (this.turnTimerInterval) {
+                clearInterval(this.turnTimerInterval);
+                this.turnTimerInterval = null;
+            }
+            if (this.aiTurnTimeout) {
+                clearTimeout(this.aiTurnTimeout);
+                this.aiTurnTimeout = null;
+            }
+            document.querySelectorAll('.seat').forEach(s => {
+                s.classList.remove('timer-hurry');
+                const prog = s.querySelector('.timer-prog');
+                if (prog) prog.style.strokeDashoffset = '0';
+            });
+        }
+
+        onTurnTimeout(playerIndex) {
+            if (this.state !== 'PLAYING' || this.turnIndex !== playerIndex) return;
+            const player = this.players[playerIndex];
+
+            player.consecutiveTimeouts++;
+            player.totalTimeouts++;
+
+            if (playerIndex === 0) {
+                this.showToast(`زمان نوبت پایان یافت! سیستم به جای شما بازی کرد (تأخیر متوالی: ${player.consecutiveTimeouts}).`, 2200);
+            }
+
+            // "چنانچه ده دست بازی نکرد و سیستم به جاش برگ زد، پرچم قرمزش اتوماتیک فعال بشه"
+            if (player.totalTimeouts >= 10 && !player.hasRedFlag) {
+                this.activateRedFlag(playerIndex, true, '۱۰ بار بازی خودکار');
+            }
+
+            const autoCard = this.aiChooseCard(playerIndex);
+            this.playCard(playerIndex, autoCard, null, true /* isAutoTimeout */);
         }
 
         // --------------------------------------------------------------------
         // Start New Match
         // --------------------------------------------------------------------
         startNewMatch() {
+            this.stopTurnTimer();
             this.score.us = 0;
             this.score.them = 0;
             this.hakem = null;
             this.stage.innerHTML = '';
+            this.players.forEach(p => {
+                p.hasRedFlag = false;
+                p.consecutiveTimeouts = 0;
+                p.totalTimeouts = 0;
+                p.tricks = 0;
+            });
+            document.querySelectorAll('.seat').forEach(s => s.classList.remove('has-flag'));
+            const btnFlag = document.getElementById('btnRedFlag');
+            if (btnFlag) btnFlag.classList.remove('voted');
+            this.updateFlagTally();
             this.updateHUD();
             this.determineHakem();
         }
@@ -885,15 +1128,21 @@
             if (count === 0) return;
 
             const stageRect = this.stage.getBoundingClientRect();
-            const centerX = stageRect.width / 2;
-            const bottomY = stageRect.height - 18;
 
-            // Compute spacing based on screen width
+            // Compute spacing and card width based on screen width
             const isMobile = stageRect.width < 600;
-            const cardWidth = isMobile ? 68 : (stageRect.width < 900 ? 80 : 96);
-            const maxSpread = Math.min(stageRect.width * 0.88, count * (cardWidth * 0.42) + cardWidth);
+            const cardWidth = isMobile ? 52 : (stageRect.width < 900 ? 62 : 72);
+            const cardHeight = cardWidth * 1.4;
+
+            // Hand center: keep clear of seat-0 at bottom-right
+            const handCenterX = isMobile ? (stageRect.width - 110) / 2 : stageRect.width / 2;
+            const maxSpread = Math.min(
+                isMobile ? (stageRect.width - 130) : (stageRect.width * 0.65),
+                count * (cardWidth * (isMobile ? 0.35 : 0.44)) + cardWidth
+            );
             const stepX = count > 1 ? maxSpread / (count - 1) : 0;
-            const startX = centerX - maxSpread / 2;
+            const startX = handCenterX - maxSpread / 2;
+            const bottomY = stageRect.height - 8;
 
             player.hand.forEach((card, i) => {
                 const cardEl = card.renderDOM();
@@ -903,8 +1152,8 @@
                 const centerOffset = i - (count - 1) / 2;
                 const posX = startX + i * stepX - cardWidth / 2;
                 // Parabolic vertical curve
-                const posY = bottomY - 110 + Math.abs(centerOffset) * (isMobile ? 3 : 5);
-                const rot = centerOffset * (isMobile ? 2.2 : 3);
+                const posY = bottomY - cardHeight + Math.abs(centerOffset) * (isMobile ? 2 : 3);
+                const rot = centerOffset * (isMobile ? 2.0 : 2.6);
 
                 cardEl.style.left = `${posX}px`;
                 cardEl.style.top = `${posY}px`;
@@ -1010,20 +1259,26 @@
         startTurn() {
             if (this.state !== 'PLAYING') return;
 
+            this.stopTurnTimer();
             this.setActiveTurn(this.turnIndex);
             this.renderPlayerHand();
 
+            const curPlayer = this.players[this.turnIndex];
+
+            // Turn duration: if 3 consecutive timeouts, accelerate to 3s, else normal 10s
+            const duration = curPlayer.consecutiveTimeouts >= 3 ? 3 : 10;
+            this.startTurnTimer(this.turnIndex, duration);
+
             if (this.turnIndex === 0) {
-                // Human turn: wait for click
+                // Human turn: wait for click or timer expiry
                 return;
             }
 
             // AI turn
-            const aiPlayer = this.players[this.turnIndex];
-            const thinkDelay = Math.floor(Math.random() * 400) + 600;
+            const thinkDelay = curPlayer.consecutiveTimeouts >= 3 ? 350 : (Math.floor(Math.random() * 500) + 700);
 
-            setTimeout(() => {
-                if (this.state !== 'PLAYING') return;
+            this.aiTurnTimeout = setTimeout(() => {
+                if (this.state !== 'PLAYING' || this.turnIndex !== curPlayer.id) return;
                 const chosenCard = this.aiChooseCard(this.turnIndex);
                 this.playCard(this.turnIndex, chosenCard);
             }, thinkDelay);
@@ -1148,11 +1403,21 @@
         // --------------------------------------------------------------------
         // Step 4: Play Card Animation & Throw Snap
         // --------------------------------------------------------------------
-        async playCard(playerIndex, card, existingEl = null) {
+        async playCard(playerIndex, card, existingEl = null, isAutoTimeout = false) {
+            this.stopTurnTimer();
             if (this.isAnimatingPlay) return;
             this.isAnimatingPlay = true;
 
             const player = this.players[playerIndex];
+
+            // If player played manually, reset consecutive timeouts back to 0
+            if (!isAutoTimeout && playerIndex === 0) {
+                if (player.consecutiveTimeouts > 0) {
+                    player.consecutiveTimeouts = 0;
+                    this.showToast('به بازی برگشتید؛ زمان نوبت به ۱۰ ثانیه بازگشت.', 2000);
+                }
+            }
+
             const handIndex = player.hand.findIndex(c => c.id === card.id);
             if (handIndex !== -1) {
                 player.hand.splice(handIndex, 1);
@@ -1315,6 +1580,7 @@
         // Step 5: Resolve Trick (Winner Determination & Trick Sweep)
         // --------------------------------------------------------------------
         async resolveTrick() {
+            this.stopTurnTimer();
             this.state = 'TRICK_RESOLVE';
             const winnerItem = this.evaluateCurrentWinner();
             const winnerPlayer = this.players[winnerItem.playerIndex];
@@ -1384,6 +1650,7 @@
         // Step 6: Hand End (Scoring: Normal 1pt, Kot 2pts, Hakem-Kot 3pts)
         // --------------------------------------------------------------------
         async resolveHand() {
+            this.stopTurnTimer();
             this.state = 'HAND_OVER';
             const weWon = this.tricks.us >= 7;
             const hakemTeam = this.players[this.hakem].team;

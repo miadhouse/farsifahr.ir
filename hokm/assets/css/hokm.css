@@ -12,32 +12,32 @@
     --wood-rim: #1f110b;
     --wood-highlight: #452618;
     --bg-dark: #07090b;
-    --card-w: 72px;
-    --card-h: 101px;
-    --card-font-size: 4.5px;
+    --card-w: 52px;
+    --card-h: 73px;
+    --card-font-size: 3.2px;
 }
 
 @media (min-width: 600px) {
     :root {
-        --card-w: 80px;
-        --card-h: 112px;
-        --card-font-size: 5px;
+        --card-w: 61px;
+        --card-h: 85px;
+        --card-font-size: 3.8px;
     }
 }
 
 @media (min-width: 900px) {
     :root {
-        --card-w: 96px;
-        --card-h: 134.4px;
-        --card-font-size: 6px;
+        --card-w: 70px;
+        --card-h: 99px;
+        --card-font-size: 4.4px;
     }
 }
 
 @media (min-width: 1200px) {
     :root {
-        --card-w: 112px;
-        --card-h: 156.8px;
-        --card-font-size: 7px;
+        --card-w: 80px;
+        --card-h: 112px;
+        --card-font-size: 5.0px;
     }
 }
 
@@ -255,10 +255,18 @@ html, body {
 }
 
 /* Seat Positions */
-.seat-0 { /* You / Bottom */
+.seat-0 { /* You / Bottom Right (Clear of cards) */
     bottom: 14px;
-    left: 50%;
-    transform: translateX(-50%);
+    right: 28px;
+    left: auto;
+    transform: none;
+}
+
+@media (max-width: 600px) {
+    .seat-0 {
+        bottom: 10px;
+        right: 6px;
+    }
 }
 
 .seat-1 { /* Right Opponent */
@@ -315,8 +323,8 @@ html, body {
     position: absolute;
     inset: -7px;
     border-radius: 50%;
-    border: 3px solid #22c55e;
-    box-shadow: 0 0 16px #22c55e, inset 0 0 10px #22c55e;
+    border: 3px solid rgba(34, 197, 94, 0.4);
+    box-shadow: 0 0 16px rgba(34, 197, 94, 0.3);
     opacity: 0;
     transform: scale(0.92);
     transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -326,12 +334,101 @@ html, body {
 .seat.active-turn .turn-ring {
     opacity: 1;
     transform: scale(1);
-    animation: turnPulse 1.6s infinite alternate;
 }
 
-@keyframes turnPulse {
-    0% { box-shadow: 0 0 10px #22c55e; border-color: #22c55e; }
-    100% { box-shadow: 0 0 25px #4ade80, 0 0 8px #fff; border-color: #4ade80; }
+/* Circular Turn Timer Progress SVG */
+.timer-ring-svg {
+    position: absolute;
+    inset: -8px;
+    width: calc(100% + 16px);
+    height: calc(100% + 16px);
+    transform: rotate(-90deg);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.25s ease;
+    z-index: 4;
+}
+
+.seat.active-turn .timer-ring-svg {
+    opacity: 1;
+}
+
+.timer-track {
+    fill: none;
+    stroke: rgba(255, 255, 255, 0.12);
+    stroke-width: 3.5px;
+}
+
+.timer-prog {
+    fill: none;
+    stroke: #22c55e;
+    stroke-width: 3.5px;
+    stroke-linecap: round;
+    stroke-dasharray: 251.33;
+    stroke-dashoffset: 0;
+    transition: stroke-dashoffset 0.08s linear, stroke 0.25s ease;
+}
+
+/* Timer Countdown Seconds Badge */
+.timer-badge {
+    position: absolute;
+    top: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(10, 16, 12, 0.95);
+    border: 1.5px solid #22c55e;
+    color: #4ade80;
+    font-size: 0.65rem;
+    font-weight: 900;
+    padding: 0 5px;
+    border-radius: 999px;
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.2s ease;
+    z-index: 8;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.7);
+    line-height: 1.3;
+}
+
+.seat.active-turn .timer-badge {
+    opacity: 1;
+}
+
+.seat.timer-hurry .timer-badge {
+    border-color: #ef4444;
+    color: #ef4444;
+    animation: hurryPulse 0.5s infinite alternate;
+}
+
+.seat.timer-hurry .timer-prog {
+    stroke: #ef4444 !important;
+    filter: drop-shadow(0 0 6px rgba(239, 68, 68, 0.8));
+}
+
+@keyframes hurryPulse {
+    0% { transform: translateX(-50%) scale(1); }
+    100% { transform: translateX(-50%) scale(1.18); }
+}
+
+/* Red Flag Badge on Seat */
+.flag-badge {
+    position: absolute;
+    bottom: -6px;
+    right: -6px;
+    font-size: 1.15rem;
+    filter: drop-shadow(0 2px 5px rgba(220, 38, 38, 0.9));
+    display: none;
+    animation: flagPop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+    z-index: 9;
+}
+
+.seat.has-flag .flag-badge {
+    display: block;
+}
+
+@keyframes flagPop {
+    0% { transform: scale(0) rotate(-25deg); }
+    100% { transform: scale(1) rotate(0deg); }
 }
 
 /* Hakem Crown & Badge */
@@ -562,6 +659,37 @@ html, body {
     transform: scale(1.08);
 }
 
+.red-flag-btn {
+    width: auto !important;
+    padding: 0 10px !important;
+    border-radius: 999px !important;
+    gap: 5px;
+    font-size: 0.8rem;
+    font-weight: 800;
+    color: #fca5a5;
+    border-color: rgba(239, 68, 68, 0.6);
+    background: rgba(30, 15, 15, 0.88);
+}
+
+.red-flag-btn:hover {
+    background: rgba(220, 38, 38, 0.3) !important;
+    color: #fff !important;
+    border-color: #ef4444 !important;
+}
+
+.red-flag-btn.voted {
+    background: #dc2626 !important;
+    color: #fff !important;
+    border-color: #fca5a5 !important;
+    box-shadow: 0 0 14px rgba(239, 68, 68, 0.8);
+}
+
+.flag-tally {
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+}
+
 /* --------------------------------------------------------------------------
    CODEPEN PLAYING CARDS IMPLEMENTATION & STYLING
    Source design inspired by Abhijit Darji (Scalable CSS Playing Cards)
@@ -641,105 +769,130 @@ html, body {
     transform: rotate(180deg);
 }
 
-/* Pip Suits Positioning (exact Codepen formula) */
+/* Pip Suits Positioning — Centered & Symmetrical */
 .card .suit {
     font-size: 4.8em;
     font-weight: normal;
-    width: 0.689655172413793em;
-    height: 0.786206896551724em;
-    line-height: 0.786206896551724em;
+    width: 0.85em;
+    height: 0.85em;
+    line-height: 1;
     position: absolute;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     text-align: center;
+    transform-origin: center center;
 }
 
+/* Top row */
 .card .suit.top_center {
-    left: 1.048275862068966em;
-    top: 0.331034482758621em;
+    left: 50%;
+    top: 18%;
+    transform: translate(-50%, -50%);
 }
 .card .suit.top_left {
-    left: 0.413793103448276em;
-    top: 0.331034482758621em;
+    left: 27%;
+    top: 18%;
+    transform: translate(-50%, -50%);
 }
 .card .suit.top_right {
-    right: 0.413793103448276em;
-    top: 0.331034482758621em;
+    left: 73%;
+    top: 18%;
+    transform: translate(-50%, -50%);
 }
-.card .suit.middle_center {
-    left: 1.048275862068966em;
-    top: 1.517241379310345em;
-}
+
+/* Middle Top row */
 .card .suit.middle_top {
-    left: 1.048275862068966em;
-    top: 0.96551724137931em;
-}
-.card .suit.middle_bottom {
-    bottom: 0.96551724137931em;
-    left: 1.048275862068966em;
-    transform: rotate(180deg);
-}
-.card .suit.middle_left {
-    left: 0.413793103448276em;
-    top: 1.517241379310345em;
-}
-.card .suit.middle_right {
-    right: 0.413793103448276em;
-    top: 1.517241379310345em;
+    left: 50%;
+    top: 32%;
+    transform: translate(-50%, -50%);
 }
 .card .suit.middle_top_center {
-    left: 1.048275862068966em;
-    top: 0.827586206896552em;
+    left: 50%;
+    top: 29%;
+    transform: translate(-50%, -50%);
 }
 .card .suit.middle_top_left {
-    left: 0.413793103448276em;
-    top: 1.103448275862069em;
+    left: 27%;
+    top: 37%;
+    transform: translate(-50%, -50%);
 }
 .card .suit.middle_top_right {
-    right: 0.413793103448276em;
-    top: 1.103448275862069em;
+    left: 73%;
+    top: 37%;
+    transform: translate(-50%, -50%);
 }
+
+/* Center row */
+.card .suit.middle_center {
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+}
+.card .suit.middle_left {
+    left: 27%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+}
+.card .suit.middle_right {
+    left: 73%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+}
+
+/* Middle Bottom row */
 .card .suit.middle_bottom_left {
-    bottom: 1.103448275862069em;
-    left: 0.413793103448276em;
-    transform: rotate(180deg);
+    left: 27%;
+    bottom: 37%;
+    transform: translate(-50%, 50%) rotate(180deg);
 }
 .card .suit.middle_bottom_right {
-    bottom: 1.103448275862069em;
-    right: 0.413793103448276em;
-    transform: rotate(180deg);
+    left: 73%;
+    bottom: 37%;
+    transform: translate(-50%, 50%) rotate(180deg);
 }
 .card .suit.middle_bottom_center {
-    bottom: 0.827586206896552em;
-    left: 1.048275862068966em;
-    transform: rotate(180deg);
+    left: 50%;
+    bottom: 29%;
+    transform: translate(-50%, 50%) rotate(180deg);
 }
+.card .suit.middle_bottom {
+    left: 50%;
+    bottom: 32%;
+    transform: translate(-50%, 50%) rotate(180deg);
+}
+
+/* Bottom row */
 .card .suit.bottom_center {
-    bottom: 0.331034482758621em;
-    left: 1.048275862068966em;
-    transform: rotate(180deg);
+    left: 50%;
+    bottom: 18%;
+    transform: translate(-50%, 50%) rotate(180deg);
 }
 .card .suit.bottom_left {
-    bottom: 0.331034482758621em;
-    left: 0.413793103448276em;
-    transform: rotate(180deg);
+    left: 27%;
+    bottom: 18%;
+    transform: translate(-50%, 50%) rotate(180deg);
 }
 .card .suit.bottom_right {
-    bottom: 0.331034482758621em;
-    right: 0.413793103448276em;
-    transform: rotate(180deg);
+    left: 73%;
+    bottom: 18%;
+    transform: translate(-50%, 50%) rotate(180deg);
 }
 
 /* Ace Mega Pip */
 .card.card-ace span.suit.middle_center {
-    font-size: 8.8em;
-    left: 0.48em;
-    top: 0.65em;
+    font-size: 8.6em;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
 }
 
 /* Face Cards (Jack, Queen, King Artwork) */
 .card .face img {
     position: absolute;
-    left: 2.56em;
-    top: 2.08em;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
     width: 10.8em;
     height: 18.24em;
     pointer-events: none;

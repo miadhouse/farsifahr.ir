@@ -7,7 +7,7 @@
     <title>حکم رویال | Hokm Royale</title>
     <link rel="preconnect" href="https://cdn.jsdelivr.net">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css">
-    <link rel="stylesheet" href="assets/css/hokm.css?v=1.1">
+    <link rel="stylesheet" href="assets/css/hokm.css?v=1.2">
 </head>
 <body>
     <!-- Room ambience: hanging lamp, light cone, floating dust -->
@@ -43,53 +43,77 @@
         <!-- Player seats (0 = you/bottom, 1 = right, 2 = partner/top, 3 = left) -->
         <div class="seat seat-0" id="seat0" data-seat="0">
             <div class="avatar-wrap">
+                <svg class="timer-ring-svg" viewBox="0 0 88 88" aria-hidden="true">
+                    <circle class="timer-track" cx="44" cy="44" r="40" />
+                    <circle class="timer-prog" cx="44" cy="44" r="40" />
+                </svg>
                 <div class="turn-ring"></div>
                 <img class="avatar" src="assets/img/avatars/p0.png" alt="" onerror="this.classList.add('no-img')">
+                <span class="timer-badge">۱۰</span>
                 <span class="hakem-crown" title="حاکم">👑</span>
                 <span class="dealer-chip">حاکم</span>
+                <span class="flag-badge" title="پرچم قرمز فعال شد">🚩</span>
             </div>
             <div class="nameplate">
                 <span class="pname">شما</span>
-                <span class="tricks"><b class="tcount">0</b><i>دست</i></span>
+                <span class="tricks"><b class="tcount">0</b><i>دست (ما)</i></span>
             </div>
             <div class="bubble"></div>
         </div>
         <div class="seat seat-1" id="seat1" data-seat="1">
             <div class="avatar-wrap">
+                <svg class="timer-ring-svg" viewBox="0 0 88 88" aria-hidden="true">
+                    <circle class="timer-track" cx="44" cy="44" r="40" />
+                    <circle class="timer-prog" cx="44" cy="44" r="40" />
+                </svg>
                 <div class="turn-ring"></div>
                 <img class="avatar" src="assets/img/avatars/p1.png" alt="" onerror="this.classList.add('no-img')">
+                <span class="timer-badge">۱۰</span>
                 <span class="hakem-crown" title="حاکم">👑</span>
                 <span class="dealer-chip">حاکم</span>
+                <span class="flag-badge" title="پرچم قرمز فعال شد">🚩</span>
             </div>
             <div class="nameplate">
                 <span class="pname">استاد بهرام</span>
-                <span class="tricks"><b class="tcount">0</b><i>دست</i></span>
+                <span class="tricks"><b class="tcount">0</b><i>دست (حریف)</i></span>
             </div>
             <div class="bubble"></div>
         </div>
         <div class="seat seat-2" id="seat2" data-seat="2">
             <div class="avatar-wrap">
+                <svg class="timer-ring-svg" viewBox="0 0 88 88" aria-hidden="true">
+                    <circle class="timer-track" cx="44" cy="44" r="40" />
+                    <circle class="timer-prog" cx="44" cy="44" r="40" />
+                </svg>
                 <div class="turn-ring"></div>
                 <img class="avatar" src="assets/img/avatars/p2.png" alt="" onerror="this.classList.add('no-img')">
+                <span class="timer-badge">۱۰</span>
                 <span class="hakem-crown" title="حاکم">👑</span>
                 <span class="dealer-chip">حاکم</span>
+                <span class="flag-badge" title="پرچم قرمز فعال شد">🚩</span>
             </div>
             <div class="nameplate">
                 <span class="pname">سارا (یار شما)</span>
-                <span class="tricks"><b class="tcount">0</b><i>دست</i></span>
+                <span class="tricks"><b class="tcount">0</b><i>دست (ما)</i></span>
             </div>
             <div class="bubble"></div>
         </div>
         <div class="seat seat-3" id="seat3" data-seat="3">
             <div class="avatar-wrap">
+                <svg class="timer-ring-svg" viewBox="0 0 88 88" aria-hidden="true">
+                    <circle class="timer-track" cx="44" cy="44" r="40" />
+                    <circle class="timer-prog" cx="44" cy="44" r="40" />
+                </svg>
                 <div class="turn-ring"></div>
                 <img class="avatar" src="assets/img/avatars/p3.png" alt="" onerror="this.classList.add('no-img')">
+                <span class="timer-badge">۱۰</span>
                 <span class="hakem-crown" title="حاکم">👑</span>
                 <span class="dealer-chip">حاکم</span>
+                <span class="flag-badge" title="پرچم قرمز فعال شد">🚩</span>
             </div>
             <div class="nameplate">
                 <span class="pname">نیلوفر</span>
-                <span class="tricks"><b class="tcount">0</b><i>دست</i></span>
+                <span class="tricks"><b class="tcount">0</b><i>دست (حریف)</i></span>
             </div>
             <div class="bubble"></div>
         </div>
@@ -120,6 +144,7 @@
             <span class="trump-suit" id="trumpSuit">—</span>
         </div>
         <div class="hud-actions">
+            <button class="icon-btn red-flag-btn" id="btnRedFlag" title="پرچم قرمز (رأی به پایان بازی بدون نتیجه)">🚩 <span class="flag-tally" id="flagTally">۰/۳</span></button>
             <button class="icon-btn" id="btnSound" title="صدا">🔊</button>
             <button class="icon-btn" id="btnRules" title="قوانین">📜</button>
             <button class="icon-btn" id="btnRestart" title="بازی جدید">↻</button>
@@ -205,6 +230,6 @@
 
     <canvas id="confetti"></canvas>
 
-    <script src="assets/js/hokm.js?v=1.1"></script>
+    <script src="assets/js/hokm.js?v=1.2"></script>
 </body>
 </html>
